@@ -7,6 +7,7 @@ use std::thread;
 use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 
 const CODEX_COMMAND: &str = "codex";
+const CLAUDE_COMMAND: &str = "claude";
 const EXPECT_COMMAND: &str = "expect";
 const SHUTDOWN_WAIT: Duration = Duration::from_secs(2);
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(60);
@@ -23,16 +24,75 @@ fn main() -> ExitCode {
 
 fn run() -> io::Result<()> {
     let diagnostics = Diagnostics::create()?;
-    let expect_script = expect_script();
     diagnostics.event("runtime_start")?;
-    diagnostics.event(&format!("spawn command={EXPECT_COMMAND} args=-c <script>"))?;
-    diagnostics.write_expect_script(&expect_script)?;
-    diagnostics.write_stdin_sent(
+
+    let codex_result = run_provider(
+        &diagnostics,
+        "codex",
+        None,
+        &codex_expect_script(),
         "bracketed-paste /status\\r\nwait\nbracketed-paste /status\\r\nctrl-c\n",
     )?;
+    let codex_summary = extract_codex_usage_summary(&codex_result.compacted_stdout);
+
+    let claude_result = run_provider(
+        &diagnostics,
+        "claude",
+        Some("claude"),
+        &claude_expect_script(),
+        "accept default theme if first-run wizard appears\n/usage\\r\nctrl-c twice\n",
+    )?;
+    let claude_summary = extract_claude_usage_summary(&claude_result.compacted_stdout);
+
+    diagnostics.event(&format!(
+        "runtime_finish diagnostics_dir={}",
+        diagnostics.dir().display()
+    ))?;
+
+    if let Some(summary) = codex_summary {
+        println!("{summary}");
+    } else {
+        println!("Codex usage: not found in CLI output");
+    }
+
+    if let Some(summary) = claude_summary {
+        println!("{summary}");
+    } else {
+        println!("Claude usage: not found in CLI output");
+    }
+
+    if !codex_result.stderr.trim().is_empty() {
+        eprint!("{}", codex_result.stderr);
+    }
+    if !claude_result.stderr.trim().is_empty() {
+        eprint!("{}", claude_result.stderr);
+    }
+
+    println!("ai-usage diagnostics: {}", diagnostics.dir().display());
+
+    Ok(())
+}
+
+struct ProviderRun {
+    compacted_stdout: String,
+    stderr: String,
+}
+
+fn run_provider(
+    diagnostics: &Diagnostics,
+    provider: &'static str,
+    file_prefix: Option<&'static str>,
+    expect_script: &str,
+    stdin_sent: &str,
+) -> io::Result<ProviderRun> {
+    diagnostics.event(&format!(
+        "{provider} spawn command={EXPECT_COMMAND} args=-c <script>"
+    ))?;
+    diagnostics.write_expect_script(file_prefix, expect_script)?;
+    diagnostics.write_stdin_sent(file_prefix, stdin_sent)?;
 
     let mut child = Command::new(EXPECT_COMMAND)
-        .args(["-c", &expect_script])
+        .args(["-c", expect_script])
         .env("TERM", "xterm-256color")
         .env("COLUMNS", "120")
         .env("LINES", "40")
@@ -41,28 +101,28 @@ fn run() -> io::Result<()> {
         .stderr(Stdio::piped())
         .spawn()?;
 
-    diagnostics.event(&format!("process_started pid={}", child.id()))?;
+    diagnostics.event(&format!("{provider} process_started pid={}", child.id()))?;
 
     let stdout_reader = child
         .stdout
         .take()
-        .map(|stream| read_stream(stream, diagnostics.clone(), "stdout"))
+        .map(|stream| read_stream(stream, diagnostics.clone(), provider, file_prefix, "stdout"))
         .expect("stdout is piped");
     let stderr_reader = child
         .stderr
         .take()
-        .map(|stream| read_stream(stream, diagnostics.clone(), "stderr"))
+        .map(|stream| read_stream(stream, diagnostics.clone(), provider, file_prefix, "stderr"))
         .expect("stderr is piped");
 
     let started_at = Instant::now();
     loop {
         if child.try_wait()?.is_some() {
-            diagnostics.event("process_finished")?;
+            diagnostics.event(&format!("{provider} process_finished"))?;
             break;
         }
 
         if started_at.elapsed() >= PROCESS_TIMEOUT {
-            diagnostics.event("process_timeout kill")?;
+            diagnostics.event(&format!("{provider} process_timeout kill"))?;
             child.kill()?;
             let _ = child.wait();
             break;
@@ -76,33 +136,22 @@ fn run() -> io::Result<()> {
     let stdout = stdout_reader.join().unwrap_or_default();
     let stderr = stderr_reader.join().unwrap_or_default();
 
-    diagnostics.write_cleaned(&stdout)?;
     let cleaned_stdout = clean_terminal_output(&stdout);
     let compacted_stdout = compact_terminal_text(&cleaned_stdout);
-    let usage_summary = extract_usage_summary(&compacted_stdout);
+    diagnostics.write_cleaned(file_prefix, &cleaned_stdout, &compacted_stdout)?;
     diagnostics.event(&format!(
-        "runtime_finish stdout_bytes={} stderr_bytes={} diagnostics_dir={}",
+        "{provider} runtime_finish stdout_bytes={} stderr_bytes={}",
         stdout.len(),
-        stderr.len(),
-        diagnostics.dir().display()
+        stderr.len()
     ))?;
 
-    if let Some(summary) = usage_summary {
-        println!("{summary}");
-    } else {
-        println!("Codex usage: not found in CLI output");
-    }
-
-    if !stderr.trim().is_empty() {
-        eprint!("{stderr}");
-    }
-
-    println!("ai-usage diagnostics: {}", diagnostics.dir().display());
-
-    Ok(())
+    Ok(ProviderRun {
+        compacted_stdout,
+        stderr,
+    })
 }
 
-fn expect_script() -> String {
+fn codex_expect_script() -> String {
     format!(
         r#"set timeout 20
 log_user 1
@@ -127,6 +176,38 @@ if {{$have_usage == 0}} {{
     }}
 }}
 after 1000
+send "\003"
+expect {{
+    eof {{}}
+    timeout {{exit 0}}
+}}
+"#
+    )
+}
+
+fn claude_expect_script() -> String {
+    format!(
+        r#"set timeout 25
+log_user 1
+spawn env TERM=xterm-256color COLUMNS=120 LINES=40 sh -c {{stty cols 120 rows 40; exec {CLAUDE_COMMAND} --no-chrome}}
+expect {{
+    -re {{Choose.*text.*style|Syntax theme}} {{
+        send "\r"
+        exp_continue
+    }}
+    -re {{for shortcuts|Do you trust|Select login method}} {{}}
+    timeout {{}}
+}}
+after 500
+send -- "/usage\r"
+expect {{
+    -re {{Usage|Current session|Current week|Resets}} {{}}
+    -re {{Select login method|Choose.*text.*style}} {{}}
+    timeout {{}}
+}}
+after 10000
+send "\003"
+after 500
 send "\003"
 expect {{
     eof {{}}
@@ -172,30 +253,49 @@ impl Diagnostics {
         events.flush()
     }
 
-    fn raw_path(&self, stream_name: &str) -> PathBuf {
-        self.dir.join(format!("{stream_name}.raw"))
+    fn file_name(prefix: Option<&str>, name: &str) -> String {
+        match prefix {
+            Some(prefix) => format!("{prefix}.{name}"),
+            None => name.to_string(),
+        }
     }
 
-    fn write_cleaned(&self, stdout: &str) -> io::Result<()> {
-        let cleaned = clean_terminal_output(stdout);
-        fs::write(self.dir.join("stdout.cleaned.txt"), cleaned.as_bytes())?;
+    fn raw_path(&self, prefix: Option<&str>, stream_name: &str) -> PathBuf {
+        self.dir
+            .join(Self::file_name(prefix, &format!("{stream_name}.raw")))
+    }
+
+    fn write_cleaned(
+        &self,
+        prefix: Option<&str>,
+        cleaned: &str,
+        compacted: &str,
+    ) -> io::Result<()> {
         fs::write(
-            self.dir.join("stdout.compacted.txt"),
-            compact_terminal_text(&cleaned),
+            self.dir.join(Self::file_name(prefix, "stdout.cleaned.txt")),
+            cleaned.as_bytes(),
+        )?;
+        fs::write(
+            self.dir
+                .join(Self::file_name(prefix, "stdout.compacted.txt")),
+            compacted,
         )
     }
 
-    fn write_stdin_sent(&self, text: &str) -> io::Result<()> {
+    fn write_stdin_sent(&self, prefix: Option<&str>, text: &str) -> io::Result<()> {
         let mut file = OpenOptions::new()
             .create(true)
             .append(true)
-            .open(self.dir.join("stdin.sent.log"))?;
+            .open(self.dir.join(Self::file_name(prefix, "stdin.sent.log")))?;
         file.write_all(text.as_bytes())?;
         file.flush()
     }
 
-    fn write_expect_script(&self, text: &str) -> io::Result<()> {
-        fs::write(self.dir.join("expect.script.tcl"), text)
+    fn write_expect_script(&self, prefix: Option<&str>, text: &str) -> io::Result<()> {
+        fs::write(
+            self.dir.join(Self::file_name(prefix, "expect.script.tcl")),
+            text,
+        )
     }
 }
 
@@ -214,6 +314,8 @@ fn runtime_dir() -> io::Result<PathBuf> {
 fn read_stream<R>(
     mut stream: R,
     diagnostics: Diagnostics,
+    provider: &'static str,
+    prefix: Option<&'static str>,
     stream_name: &'static str,
 ) -> thread::JoinHandle<String>
 where
@@ -223,7 +325,7 @@ where
         let mut raw_file = OpenOptions::new()
             .create(true)
             .append(true)
-            .open(diagnostics.raw_path(stream_name))
+            .open(diagnostics.raw_path(prefix, stream_name))
             .ok();
         let mut output = String::new();
         let mut buffer = [0_u8; 4096];
@@ -231,7 +333,7 @@ where
         loop {
             match stream.read(&mut buffer) {
                 Ok(0) => {
-                    let _ = diagnostics.event(&format!("{stream_name}_closed"));
+                    let _ = diagnostics.event(&format!("{provider} {stream_name}_closed"));
                     break;
                 }
                 Ok(count) => {
@@ -242,10 +344,12 @@ where
                     }
 
                     output.push_str(&String::from_utf8_lossy(bytes));
-                    let _ = diagnostics.event(&format!("{stream_name}_chunk bytes={count}"));
+                    let _ =
+                        diagnostics.event(&format!("{provider} {stream_name}_chunk bytes={count}"));
                 }
                 Err(error) => {
-                    let _ = diagnostics.event(&format!("{stream_name}_read_error {error}"));
+                    let _ =
+                        diagnostics.event(&format!("{provider} {stream_name}_read_error {error}"));
                     break;
                 }
             }
@@ -364,7 +468,7 @@ fn flush_pending_word(output: &mut String, pending_word: &mut String) {
     pending_word.clear();
 }
 
-fn extract_usage_summary(input: &str) -> Option<String> {
+fn extract_codex_usage_summary(input: &str) -> Option<String> {
     let mut five_hour_limit = None;
     let mut weekly_limit = None;
     let mut credits = None;
@@ -405,4 +509,212 @@ fn extract_usage_summary(input: &str) -> Option<String> {
     }
 
     Some(summary)
+}
+
+fn extract_claude_usage_summary(input: &str) -> Option<String> {
+    let lines = input
+        .split(['\n', '\r'])
+        .map(normalize_terminal_line)
+        .filter(|line| !line.is_empty())
+        .collect::<Vec<_>>();
+
+    if lines.iter().any(|line| {
+        let compact = compact_for_matching(line);
+        compact.contains("selectloginmethod") || compact.contains("choosethetextstyle")
+    }) {
+        return Some(
+            "Claude usage:\nClaude CLI is not ready: interactive setup is required\n".to_string(),
+        );
+    }
+
+    let current_session = extract_claude_limit_block(&lines, "Current session");
+    let current_week = extract_claude_limit_block(&lines, "Current week");
+    let total_cost = find_line_by_compact_prefix(&lines, "totalcost");
+    let token_usage = find_line_by_compact_prefix(&lines, "usage");
+
+    if current_session.is_none()
+        && current_week.is_none()
+        && total_cost.is_none()
+        && token_usage.is_none()
+    {
+        return None;
+    }
+
+    let mut summary = String::from("Claude usage:\n");
+
+    if let Some(value) = current_session {
+        summary.push_str(&value);
+        summary.push('\n');
+    }
+
+    if let Some(value) = current_week {
+        summary.push_str(&value);
+        summary.push('\n');
+    }
+
+    if let Some(value) = total_cost.and_then(|line| format_claude_metric_line(&line)) {
+        summary.push_str(&value);
+        summary.push('\n');
+    }
+
+    if let Some(value) = token_usage.and_then(|line| format_claude_metric_line(&line)) {
+        summary.push_str(&value);
+        summary.push('\n');
+    }
+
+    Some(summary)
+}
+
+fn normalize_terminal_line(raw_line: &str) -> String {
+    raw_line
+        .trim()
+        .trim_matches(|character| character == '\u{2502}')
+        .trim()
+        .split_whitespace()
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn extract_claude_limit_block(lines: &[String], label: &str) -> Option<String> {
+    let label_compact = compact_for_matching(label);
+    let start = lines
+        .iter()
+        .position(|line| compact_for_matching(line).starts_with(&label_compact))?;
+    let percent = lines
+        .iter()
+        .skip(start + 1)
+        .take(3)
+        .find_map(|line| extract_percent_used(line))?;
+    let resets = lines
+        .iter()
+        .skip(start + 1)
+        .take(5)
+        .find_map(|line| extract_resets(line));
+
+    let mut summary = format!("{label}: {percent} used");
+    if let Some(resets) = resets {
+        summary.push_str(" (resets ");
+        summary.push_str(&format_claude_reset(&resets));
+        summary.push(')');
+    }
+
+    Some(summary)
+}
+
+fn extract_percent_used(line: &str) -> Option<String> {
+    let used_index = line.find("used")?;
+    let before_used = &line[..used_index];
+    let percent_index = before_used.rfind('%')?;
+    let digits = before_used[..percent_index]
+        .chars()
+        .rev()
+        .take_while(|character| character.is_ascii_digit())
+        .collect::<String>();
+
+    if digits.is_empty() {
+        return None;
+    }
+
+    Some(digits.chars().rev().collect::<String>() + "%")
+}
+
+fn format_claude_metric_line(line: &str) -> Option<String> {
+    let compact = compact_for_matching(line);
+
+    if compact.starts_with("totalcost") {
+        let value = line.split_once(':')?.1.trim();
+        return Some(format!("Total cost: {value}"));
+    }
+
+    if compact.starts_with("usage") {
+        let value = line.split_once(':')?.1.trim();
+        return Some(format!("Tokens: {}", readable_compact_usage(value)));
+    }
+
+    None
+}
+
+fn readable_compact_usage(value: &str) -> String {
+    let mut output = String::new();
+    let mut previous = None;
+
+    for character in value.chars() {
+        if character == ',' {
+            output.push_str(", ");
+        } else {
+            if character.is_ascii_alphabetic()
+                && previous
+                    .map(|previous: char| previous.is_ascii_digit())
+                    .unwrap_or(false)
+            {
+                output.push(' ');
+            }
+            output.push(character);
+        }
+        previous = Some(character);
+    }
+
+    output
+        .replace("cacheread", "cache read")
+        .replace("cachewrite", "cache write")
+}
+
+fn format_claude_reset(value: &str) -> String {
+    let with_timezone_space = value.replace('(', " (");
+    let mut chars = with_timezone_space.chars().peekable();
+    let mut month = String::new();
+
+    while chars
+        .peek()
+        .map(|character| character.is_ascii_alphabetic())
+        .unwrap_or(false)
+    {
+        month.push(chars.next().expect("peeked character exists"));
+    }
+
+    let mut day = String::new();
+    while chars
+        .peek()
+        .map(|character| character.is_ascii_digit())
+        .unwrap_or(false)
+    {
+        day.push(chars.next().expect("peeked character exists"));
+    }
+
+    let rest = chars.collect::<String>();
+    if month.len() == 3 && !day.is_empty() && rest.starts_with("at") {
+        return format!("{month} {day} at {}", rest.trim_start_matches("at"));
+    }
+
+    with_timezone_space
+}
+
+fn extract_resets(line: &str) -> Option<String> {
+    let compact = compact_for_matching(line);
+    if !compact.starts_with("resets") {
+        return None;
+    }
+
+    line.split_once(' ')
+        .map(|(_, value)| value.trim().to_string())
+        .or_else(|| {
+            line.strip_prefix("Resets")
+                .map(|value| value.trim().to_string())
+        })
+        .filter(|value| !value.is_empty())
+}
+
+fn find_line_by_compact_prefix(lines: &[String], prefix: &str) -> Option<String> {
+    lines
+        .iter()
+        .find(|line| compact_for_matching(line).starts_with(prefix))
+        .cloned()
+}
+
+fn compact_for_matching(value: &str) -> String {
+    value
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase()
 }

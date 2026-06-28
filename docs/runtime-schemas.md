@@ -88,8 +88,14 @@ stateDiagram-v2
 - `expect` ждет признаки ответа Codex: стартовый экран, `refresh requested`, строки лимитов или `Credits`.
 - Пользовательский вывод PoC показывает только найденную сводку `5h limit`, `Weekly limit` и `Credits`.
 - Полный вывод Codex CLI остается TUI-потоком и может содержать управляющие terminal-последовательности.
+- PoC запускает Claude через стандартную команду `claude` с флагом `--no-chrome`, чтобы не открывать дополнительный интерактивный диалог Chrome integration во время запроса лимитов.
+- Для Claude PoC отправляет slash-команду `/usage`, потому что именно она открывает экран usage/limits; `/status` по умолчанию открывает вкладку Status без лимитов.
+- Для Claude PoC ждет готовность prompt по нижней строке `for shortcuts`, затем отправляет `/usage` обычным вводом без bracketed paste.
+- Пользовательский вывод Claude показывает найденные строки `Current session`, `Current week`, `Total cost` и token usage.
+- Полный вывод Claude CLI остается TUI-потоком; часть строк приходит через bare carriage return, поэтому парсер Claude режет cleaned/compacted output по `\n` и `\r`.
 - Для диагностики PoC создает runtime-каталог `.runtime/ai-usage/<timestamp>-<pid>/`.
 - В runtime-каталог пишутся `events.log`, `expect.script.tcl`, `stdin.sent.log`, `stdout.raw`, `stderr.raw`, `stdout.cleaned.txt` и `stdout.compacted.txt`.
+- Диагностические файлы Claude пишутся в тот же runtime-каталог с префиксом `claude.`: `claude.expect.script.tcl`, `claude.stdin.sent.log`, `claude.stdout.raw`, `claude.stderr.raw`, `claude.stdout.cleaned.txt` и `claude.stdout.compacted.txt`.
 - Диагностические файлы нужны для анализа порядка действий и фактических потоков CLI; это не пользовательский формат MVP.
 
 ## Завершение runtime
