@@ -1,0 +1,31 @@
+version: 1
+kind: competitors-index
+
+# Language:
+# - This index is maintained in English.
+# - Linked Markdown documents may be maintained in Russian during early iterations.
+# - Do not infer the Markdown document language from this index.
+#
+# Format:
+# - Use null for empty field values.
+# - Competitors is a required object.
+# - Each key inside competitors is a stable competitor ID.
+# - Each competitor contains only a short index card.
+# - Name is a human-readable competitor name.
+# - Status is one of [not_researched, docs_reviewed, hands_on].
+# - Document must match the competitor ID: {id}.md.
+# - URL is the primary competitor URL.
+# - Supported interfaces is an array of [cli, api, macos, windows, linux, android, iphone].
+# - Summary is a short human-readable description.
+# - Details, comparison, sources and custom sections are maintained in document.
+
+competitors:
+  router-for-me:
+    name: Router-For.ME
+    status: docs_reviewed
+    document: router-for-me.md
+    url: https://github.com/router-for-me
+    supported_interfaces: [cli, api]
+    summary: >
+      GitHub organization around CLIProxyAPI and related tools for exposing
+      CLI agents through API-compatible interfaces.
