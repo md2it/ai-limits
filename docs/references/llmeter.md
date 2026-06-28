@@ -15,6 +15,7 @@
 - Installed from `amedinat/LLMeter` at commit `8b8b52a` and ran the app locally from `.hands-on/llmeter/`.
 - Verified a working production build and local `next start`; public `/` and `/demo` served successfully.
 - Verified the public demo dashboard shows API spend, request counts, provider/model breakdowns, daily history, month spend forecast, and optimization suggestions.
+- Verified LLMeter is not a fully local tool: the real product experience is an authenticated web app that requires registration/login and external Supabase Auth/PostgreSQL infrastructure.
 - Verified authenticated dashboard/API surfaces require Supabase auth; without a session, `/dashboard`, `/providers`, `/api/providers`, `/api/usage/forecast`, and `/api/v1/metrics` redirect to `/login`.
 - Verified no CLI subscription quota tracking: there is no local Claude Code / Codex / Gemini CLI data access path, no real quota cap, no remaining credits balance, and no reset countdown.
 - Verified Google AI is not connectable in the current UI/code path: provider validators mark `google` as `comingSoonProviders`, and the polling registry excludes it because there is no public usage/billing API.
@@ -24,6 +25,7 @@
 - Core value: LLMeter is a multi-provider API billing cost dashboard; ai-usage-mit focuses on subscription quota visibility for CLI-based coding tools.
 - Data source: LLMeter uses provider usage/billing APIs and an ingestion API; ai-usage-mit is expected to use local CLI session data or telemetry.
 - Target user: LLMeter targets developers with direct API spend; ai-usage-mit targets users of Claude Code, Codex, Gemini CLI, and similar subscriptions.
+- Locality/dependencies: LLMeter can be self-hosted, but not used as a fully local standalone tool; it needs Supabase Auth/PostgreSQL, user login, provider API keys, and optional Resend/Slack/Paddle integrations.
 - CLI subscription awareness: LLMeter does not cover Claude Code, Codex, or Gemini CLI subscription quotas.
 - Limits/credits/reset: hands-on confirmed configurable daily/monthly spend alerts and anomaly detection, but no real subscription quota cap, remaining credits balance, or reset countdown for CLI tools.
 - Forecast: the app has a month-spend forecast based on historical API spend, but not a forecast of limit-hit time or quota exhaustion.

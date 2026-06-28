@@ -27,8 +27,8 @@ kind: references-index
 #     At docs_reviewed: from documentation only. At hands_on: prefer verified runtime behavior.
 #   - notifications: true/false when verified, null when not checked.
 #   - hard_stop: true/false when verified, null when not checked. Use for enforced spend/usage stop or limit-control capabilities.
-#   - conclusion: final visual research outcome, one of [💎, 👍, 🤷‍♂️, ❓, 👀].
-#     💎 ideal; 👍 good; 🤷‍♂️ not relevant; ❓ unclear; 👀 needs more research.
+#   - conclusion: final visual research outcome, one of [💎, 👍, 🤷‍♂️, ❓, 👀, 🌚].
+#     💎 ideal; 👍 good; 🤷‍♂️ not relevant; ❓ unclear; 👀 needs more research; 🌚 совсем нет.
 # - Summary is a short human-readable description (positioning, data source, relevance vs ai-usage-mit).
 #   Do not repeat capability tags; use summary for scope caveats (e.g. "Claude only", "Codex: usage only").
 # - Details, comparison, sources and custom sections are maintained in document.
@@ -155,15 +155,13 @@ references:
       capabilities: [usage, cost, usage_history]
       notifications: true
       hard_stop: false
-      conclusion: 👍
+      conclusion: 🌚
     summary: >
       Open-source multi-provider AI billing dashboard. Hands-on installed commit `8b8b52a`,
       built the app, and verified public homepage/demo plus auth-protected dashboard/API
-      surfaces. Runtime provider list is broader than docs, but Google is coming soon and
-      AWS Bedrock was not present in app validators/registry. No local-file or CLI
-      subscription awareness: no Claude Code / Codex / Gemini CLI limits, credits, or reset
-      countdown. Low-Medium relevance: different data source and audience; useful dashboard
-      reference, not a quota tracker.
+      surfaces. Not fully local: real use requires registration/login plus Supabase
+      Auth/PostgreSQL and provider API keys. No local-file or CLI subscription awareness:
+      no Claude Code / Codex / Gemini CLI limits, credits, or reset countdown.
 
   router-for-me:
     meta:
