@@ -19,6 +19,7 @@
 - With an isolated CLIProxyAPI v7.2.44 instance, Keeper connected to the CPA Redis/RESP endpoint, selected the `usage` key, synced CPA API-key/provider identity metadata, and switched metadata sync to notification mode.
 - End-to-end usage ingestion was verified with an isolated OpenAI-compatible mock provider through CPA: one successful request was imported into SQLite and appeared in overview, event log, identity stats, JSON export, and CSV export.
 - Cost calculation was verified after adding a local pricebook entry for the mock model; the same imported event changed from `cost_available:false` to a computed USD cost.
+- CPA Usage Keeper only tracks requests that were routed through CLIProxyAPI and became CPA/API traffic. Direct provider usage, local CLI usage, and agent activity outside CPA are invisible to it.
 - Quota/limit/reset behavior was not verified against real provider credentials. In the mock OpenAI-compatible identity, quota cache returned no rows and quota refresh rejected the identity as `not_auth_file`.
 - No existing live CPA with real auth entries was found during the check, so hands-on did not validate real Claude/Codex/Gemini quota windows or reset timing.
 
@@ -31,7 +32,7 @@
 - Pricing visibility: CPA Usage Keeper tracks cost and can use models.dev pricing.
 - Credential health: CPA Usage Keeper includes credential health snapshots, but hands-on only verified empty/mock identity states.
 - Export: CSV/JSON export is documented.
-- Threat level: Medium. It directly addresses usage observability for CLIProxyAPI users and works as a CPA sidecar, but its dependency on CLIProxyAPI limits overlap if ai-usage-mit targets broader standalone data sources.
+- Threat level: Low for ai-usage-mit. It is a good CPA sidecar, but absolutely irrelevant for tracking user spend/usage that happens directly in providers or agents and never passes through CLIProxyAPI.
 
 ### What we can learn
 
@@ -101,7 +102,7 @@ For the live dependency check, CLIProxyAPI v7.2.44 was also downloaded into `.ha
 
 ### Data access
 
-Keeper does not read Claude/Codex/Gemini local files directly. It reads CPA management APIs and the CPA Redis/RESP usage stream. In the successful isolated run, Keeper logs showed `subscribe_connected`, selected Redis key `usage`, performed a zero-message backfill, then received usage through CPA after a mock provider request. SQLite files were created under `.hands-on/cpa-usage-keeper/data/`.
+Keeper does not read Claude/Codex/Gemini local files directly and does not inspect arbitrary agent activity. It reads CPA management APIs and the CPA Redis/RESP usage stream, so usage must first be converted into requests routed through CLIProxyAPI. In the successful isolated run, Keeper logs showed `subscribe_connected`, selected Redis key `usage`, performed a zero-message backfill, then received usage through CPA after a mock provider request. SQLite files were created under `.hands-on/cpa-usage-keeper/data/`.
 
 Local SQLite/dashboard features verified: request/tokens overview, event list, source identity stats, service health success rate, pricebook-based cost calculation, JSON export, and CSV export.
 

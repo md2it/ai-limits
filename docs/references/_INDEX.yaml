@@ -132,14 +132,15 @@ references:
       capabilities: [usage, limits, session_limits, reset, cost, usage_history]
       notifications: false
       hard_stop: false
-      conclusion: 👍
+      conclusion: 🤷‍♂️
     summary: >
       Open-source observability sidecar (MIT, 818 stars) for CLIProxyAPI — not a standalone
       product. Hands-on installed v1.12.1 macOS binary, ran an isolated CPA v7.2.44, and
       confirmed Redis-stream ingestion into SQLite, dashboard/API usage history, pricebook
-      cost calculation, identity stats, and CSV/JSON export. Real auth-file quota windows
-      and reset timing require live CPA provider credentials and were not validated; provider
-      scope is CLIProxyAPI events, not direct provider integrations.
+      cost calculation, identity stats, and CSV/JSON export. It only tracks requests that
+      were routed through CPA and became API traffic; direct provider/agent usage outside
+      CPA is invisible. Good CPA tool, but irrelevant for ai-usage-mit unless users proxy
+      their agent traffic through CLIProxyAPI.
 
   llmeter:
     meta:
