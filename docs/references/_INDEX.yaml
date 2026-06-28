@@ -102,22 +102,23 @@ references:
   cpa-manager-plus:
     meta:
       name: CPA-Manager-Plus
-      status: docs_reviewed
+      status: hands_on
       document: cpa-manager-plus.md
       link: https://github.com/seakee/CPA-Manager-Plus
     compare:
-      supported_interfaces: [macos, windows, linux]
+      supported_interfaces: [web, macos, windows, linux]
       providers: [CLIProxyAPI, Codex]
-      capabilities: []
+      capabilities: [usage, limits, session_limits, reset, cost, burn_rate, usage_history]
       notifications: null
-      hard_stop: null
+      hard_stop: true
       conclusion: 👀
     summary: >
-      Free MIT-licensed self-hosted ops dashboard (944 stars) tightly coupled to
-      CLIProxyAPI. Adds SQLite request ledger, cost/token analytics by model/key/project,
-      Codex quota inspection, and plugin ecosystem on top of CPA. Useless without CPA —
-      no standalone value. Primary audience: Chinese-speaking self-hosters. Low reference
-      relevance unless ai-usage-mit targets the same CPA analytics niche.
+      Free MIT-licensed self-hosted ops dashboard (945 stars) tightly coupled to
+      CLIProxyAPI. Hands-on on native macOS binary confirmed Manager Server setup, SQLite
+      request ingestion from a live local CPA, dashboard/monitoring analytics, usage export,
+      rolling burn-rate, and Codex inspection runs over CPA auth files. Codex quota inspection
+      is not standalone: it depends on CPA `/v0/management/auth-files` and `/v0/management/api-call`.
+      Low reference relevance unless ai-usage-mit targets the same CPA analytics niche.
 
   cpa-usage-keeper:
     meta:
@@ -165,22 +166,22 @@ references:
   router-for-me:
     meta:
       name: Router-For.ME
-      status: docs_reviewed
+      status: hands_on
       document: router-for-me.md
       link: https://github.com/router-for-me
     compare:
       supported_interfaces: [cli, api]
       providers: [Claude, Codex, Gemini, Grok, Antigravity]
-      capabilities: []
-      notifications: null
-      hard_stop: null
-      conclusion: 👀
+      capabilities: [usage]
+      notifications: false
+      hard_stop: false
+      conclusion: 🤷‍♂️
     summary: >
-      Open-source proxy server (CLIProxyAPI, 38,618 stars, v7.2.44 as of 2026-06-28) that
+      Open-source proxy server (CLIProxyAPI, 38,624 stars, v7.2.44 as of 2026-06-28) that
       wraps Claude Code, Codex, Gemini CLI, Grok Build, and Antigravity behind unified
       OpenAI-compatible API endpoints with multi-account load balancing. Focused on
-      access/routing, not observability. Usage tracking permanently removed in v6.10.0
-      ("chore: remove usage tracking and logging functionality",
-      https://github.com/router-for-me/CLIProxyAPI/releases/tag/v6.10.0);
-      feature-request issues #3444 and #3481 closed "Not planned" May 2026.
-      Low-Medium reference relevance.
+      access/routing, not observability. Hands-on confirmed raw per-request token records
+      through `/usage-queue` and no built-in aggregate usage dashboard, usage history,
+      cost tracking, notifications, or hard stop; `/usage` and `/usage/export` return 404.
+      Usage tracking was removed in v6.10.0 ("chore: remove usage tracking and logging
+      functionality"); restore requests #3444 and #3481 were closed "not_planned".
