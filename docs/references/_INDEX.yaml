@@ -144,24 +144,24 @@ references:
   llmeter:
     meta:
       name: LLMeter
-      status: docs_reviewed
+      status: hands_on
       document: llmeter.md
       link: https://llmeter.app
     compare:
       supported_interfaces: [api, web]
-      providers: [OpenAI, Anthropic, DeepSeek, OpenRouter, Mistral, Google AI, Azure OpenAI, AWS Bedrock]
+      providers: [OpenAI, Anthropic, DeepSeek, OpenRouter, Mistral, Azure OpenAI, xAI, Cohere, Groq, Together, Fireworks, Perplexity, Cerebras, AI21, DeepInfra, Novita, Hyperbolic, SambaNova, Lambda Labs, Lepton, Inference.net, NVIDIA NIM, Cloudflare Workers AI, Nebius, Replicate]
       capabilities: [usage, cost, usage_history]
       notifications: true
       hard_stop: false
-      conclusion: 👀
+      conclusion: 👍
     summary: >
-      Open-source multi-provider AI billing dashboard for real API spend, usage trends,
-      retention, exports, budget/anomaly alerts, and email/Slack/webhook notifications.
-      Billing API integrations cover OpenAI, Anthropic, DeepSeek, OpenRouter, and Mistral;
-      Google AI, Azure OpenAI, and AWS Bedrock are documented through SDK wrappers, with
-      Google AI marked "coming soon" on the homepage FAQ. No local-file or CLI subscription
-      awareness: no Claude Code / Codex / Gemini CLI limits, credits, or reset countdown.
-      Low-Medium relevance: different data source and audience; positioning overlap only.
+      Open-source multi-provider AI billing dashboard. Hands-on installed commit `8b8b52a`,
+      built the app, and verified public homepage/demo plus auth-protected dashboard/API
+      surfaces. Runtime provider list is broader than docs, but Google is coming soon and
+      AWS Bedrock was not present in app validators/registry. No local-file or CLI
+      subscription awareness: no Claude Code / Codex / Gemini CLI limits, credits, or reset
+      countdown. Low-Medium relevance: different data source and audience; useful dashboard
+      reference, not a quota tracker.
 
   router-for-me:
     meta:
