@@ -31,7 +31,8 @@
 - Provider support: usage analytics are CPA-wide; Codex has the deepest explicit quota/inspection path.
 - Pricing: free / MIT.
 - Target audience: CPA self-hosters, with strong relevance to the Chinese self-hosting community noted in the original research.
-- Reference relevance: Low. CPA-Manager-Plus is tightly coupled to CLIProxyAPI. If ai-usage-mit targets broader or agent-level usage tracking outside CLIProxyAPI, direct overlap is limited.
+- Tracking boundary: CPA-Manager-Plus only sees usage that is converted into API traffic and routed through CLIProxyAPI. Direct provider usage, local CLI usage, and agent activity outside CPA are invisible to it.
+- Reference relevance: Threat level is low. CPA-Manager-Plus is a good CPA tool, but absolutely irrelevant for ai-usage-mit unless users intentionally proxy ordinary provider/agent usage through CLIProxyAPI.
 
 ### What we can learn
 
@@ -62,7 +63,7 @@
 
 ### Overview
 
-CPA-Manager-Plus is a self-hosted management and analytics dashboard built on top of CLIProxyAPI (CPA). It is not an AI product by itself: it is an ops panel that converts the CPA usage queue into a SQLite request log and provides monitoring, cost/token analytics, quota views, account management, and plugin integration. It targets self-hosters who already run CLIProxyAPI and want visibility into spend, request health, and quota state.
+CPA-Manager-Plus is a self-hosted management and analytics dashboard built on top of CLIProxyAPI (CPA). It is not an AI product by itself: it is an ops panel that converts the CPA usage queue into a SQLite request log and provides monitoring, cost/token analytics, quota views, account management, and plugin integration. It targets self-hosters who already run CLIProxyAPI and want visibility into spend, request health, and quota state. It does not analyze provider or agent usage that bypasses CLIProxyAPI.
 
 Components documented in the original research:
 
@@ -117,6 +118,7 @@ CPA-Manager-Plus `v1.9.1` was installed from the official `darwin_arm64` native 
 - The connected CPA had no auth files: `/v0/management/auth-files` returned `{"files":[]}`.
 - The connected CPA exposed one OpenAI-compatible local model, `mock-model`, through `hands-on-mock`.
 - One controlled request through CPA to `/v1/chat/completions` produced one usage event; CPAMP collected it into `.hands-on/cpa-manager-plus/data/usage.sqlite`.
+- Requests that do not pass through CPA are outside CPAMP's data model; the tool does not import local agent histories or provider billing ledgers directly.
 
 ### Verified behavior
 

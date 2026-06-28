@@ -111,14 +111,15 @@ references:
       capabilities: [usage, limits, session_limits, reset, cost, burn_rate, usage_history]
       notifications: null
       hard_stop: true
-      conclusion: 👀
+      conclusion: 🤷‍♂️
     summary: >
       Free MIT-licensed self-hosted ops dashboard (945 stars) tightly coupled to
       CLIProxyAPI. Hands-on on native macOS binary confirmed Manager Server setup, SQLite
       request ingestion from a live local CPA, dashboard/monitoring analytics, usage export,
       rolling burn-rate, and Codex inspection runs over CPA auth files. Codex quota inspection
       is not standalone: it depends on CPA `/v0/management/auth-files` and `/v0/management/api-call`.
-      Low reference relevance unless ai-usage-mit targets the same CPA analytics niche.
+      Good CPA tool, but absolutely irrelevant for ai-usage-mit unless ordinary provider/agent
+      usage is explicitly converted into API traffic routed through CLIProxyAPI.
 
   cpa-usage-keeper:
     meta:
