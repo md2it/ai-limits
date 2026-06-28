@@ -27,5 +27,9 @@ competitors:
     url: https://github.com/router-for-me
     supported_interfaces: [cli, api]
     summary: >
-      GitHub organization around CLIProxyAPI and related tools for exposing
-      CLI agents through API-compatible interfaces.
+      Open-source proxy server (CLIProxyAPI, 38k GitHub stars) that wraps
+      Claude Code, Codex, Gemini CLI and Grok behind unified OpenAI-compatible
+      API endpoints with multi-account load balancing. Focused on access/routing,
+      not usage observability. Since v6.10.0: "CLIProxyAPI and CPAMC no longer
+      ship built-in usage statistics" (README: https://github.com/router-for-me/CLIProxyAPI/blob/main/README.md).
+      Low-Medium competitive threat.
