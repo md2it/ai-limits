@@ -48,8 +48,10 @@ Sections (in order):
 
 - **META** — date, URL, relevance, pricing, license.
 - **OVERVIEW** — one paragraph, plain prose.
-- **PRODUCTS** — table if multiple repos/tools.
+- **PRODUCTS** — required if there are multiple repos, tools, modules, editions, or related products. Use a compact table.
 - **FEATURES** — bullet list; no padding.
+- **HANDS-ON FINDINGS** — required when `status: hands_on`. State what was installed or run, version/command if known, what was confirmed, what was not confirmed, and what differed from docs, marketing pages, README files, or changelogs.
+- **ARCHITECTURE** — required for complex systems: proxies, sidecars, self-hosted dashboards, backends, multi-component products, or data pipelines. Keep it factual and compact.
 - **PRICING / BUSINESS MODEL** — factual, no speculation.
 - **COMPARISON WITH AI-USAGE-MIT** — table: dimension / competitor / ai-usage-mit. Then threat level with one-line rationale.
 - **WHAT WE CAN LEARN** — 1–5 short bullets: what the product solved well, why it matters to us, and whether to adopt, adapt, evaluate, watch, or ignore. Do not use tables here.
