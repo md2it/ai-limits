@@ -37,6 +37,9 @@
 - Date and model filters are baseline controls for usage review.
 - CSV export from cost/session tables is useful for users who reconcile usage externally.
 - CDN dependencies should be considered carefully for local-first products.
+- Its main source is `~/.claude/projects/**/*.jsonl`, but it also checks Xcode's Claude agent path: `~/Library/Developer/Xcode/CodingAssistant/ClaudeAgentConfig/projects`.
+- Scanning into a local SQLite database (`~/.claude/usage.db` by default) gives fast dashboard reads and incremental rescans without treating SQLite as the original source of truth.
+- Claude discovery should include client-specific transcript roots, not only the standard Claude Code directory.
 
 ## META
 

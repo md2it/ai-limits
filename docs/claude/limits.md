@@ -29,5 +29,8 @@ PoC получает usage/limits через Claude CLI. Приложение з
 | Вариант | Статус | Комментарий |
 |---|---|---|
 | Официальный API | Не исследовано | Может относиться к API-аккаунтам, но не обязательно к подписочным лимитам Claude Code. |
+| Локальные transcript JSONL | Кандидат для usage history | Проверить `~/.config/claude/projects/**/*.jsonl`, `~/.claude/projects/**/*.jsonl` и Xcode ClaudeAgentConfig; хорошо для токенов/стоимости/сессий, но не всегда для официального остатка лимита. |
+| Claude Code statusline `rate_limits` | Кандидат для live limits | Hook получает JSON через stdin от Claude Code и может дать официальный live-сигнал по 5h/7d лимитам; требует настройки statusline. |
+| Локальная SQLite/cache | Вспомогательный слой | Например `~/.claude/usage.db` у `claude-usage`: удобно для dashboard и инкрементального сканирования, но это derived data, не первичный источник. |
 | Frontend/dashboard API | Research-only | Возможен только при понятной и безопасной работе с cookie/session token. |
 | Наблюдение трафика | Research-only | Не рассматривать как продуктовый механизм. |

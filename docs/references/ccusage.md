@@ -35,6 +35,9 @@
 - Offline JSON output is important for users who want local-only workflows.
 - Agent-specific namespaces help keep multi-tool reporting understandable.
 - Active-block projections are useful, but subscription-specific reset and quota views remain a differentiator to evaluate.
+- Claude discovery should check both modern and legacy config roots: `~/.config/claude/projects/**/*.jsonl` and `~/.claude/projects/**/*.jsonl`.
+- `CLAUDE_CONFIG_DIR` support is important because Claude data may be moved, archived, or split across multiple roots.
+- Claude statusline data is a separate channel from transcript JSONL: useful for live context/cost display, but ordinary reports still come from local transcript files.
 
 ## META
 
