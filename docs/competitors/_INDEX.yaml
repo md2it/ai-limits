@@ -12,6 +12,8 @@ kind: competitors-index
 # - Each key inside competitors is a stable competitor ID.
 # - Each competitor contains only a short index card.
 # - Name is a human-readable competitor name.
+# - Icons is a compact human-readable quick-scan field:
+#   ⭐️ good tool; ❓ unclear/no conclusion; 🥴 weak tool; 👀 needs attention; 🆕 new/not researched.
 # - Status is one of [not_researched, docs_reviewed, hands_on].
 # - Document must match the competitor ID: {id}.md.
 # - URL is the primary competitor URL.
@@ -22,6 +24,7 @@ kind: competitors-index
 competitors:
   router-for-me:
     name: Router-For.ME
+    icons: "🥴"
     status: docs_reviewed
     document: router-for-me.md
     url: https://github.com/router-for-me
@@ -38,6 +41,7 @@ competitors:
 
   cpa-manager-plus:
     name: CPA-Manager-Plus
+    icons: "🥴"
     status: docs_reviewed
     document: cpa-manager-plus.md
     url: https://github.com/seakee/CPA-Manager-Plus
@@ -51,6 +55,7 @@ competitors:
 
   cpa-usage-keeper:
     name: CPA Usage Keeper
+    icons: "👀"
     status: docs_reviewed
     document: cpa-usage-keeper.md
     url: https://github.com/Willxup/cpa-usage-keeper
@@ -65,6 +70,7 @@ competitors:
 
   ccusage:
     name: ccusage
+    icons: "⭐️ 👀"
     status: docs_reviewed
     document: ccusage.md
     url: https://github.com/ryoppippi/ccusage
@@ -78,6 +84,7 @@ competitors:
 
   claude-code-usage-monitor:
     name: Claude-Code-Usage-Monitor
+    icons: "⭐️ 👀"
     status: docs_reviewed
     document: claude-code-usage-monitor.md
     url: https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor
@@ -91,6 +98,7 @@ competitors:
 
   claude-usage:
     name: claude-usage (phuryn)
+    icons: "👀"
     status: docs_reviewed
     document: claude-usage.md
     url: https://github.com/phuryn/claude-usage
@@ -104,6 +112,7 @@ competitors:
 
   llmeter:
     name: LLMeter
+    icons: "⭐️"
     status: docs_reviewed
     document: llmeter.md
     url: https://llmeter.app
