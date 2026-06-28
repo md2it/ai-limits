@@ -12,15 +12,12 @@ For the user, the app acts as a local assistant: it collects available usage and
 4. **app**: normalizes the result
 5. **app** → **user**: shows the summary
 
-## PoC
+## Supported features
 
-The current PoC is the `ai-usage` command, which fetches available usage/limit information for Codex, Claude, and Cursor in one run and exits.
-
-Methods:
-
-- Codex: CLI `/status`.
-- Claude: CLI `/usage`.
-- Cursor: internal `api2.cursor.sh` via token from `cursor agent login`; if the API is unavailable, falls back to `cursor agent about/status`.
+- **`ai-usage` command** — queries Codex, Claude, and Cursor in one run and prints a normalized usage/limit summary.
+- **Codex** — reads limits via CLI `/status`.
+- **Claude** — reads limits via CLI `/usage`.
+- **Cursor** — reads usage from `api2.cursor.sh` using a token from `cursor agent login`; if the API is unavailable, falls back to `cursor agent about/status`.
 
 Run from the repository:
 
@@ -28,4 +25,4 @@ Run from the repository:
 ./bin/ai-usage
 ```
 
-By default, the command uses the standard `codex`, `claude`, and `cursor` CLI tools. You need the relevant provider CLIs installed.
+The command uses the standard `codex`, `claude`, and `cursor` CLIs. Install the provider CLIs for the tools you want to query.
