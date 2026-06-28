@@ -123,23 +123,23 @@ references:
   cpa-usage-keeper:
     meta:
       name: CPA Usage Keeper
-      status: docs_reviewed
+      status: hands_on
       document: cpa-usage-keeper.md
       link: https://github.com/Willxup/cpa-usage-keeper
     compare:
-      supported_interfaces: [api]
+      supported_interfaces: [api, web, macos]
       providers: [CLIProxyAPI]
       capabilities: [usage, limits, session_limits, reset, cost, usage_history]
-      notifications: null
-      hard_stop: null
-      conclusion: 👀
+      notifications: false
+      hard_stop: false
+      conclusion: 👍
     summary: >
       Open-source observability sidecar (MIT, 818 stars) for CLIProxyAPI — not a standalone
-      product. Consumes CPA's Redis usage queue into SQLite and serves a built-in React
-      dashboard with historical CPA event analytics, pricing/latency diagnostics, credential
-      health, and CSV/JSON export. Live CPA/Redis is still required for ingestion, metadata,
-      credential quota windows, and reset timing; provider scope is CLIProxyAPI events, not
-      direct provider integrations. Very active: 55 releases, v1.12.1 on 2026-06-26.
+      product. Hands-on installed v1.12.1 macOS binary, ran an isolated CPA v7.2.44, and
+      confirmed Redis-stream ingestion into SQLite, dashboard/API usage history, pricebook
+      cost calculation, identity stats, and CSV/JSON export. Real auth-file quota windows
+      and reset timing require live CPA provider credentials and were not validated; provider
+      scope is CLIProxyAPI events, not direct provider integrations.
 
   llmeter:
     meta:
