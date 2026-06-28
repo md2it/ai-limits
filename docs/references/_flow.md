@@ -17,7 +17,7 @@ This directory contains these document roles:
 
 Sources: community mentions, Reddit, GitHub trending, product launches, user feedback.
 
-Add a stub entry to `_INDEX.yaml` with `status: not_researched`.
+Add a stub entry to `_INDEX.yaml` with `meta.status: not_researched`.
 
 ## 2. Docs review → `status: docs_reviewed`
 
@@ -27,6 +27,7 @@ Goal: answer the required `_INDEX.yaml` comparison questions from documentation:
 - `compare.providers`
 - `compare.notifications`
 - `compare.hard_stop`
+- `compare.conclusion`
 
 In order:
 
@@ -50,6 +51,7 @@ Goal: verify the uncertain `_INDEX.yaml` comparison questions by running the pro
 - `compare.providers`
 - `compare.notifications`
 - `compare.hard_stop`
+- `compare.conclusion`
 
 1. Prepare `.hands-on/{reference-id}/` as the only hands-on workspace.
    - Put repos, virtualenvs, caches, test data, logs, and temporary HOME there.
@@ -97,10 +99,20 @@ Rules:
 
 ## 5. Update `_INDEX.yaml`
 
-- Set `status`.
+- Update `meta`:
+  - `name` — human-readable reference name.
+  - `status` — `not_researched`, `docs_reviewed`, or `hands_on`.
+  - `document` — reference document path, normally `{id}.md`.
+  - `link` — primary reference URL.
 - Update `compare` after research:
   - `supported_interfaces` — array of supported interfaces, for example `cli`, `api`, `macos`, `windows`, `linux`, `android`, `iphone`.
   - `providers` — array of supported providers or data sources, for example `Claude`, `Cursor`, `Codex`, `Mistral`.
   - `notifications` — `true`, `false`, or `null` if not checked.
   - `hard_stop` — `true`, `false`, or `null` if not checked. Use this for hard spend/usage stop or enforced limit-control capabilities.
+  - `conclusion` — one final visual research outcome:
+    - `💎` — ideal tool; outstanding fit and quality.
+    - `👍` — good tool; useful, but not outstanding.
+    - `🤷‍♂️` — not relevant to ai-usage-mit, even if the tool itself may be good.
+    - `❓` — unclear; research did not produce a confident conclusion.
+    - `👀` — needs further research.
 - Write `summary` in 2–4 lines: what it does, key differentiator vs. ai-usage-mit, and reference relevance. Include verbatim quotes for critical facts.
