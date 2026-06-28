@@ -182,8 +182,8 @@ references:
       Open-source proxy server (CLIProxyAPI, 38,624 stars, v7.2.44 as of 2026-06-28) that
       wraps Claude Code, Codex, Gemini CLI, Grok Build, and Antigravity behind unified
       OpenAI-compatible API endpoints with multi-account load balancing. Focused on
-      access/routing, not observability. Hands-on confirmed raw per-request token records
-      through `/usage-queue` and no built-in aggregate usage dashboard, usage history,
-      cost tracking, notifications, or hard stop; `/usage` and `/usage/export` return 404.
-      Usage tracking was removed in v6.10.0 ("chore: remove usage tracking and logging
-      functionality"); restore requests #3444 and #3481 were closed "not_planned".
+      access/routing, not ai-usage-mit-style observability: it only sees traffic routed
+      through CLIProxyAPI and does not track normal local agent usage or provider-side
+      subscription limits. Hands-on confirmed raw `/usage-queue` records only; aggregate
+      dashboard/history/cost analytics live in companion tools, while `/usage` and
+      `/usage/export` return 404. Restore requests #3444 and #3481 were closed "not_planned".

@@ -29,6 +29,7 @@
 - Limit visibility: routing quota state, load balancing, and account management are not counted as ai-usage-mit-style usage/cost capabilities. Hands-on confirmed the remaining built-in telemetry is raw per-request usage records, not an aggregate dashboard, usage history, cost model, forecast, reset countdown, notification system, or hard stop.
 - Removed feature signal: usage tracking and logging were explicitly removed in v6.10.0 with the release note "chore: remove usage tracking and logging functionality"; restore requests #3444 and #3481 were closed with `state_reason: not_planned` in May 2026.
 - Threat level: Low-Medium ecosystem relevance, but the core Router-For.ME/CLIProxyAPI product is not a direct ai-usage-mit analog after hands-on.
+- Bottom line: Router-For.ME is not an ai-usage-mit analog. It only observes requests that users intentionally route through CLIProxyAPI, and it does not track normal local agent usage, provider-side subscription limits, or usage outside the proxy conversion layer.
 
 ### What we can learn
 
@@ -92,6 +93,14 @@ Products documented in the original research:
 - CLIProxyAPI-Plugins-Store: plugin marketplace.
 - cpa-plugin-gemini-cli: Gemini CLI plugin.
 - cliproxyapi-installer: Linux automated installer.
+
+### Boundary with related tools
+
+This research is about Router-For.ME / CLIProxyAPI itself: the proxy/router that turns existing Claude Code, Codex, Gemini, Grok, and Antigravity access into API-compatible endpoints. Its core responsibility is traffic conversion, credential/account management, load balancing, retry/cooldown behavior, and compatibility translation.
+
+CPA Usage Keeper, CPA-Manager-Plus, CLIProxyAPI Dashboard, and similar projects are related but separate companion tools. They consume CLIProxyAPI traffic, queues, logs, or Management API data and add persistence, dashboards, exports, quota inspection, and cost/usage analytics. Those companion capabilities are not counted as Router-For.ME core capabilities in `_INDEX.yaml`.
+
+The practical distinction matters for ai-usage-mit: CLIProxyAPI can only see traffic that goes through CLIProxyAPI. It does not passively inspect normal Claude Code / Codex / Gemini CLI usage outside the proxy, does not read local agent telemetry files, and does not provide a first-party cross-provider subscription-limit tracker.
 
 ### Claimed features
 
