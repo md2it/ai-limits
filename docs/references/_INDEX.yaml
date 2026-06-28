@@ -43,7 +43,7 @@ references:
     compare:
       supported_interfaces: [cli]
       providers: [Claude, Codex, Gemini]
-      capabilities: []
+      capabilities: [usage, session_limits, reset, cost, burn_rate, forecast, usage_history]
       notifications: false
       hard_stop: false
       conclusion: 👍
@@ -65,7 +65,7 @@ references:
     compare:
       supported_interfaces: [cli]
       providers: [Claude]
-      capabilities: []
+      capabilities: [usage, session_limits, reset, cost, burn_rate, forecast, usage_history]
       notifications: false
       hard_stop: false
       conclusion: 👍
@@ -86,7 +86,7 @@ references:
     compare:
       supported_interfaces: [cli, web, vscode]
       providers: [Claude]
-      capabilities: []
+      capabilities: [usage, cost, usage_history]
       notifications: false
       hard_stop: false
       conclusion: 👍
