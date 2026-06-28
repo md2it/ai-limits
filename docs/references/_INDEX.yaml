@@ -89,7 +89,7 @@ references:
       providers: [CLIProxyAPI, Codex]
       notifications: null
       hard_stop: null
-      conclusion: 🤷‍♂️
+      conclusion: 👀
     summary: >
       Free MIT-licensed self-hosted ops dashboard (944 stars) tightly coupled to
       CLIProxyAPI. Adds SQLite request ledger, cost/token analytics by model/key/project,
@@ -128,7 +128,7 @@ references:
       providers: [OpenAI, Anthropic, Google AI, DeepSeek, OpenRouter, Mistral]
       notifications: null
       hard_stop: false
-      conclusion: 🤷‍♂️
+      conclusion: 👀
     summary: >
       Open-source multi-provider AI billing dashboard that reads from provider billing
       APIs (OpenAI, Anthropic, Google AI, DeepSeek, OpenRouter, Mistral) using read-only
@@ -147,7 +147,7 @@ references:
       providers: [Claude, Codex, Gemini, Grok, Antigravity]
       notifications: false
       hard_stop: false
-      conclusion: 🤷‍♂️
+      conclusion: 👀
     summary: >
       Open-source proxy server (CLIProxyAPI, 38,618 stars, v7.2.44 as of 2026-06-28) that
       wraps Claude Code, Codex, Gemini CLI, Grok Build, and Antigravity behind unified
