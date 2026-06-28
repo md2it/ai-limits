@@ -1,0 +1,10 @@
+[package]
+name = "ai-usage-mit"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "ai-usage"
+path = "src/main.rs"
+
+[dependencies]
