@@ -25,4 +25,39 @@ Run from the repository:
 ./bin/ai-usage
 ```
 
+Show CLI help:
+
+```sh
+./bin/ai-usage --help
+```
+
+Query only selected sources by passing source flags:
+
+```sh
+./bin/ai-usage --codex-cli --cursor-api2
+```
+
+Supported source flags are:
+
+- `--codex-cli`
+- `--claude-cli`
+- `--cursor-api2`
+
+`--all` and `-a` force all current sources, even when the config defines a narrower default. When no source is selected, the command uses config defaults or, if no config exists, all three current sources in the fixed output order: Codex, Claude, Cursor.
+
+Optional config path:
+
+```text
+~/.config/ai-usage/config.toml
+```
+
+Example:
+
+```toml
+default_sources = [
+  "codex_cli",
+  "cursor_api2"
+]
+```
+
 The command uses the standard `codex`, `claude`, and `cursor` CLIs. Install the provider CLIs for the tools you want to query.
