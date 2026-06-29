@@ -6,6 +6,14 @@ pub struct Config {
     pub default_sources: Vec<Source>,
 }
 
+const DEFAULT_CONFIG: &str = "\
+default_sources = [
+  \"codex_cli\",
+  \"claude_cli\",
+  \"cursor_api2\"
+]
+";
+
 pub fn load() -> io::Result<Option<Config>> {
     let path = config_path()?;
 
@@ -21,6 +29,25 @@ pub fn load() -> io::Result<Option<Config>> {
             format!("invalid config {}: {error}", path.display()),
         )
     })
+}
+
+pub fn init() -> io::Result<PathBuf> {
+    let path = config_path()?;
+
+    if path.exists() {
+        return Err(io::Error::new(
+            io::ErrorKind::AlreadyExists,
+            format!("config already exists: {}", path.display()),
+        ));
+    }
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+
+    fs::write(&path, DEFAULT_CONFIG)?;
+
+    Ok(path)
 }
 
 fn config_path() -> io::Result<PathBuf> {

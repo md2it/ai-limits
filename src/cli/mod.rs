@@ -20,6 +20,19 @@ fn run_cli() -> io::Result<()> {
         return Ok(());
     }
 
+    if args.init_config {
+        if args.all || !args.sources.is_empty() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "--init-config cannot be combined with source flags or --all",
+            ));
+        }
+
+        let path = crate::config::init()?;
+        println!("Created config: {}", path.display());
+        return Ok(());
+    }
+
     let sources = select_sources(args)?;
     let report = crate::get_limits::get_limits(&sources)?;
 
@@ -36,6 +49,7 @@ fn run_cli() -> io::Result<()> {
 
 struct CliArgs {
     help: bool,
+    init_config: bool,
     all: bool,
     sources: Vec<Source>,
 }
@@ -43,6 +57,7 @@ struct CliArgs {
 fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
     let mut parsed = CliArgs {
         help: false,
+        init_config: false,
         all: false,
         sources: Vec::new(),
     };
@@ -52,6 +67,9 @@ fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
         match arg.as_str() {
             "-h" | "--help" => {
                 parsed.help = true;
+            }
+            "--init-config" => {
+                parsed.init_config = true;
             }
             "-a" | "--all" => {
                 parsed.all = true;
@@ -86,11 +104,12 @@ Usage:
   ai-usage [OPTIONS]
 
 Options:
+  --help, -h      Show this help
+  --init-config   Create the user config file if it does not exist
+  --all, -a       Query all current sources, ignoring config defaults
   --codex-cli     Query Codex through the Codex CLI
   --claude-cli    Query Claude through the Claude CLI
   --cursor-api2   Query Cursor through api2.cursor.sh
-  -a, --all       Query all current sources, ignoring config defaults
-  -h, --help      Show this help
 
 Config:
   ~/.config/ai-usage/config.toml

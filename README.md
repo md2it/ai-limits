@@ -25,10 +25,25 @@ Run from the repository:
 ./bin/ai-usage
 ```
 
+Supported flags are:
+
+- `--help`, `-h`
+- `--init-config`
+- `--all`, `-a`
+- `--codex-cli`
+- `--claude-cli`
+- `--cursor-api2`
+
 Show CLI help:
 
 ```sh
 ./bin/ai-usage --help
+```
+
+Create a user config:
+
+```sh
+./bin/ai-usage --init-config
 ```
 
 Query only selected sources by passing source flags:
@@ -36,12 +51,6 @@ Query only selected sources by passing source flags:
 ```sh
 ./bin/ai-usage --codex-cli --cursor-api2
 ```
-
-Supported source flags are:
-
-- `--codex-cli`
-- `--claude-cli`
-- `--cursor-api2`
 
 `--all` and `-a` force all current sources, even when the config defines a narrower default. When no source is selected, the command uses config defaults or, if no config exists, all three current sources in the fixed output order: Codex, Claude, Cursor.
 
