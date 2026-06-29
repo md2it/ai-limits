@@ -1,18 +1,18 @@
 # Cursor api2.cursor.sh
 
-## Статус
+## Status
 
-Research-документ. Описывает неофициальный способ получения usage/limits Cursor через backend `api2.cursor.sh`.
-
----
-
-## Проблема
-
-Для личных Pro/Ultra/Team тарифов публичный официальный usage API не подтвержден. При этом access token после `cursor agent login` позволяет получить текущие лимиты через endpoint, который использует клиентский backend Cursor.
+Research document. Describes an unofficial way to retrieve Cursor usage/limits via the `api2.cursor.sh` backend.
 
 ---
 
-## Основной Проверенный Endpoint
+## Problem
+
+For personal Pro/Ultra/Team plans, a public official usage API is not confirmed. However, the access token obtained after `cursor agent login` allows retrieving current limits via an endpoint used by the Cursor client backend.
+
+---
+
+## Primary Verified Endpoint
 
 Endpoint:
 
@@ -20,7 +20,7 @@ Endpoint:
 POST https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage
 ```
 
-Заголовки:
+Headers:
 
 ```text
 Authorization: Bearer <access_token>
@@ -28,13 +28,13 @@ Content-Type: application/json
 Connect-Protocol-Version: 1
 ```
 
-Тело:
+Body:
 
 ```json
 {}
 ```
 
-Пример ответа:
+Example response:
 
 ```json
 {
@@ -51,62 +51,62 @@ Connect-Protocol-Version: 1
 }
 ```
 
-Поля:
+Fields:
 
-- `planUsage.remaining` — оставшийся included usage
+- `planUsage.remaining` — remaining included usage
 - `planUsage.limit` — included usage limit
-- `planUsage.totalPercentUsed` — общий процент использования
-- `planUsage.autoPercentUsed` — процент использования Auto
-- `planUsage.apiPercentUsed` — процент использования API models
-- `billingCycleStart` — начало billing cycle в Unix ms
-- `billingCycleEnd` — конец billing cycle в Unix ms
-- `displayMessage` — человекочитаемое сообщение Cursor
+- `planUsage.totalPercentUsed` — total usage percentage
+- `planUsage.autoPercentUsed` — Auto usage percentage
+- `planUsage.apiPercentUsed` — API models usage percentage
+- `billingCycleStart` — billing cycle start in Unix ms
+- `billingCycleEnd` — billing cycle end in Unix ms
+- `displayMessage` — human-readable Cursor message
 
 ---
 
-## Токены
+## Tokens
 
-На macOS после `cursor agent login` токены можно найти в Keychain:
+On macOS after `cursor agent login`, tokens can be found in Keychain:
 
 ```sh
 security find-generic-password -s cursor-access-token -w
 security find-generic-password -s cursor-refresh-token -w
 ```
 
-Access token короткоживущий. При `401` нужен новый login или refresh через OAuth endpoint Cursor.
+Access token is short-lived. On `401`, a new login or refresh via the Cursor OAuth endpoint is required.
 
-Refresh token является чувствительным секретом. Приложение не должно читать, логировать или обновлять его без отдельного security review и явного пользовательского сценария.
+Refresh token is a sensitive secret. The application must not read, log, or refresh it without a separate security review and an explicit user scenario.
 
 ---
 
-## Альтернативы
+## Alternatives
 
-| Вариант | План/доступность | Статус | Комментарий |
+| Option | Plan/availability | Status | Comment |
 |---|---|---|---|
-| IDE backend `api2.cursor.sh` | Pro/Ultra/Team | Реализовано в PoC | Использует access token после `cursor agent login`; неофициальный контракт |
-| Dashboard API `cursor.com/api/...` | Любой | Research-only | Нужна cookie веб-сессии; высокий security-риск |
-| Admin API `api.cursor.com` | Enterprise | Официальный | Подходит для Enterprise-мониторинга; на Pro/Teams без Enterprise ожидается 403 |
+| IDE backend `api2.cursor.sh` | Pro/Ultra/Team | Implemented in PoC | Uses access token after `cursor agent login`; unofficial contract |
+| Dashboard API `cursor.com/api/...` | Any | Research-only | Requires web session cookie; high security risk |
+| Admin API `api.cursor.com` | Enterprise | Official | Suitable for Enterprise monitoring; on Pro/Teams without Enterprise expect 403 |
 
 ---
 
-## Ограничения
+## Limitations
 
-- `api2.cursor.sh` не является публично документированным контрактом
-- endpoint может измениться без предупреждения
-- response schema должна валидироваться осторожно
-- cookie dashboard не должны использоваться как продуктовый механизм по умолчанию
-- refresh token нельзя считать обычной настройкой приложения
+- `api2.cursor.sh` is not a publicly documented contract
+- endpoint may change without notice
+- response schema should be validated carefully
+- dashboard cookies must not be used as the default product mechanism
+- refresh token cannot be treated as ordinary application configuration
 
 ---
 
-## Рекомендация
+## Recommendation
 
-Для личного Pro/Ultra/Team сценария основной кандидат — `GetCurrentPeriodUsage` через access token Cursor Agent.
+For personal Pro/Ultra/Team scenarios, the primary candidate is `GetCurrentPeriodUsage` via Cursor Agent access token.
 
-Перед production-использованием нужен отдельный security review:
+Before production use, a separate security review is required:
 
-- какие токены читаются
-- где токены хранятся
-- какие данные запрещено логировать или сохранять
-- как показывается ошибка при истекшем token
-- нужно ли приложению самостоятельно делать refresh
+- which tokens are read
+- where tokens are stored
+- which data must not be logged or saved
+- how to display an error when the token expires
+- whether the application needs to perform refresh itself

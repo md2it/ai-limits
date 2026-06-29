@@ -1,6 +1,6 @@
 # STACK
 
-Используем
+We use
 - Backend
    - Shell
    - Rust
@@ -10,4 +10,4 @@
    - CSS
    - JS
 
-Не используем ничего кроме белого списка выше, включая инструменты разрабоки и сборки. Любые новые технологии необходимо обсуждать до внедрения.
+We do not use anything outside the whitelist above, including development and build tools. Any new technologies must be discussed before adoption.

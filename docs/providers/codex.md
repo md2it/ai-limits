@@ -1,48 +1,48 @@
 # Codex
 
-## Текущий статус
+## Current status
 
-PoC получает лимиты через Codex CLI. Приложение запускает стандартную команду `codex`, отправляет `/status` в интерактивный TUI и извлекает строки лимитов из вывода.
+PoC retrieves limits via Codex CLI. The application launches the standard `codex` command, sends `/status` to the interactive TUI, and extracts limit lines from the output.
 
 ---
 
 ## Provider Method: `codex_cli_status`
 
-Минимальные команды:
+Minimum commands:
 
-- проверить наличие CLI: `command -v codex`
-- проверить версию CLI: `codex --version`
-- официальный сайт: https://openai.com/codex
-- документация CLI: https://developers.openai.com/codex/cli
+- verify CLI availability: `command -v codex`
+- verify CLI version: `codex --version`
+- official website: https://openai.com/codex
+- CLI documentation: https://developers.openai.com/codex/cli
 
-Проверенные детали PoC:
+Verified PoC details:
 
-- запускается стандартная команда `codex` без пользовательского пути к CLI
-- Codex CLI отказывается запускать интерактивный TUI, если `stdin`/`stderr` не являются TTY
-- для PoC используется системная команда `expect` как минимальный PTY-адаптер
-- runtime задает `TERM=xterm-256color`, `COLUMNS=120`, `LINES=40` и выполняет `stty cols 120 rows 40`
-- PoC отправляет `/status` через bracketed paste
-- первый вызов `/status` иногда инициирует обновление лимитов
-- повторный вызов `/status` возвращает фактический breakdown
-- парсер ждет признаки ответа: стартовый экран, `refresh requested`, строки лимитов или `Credits`
-- пользовательский вывод показывает только найденную сводку `5h limit`, `Weekly limit` и `Credits`
-
----
-
-## Ограничения
-
-- полный вывод остается TUI-потоком и может содержать управляющие terminal-последовательности
-- способ зависит от текущего поведения CLI и текста TUI
-- запрос через CLI может занимать заметное время
-- нужна проверка, расходует ли такой запрос пользовательские лимиты
+- launches the standard `codex` command without a custom path to the CLI
+- Codex CLI refuses to launch the interactive TUI if `stdin`/`stderr` are not TTYs
+- for PoC, the system `expect` command is used as a minimal PTY adapter
+- runtime sets `TERM=xterm-256color`, `COLUMNS=120`, `LINES=40` and runs `stty cols 120 rows 40`
+- PoC sends `/status` via bracketed paste
+- the first `/status` call sometimes triggers a limit refresh
+- a second `/status` call returns the actual breakdown
+- the parser waits for response indicators: startup screen, `refresh requested`, limit lines, or `Credits`
+- user-facing output shows only the found summary: `5h limit`, `Weekly limit`, and `Credits`
 
 ---
 
-## Другие варианты
+## Limitations
 
-| Вариант | Статус | Комментарий |
+- full output remains a TUI stream and may contain terminal control sequences
+- the approach depends on the current CLI behavior and TUI text
+- CLI requests can take a noticeable amount of time
+- needs verification of whether such requests consume user limits
+
+---
+
+## Other options
+
+| Option | Status | Comment |
 |---|---|---|
-| Официальный API | Не исследовано | Требует отдельной проверки доступности usage/limits для Codex-подписки |
-| Локальные telemetry файлы | Кандидат для usage history | По аналогам (`ccusage`) Codex usage можно читать из `${CODEX_HOME:-~/.codex}`; подтверждает токены/стоимость/модели, но не subscription limit/reset |
-| Frontend/dashboard API | Research-only | Возможен только при понятной и безопасной работе с сессионными данными |
-| Наблюдение трафика | Research-only | Не рассматривать как продуктовый механизм |
+| Official API | Not investigated | Requires separate verification of usage/limits availability for a Codex subscription |
+| Local telemetry files | Candidate for usage history | By analogy with `ccusage`, Codex usage can be read from `${CODEX_HOME:-~/.codex}`; confirms tokens/cost/models, but not subscription limit/reset |
+| Frontend/dashboard API | Research-only | Possible only with a clear and safe approach to session data |
+| Traffic observation | Research-only | Do not consider as a product mechanism |

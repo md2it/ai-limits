@@ -1,82 +1,82 @@
-# Получение Лимитов Через CLI Провайдера
+# Getting Limits Through Provider CLI
 
-Документ описывает provider methods, которые получают usage/limits через локальный CLI или локальный клиентский инструмент провайдера.
+This document describes provider methods that fetch usage/limits through the local CLI or the provider's local client tool.
 
 ---
 
-## Базовая Схема
+## Base Flow
 
-Диаграмма описывает общий процесс для provider method, который использует локальный CLI или локальный клиентский инструмент.
+The diagram below describes the general process for a provider method that uses the local CLI or local client tool.
 
 ```mermaid
 sequenceDiagram
-    actor User as Пользователь
-    participant App as Приложение
-    participant Provider as Инструмент провайдера
+    actor User as User
+    participant App as Application
+    participant Provider as Provider tool
 
-    User->>App: Запрашивает лимиты
-    App->>App: Выбирает provider method
-    App->>Provider: Запрашивает данные по лимитам
-    Provider-->>App: Возвращает доступные данные
-    App->>App: Нормализует usage/limits
-    App-->>User: Показывает лимиты
+    User->>App: Requests limits
+    App->>App: Selects provider method
+    App->>Provider: Requests limit data
+    Provider-->>App: Returns available data
+    App->>App: Normalizes usage/limits
+    App-->>User: Shows limits
 ```
 
 ---
 
-## Виртуальный Терминал И CLI-Сессии
+## Virtual Terminal and CLI Sessions
 
-Диаграмма описывает runtime-сессию для интерактивных CLI, где нужен псевдотерминал.
+The diagram below describes the runtime session for interactive CLIs that require a pseudoterminal.
 
 ```mermaid
 stateDiagram-v2
-    [*] --> Запрос_лимитов
+    [*] --> Limit_request
 
-    Запрос_лимитов --> Провайдер_определен
-    Провайдер_определен --> Метод_определен
-    Метод_определен --> Проверка_сессии
+    Limit_request --> Provider_selected
+    Provider_selected --> Method_selected
+    Method_selected --> Session_check
 
-    Проверка_сессии --> Открытая_сессия: Сессия есть
-    Проверка_сессии --> Новая_сессия: Сессии нет
+    Session_check --> Open_session: Session exists
+    Session_check --> New_session: No session
 
-    Открытая_сессия --> Запрос_данных
-    Новая_сессия --> Запрос_данных
+    Open_session --> Data_request
+    New_session --> Data_request
 
-    Запрос_данных --> Данные_получены
-    Данные_получены --> Нормализация
-    Нормализация --> Лимиты_показаны_пользователю
+    Data_request --> Data_received
+    Data_received --> Normalization
+    Normalization --> Limits_shown_to_user
 
-    Лимиты_показаны_пользователю --> [*]
+    Limits_shown_to_user --> [*]
 ```
 
 ---
 
-## Правила
+## Rules
 
-- для каждого провайдера может быть несколько provider method
-- приложение выбирает основной доступный метод и может использовать fallback, если основной метод недоступен
-- для интерактивных CLI может быть открыта отдельная runtime-сессия в виртуальном терминале
-- если пользователь запрашивает лимиты, а нужной runtime-сессии нет, приложение запускает новую сессию
-- если подходящая сессия уже открыта, приложение может переиспользовать ее
-- виртуальные терминалы принадлежат runtime приложения и не должны жить отдельно от него
-- при завершении runtime приложения все открытые виртуальные терминалы должны быть завершены
-- приложение не должно оставлять фоновые терминалы или CLI-сессии провайдеров после своего завершения
-- если CLI провайдера поддерживает очистку контекста внутри открытой сессии, приложение может очищать контекст вместо запуска новой сессии
-- очистка контекста может использоваться как способ переиспользовать сессию и снижать лишний расход токенов
-
----
-
-## Завершение Runtime
-
-Виртуальный терминал живет только в рамках активного runtime приложения. Если runtime завершается, приложение должно синхронно завершить все открытые виртуальные терминалы и связанные с ними сессии провайдеров.
-
-Это правило нужно для контроля ресурсов: приложение не должно бесконтрольно создавать терминалы и оставлять их работать после выхода пользователя или остановки процесса.
+- each provider may have multiple provider methods
+- the application selects the primary available method and may use a fallback if the primary method is unavailable
+- for interactive CLIs, a separate runtime session may be opened in a virtual terminal
+- if the user requests limits and no required runtime session exists, the application starts a new session
+- if a suitable session is already open, the application may reuse it
+- virtual terminals belong to the application runtime and must not outlive it
+- when the application runtime terminates, all open virtual terminals must be shut down
+- the application must not leave background terminals or provider CLI sessions running after it exits
+- if the provider CLI supports context cleanup within an open session, the application may clear context instead of starting a new session
+- context cleanup may be used to reuse a session and reduce unnecessary token consumption
 
 ---
 
-## Отклонения От Сценария
+## Runtime Shutdown
 
-- если нет соответствующего CLI или локального инструмента для нужного провайдера, приложение показывает понятную ошибку и следующий шаг
-- если CLI не вернул ответ, приложение показывает соответствующую ошибку
-- если формат ответа не удалось распарсить, приложение показывает соответствующую ошибку
-- если provider method требует чувствительный токен, cookie или дополнительный login, приложение не должно выполнять действие без явного согласия пользователя
+A virtual terminal lives only for the duration of the active application runtime. When the runtime terminates, the application must synchronously shut down all open virtual terminals and associated provider sessions.
+
+This rule is for resource control: the application must not create terminals uncontrollably and leave them running after the user exits or the process stops.
+
+---
+
+## Deviations From the Flow
+
+- if no matching CLI or local tool exists for the required provider, the application shows a clear error and next step
+- if the CLI returned no response, the application shows an appropriate error
+- if the response format could not be parsed, the application shows an appropriate error
+- if a provider method requires a sensitive token, cookie, or additional login, the application must not perform the action without explicit user consent

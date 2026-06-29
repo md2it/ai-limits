@@ -1,26 +1,26 @@
-# Архитектура
+# Architecture
 
-Документ фиксирует целевую структуру `src/` после перехода от PoC-монолита к поддерживаемому приложению.
-
----
-
-## Цель
-
-Код должен поддерживать:
-
-- CLI-интерфейс
-- будущий desktop-интерфейс
-- несколько провайдеров
-- несколько способов получения данных для одного провайдера
-- небольшие файлы с понятной зоной ответственности
-
-CLI и будущий desktop должны использовать общий core, а не иметь отдельную бизнес-логику.
+This document defines the target structure of `src/` after moving from a PoC monolith to a maintainable application.
 
 ---
 
-## Структура `src/`
+## Goal
 
-Целевая структура ближайшего этапа:
+The code should support:
+
+- a CLI interface
+- a future desktop interface
+- multiple providers
+- multiple ways to fetch data for a single provider
+- small files with a clear area of responsibility
+
+The CLI and the future desktop should share a common core, not separate business logic.
+
+---
+
+## `src/` Structure
+
+Target structure for the near term:
 
 ```text
 src/
@@ -33,39 +33,39 @@ src/
   types.rs
 ```
 
-Назначение:
+Purpose:
 
-- `cli/` — терминальный интерфейс, аргументы, вывод, exit codes
-- `config/` — пользовательские настройки, дефолты и пути к config-файлам
-- `infra/` — технические примитивы для процессов, HTTP и timeouts
-- `providers/` — способы получения usage/limits от провайдеров
-- `get_limits.rs` — сценарий получения лимитов и интеграции provider method
-- `lib.rs` — общий core, доступный разным интерфейсам
-- `types.rs` — общие типы и внутренний язык приложения
-
----
-
-## Границы
-
-Правила модулей:
-
-- `cli/` не получает данные от провайдеров напрямую
-- `cli/` вызывает общий core и отвечает только за терминальное поведение
-- `get_limits.rs` координирует config, providers и fallback-логику
-- `get_limits.rs` не запускает процессы и HTTP напрямую, если это можно делегировать provider/infra
-- `providers/` не форматируют terminal output
-- `providers/` возвращают нормализованные типы из `types.rs`
-- `infra/` не знает бизнес-смысл usage/limits
-- `infra/` отвечает только за техническое взаимодействие с внешним миром
-- `types.rs` не должен зависеть от CLI, desktop, файловой системы или внешних команд
+- `cli/` — terminal interface, arguments, output, exit codes
+- `config/` — user settings, defaults, and paths to config files
+- `infra/` — technical primitives for processes, HTTP, and timeouts
+- `providers/` — ways to fetch usage/limits from providers
+- `get_limits.rs` — limits-fetching scenario and provider method integration
+- `lib.rs` — shared core available to different interfaces
+- `types.rs` — shared types and the application's internal language
 
 ---
 
-## Провайдеры
+## Boundaries
 
-На старте `providers/` остается плоским каталогом.
+Module rules:
 
-Пример:
+- `cli/` does not fetch data from providers directly
+- `cli/` calls the shared core and is responsible only for terminal behavior
+- `get_limits.rs` coordinates config, providers, and fallback logic
+- `get_limits.rs` does not run processes or HTTP directly when that can be delegated to provider/infra
+- `providers/` does not format terminal output
+- `providers/` returns normalized types from `types.rs`
+- `infra/` does not know the business meaning of usage/limits
+- `infra/` is responsible only for technical interaction with the outside world
+- `types.rs` must not depend on CLI, desktop, the file system, or external commands
+
+---
+
+## Providers
+
+Initially, `providers/` remains a flat directory.
+
+Example:
 
 ```text
 providers/
@@ -75,41 +75,41 @@ providers/
   cursor_api2_usage.rs
 ```
 
-Правила:
+Rules:
 
-- один файл описывает один способ получения данных
-- способ получения данных должен быть независим от других способов
-- удаление одного способа не должно ломать остальные
-- общая техническая логика выносится в `infra/`
-- общие бизнес-типы выносятся в `types.rs`
+- one file describes one way to fetch data
+- each data-fetching method must be independent of the others
+- removing one method must not break the rest
+- shared technical logic goes in `infra/`
+- shared business types go in `types.rs`
 
-Если у одного провайдера появится много файлов, можно перейти к вложенной структуре по провайдерам.
+If a single provider grows to many files, you can move to a nested structure by provider.
 
 ---
 
-## Сценарий `get_limits`
+## `get_limits` Scenario
 
-`get_limits.rs` соответствует документу [get-limits.md](get-limits.md).
+`get_limits.rs` follows the document [get-limits.md](get-limits.md).
 
-Назначение:
+Purpose:
 
-- выбрать включенные provider method
-- вызвать provider method в нужном порядке
-- применить fallback-логику
-- собрать общий результат для CLI и будущего desktop
+- select enabled provider methods
+- call provider methods in the right order
+- apply fallback logic
+- assemble a shared result for the CLI and the future desktop
 
-Границы:
+Boundaries:
 
-- не содержит terminal output
-- не содержит низкоуровневый запуск процессов
-- не содержит низкоуровневые HTTP-примитивы
-- не парсит provider-specific output, если это ответственность provider method
+- does not contain terminal output
+- does not contain low-level process execution
+- does not contain low-level HTTP primitives
+- does not parse provider-specific output when that is a provider method's responsibility
 
 ---
 
 ## Provider Specs
 
-Документация по провайдерам группируется по провайдерам:
+Provider documentation is grouped by provider:
 
 ```text
 docs/providers/
@@ -118,62 +118,62 @@ docs/providers/
   cursor.md
 ```
 
-Правила:
+Rules:
 
-- один spec-файл описывает одного провайдера
-- внутри spec-файла можно описывать несколько provider method
-- секции provider method называются как будущие файлы кода без `.rs`
-- код может быть детальнее документации и разделять provider method по отдельным файлам
-- если spec-файл становится слишком большим, его можно разделить по provider method
-
----
-
-## Конфигурация
-
-Пользовательские настройки не должны зашиваться в скомпилированный бинарник.
-
-Модель:
-
-- в коде есть дефолты
-- пользовательский config хранится отдельным runtime-файлом
-- CLI и будущий desktop используют один и тот же config
-- платформенные пути к config-файлу определяются внутри `config/`
+- one spec file describes one provider
+- a spec file may describe multiple provider methods
+- provider method sections are named like future code files without `.rs`
+- code may be more detailed than the documentation and split provider methods into separate files
+- if a spec file becomes too large, it can be split by provider method
 
 ---
 
-## Будущий Desktop
+## Configuration
 
-Desktop почти наверняка будет реализован на Tauri, но отдельный desktop-каталог сейчас не создается.
+User settings must not be baked into the compiled binary.
 
-Текущее правило:
+Model:
 
-- общий core должен жить в `lib.rs` и модулях `src/`
-- CLI должен быть только одним из интерфейсов к core
-- Tauri-интеграция должна появиться позже как отдельный интерфейс к тому же core
-
----
-
-## Уведомления
-
-Каталог `notifications/` сейчас не создается, пока нет реализации системных уведомлений.
-
-Будущее правило:
-
-- уведомления должны быть общим сервисом, а не частью только desktop
-- CLI сможет использовать уведомления, если это поддержано платформой и включено в config
-- платформенные различия должны быть изолированы внутри модуля уведомлений
+- defaults live in code
+- user config is stored in a separate runtime file
+- the CLI and the future desktop use the same config
+- platform-specific config file paths are defined inside `config/`
 
 ---
 
-## Правило Для Агентов
+## Future Desktop
 
-При изменениях сначала определить бизнес-зону задачи:
+The desktop will almost certainly be built with Tauri, but a separate desktop directory is not created yet.
 
-- терминальное поведение — `cli/`
-- настройки — `config/`
-- получение данных — `providers/`
-- сценарий получения лимитов — `get_limits.rs`
-- запуск процессов, HTTP, timeouts — `infra/`
-- общие структуры данных — `types.rs`
+Current rule:
 
-Если задача не укладывается в одну зону, нужно явно описать пересечение перед изменениями.
+- the shared core must live in `lib.rs` and the `src/` modules
+- the CLI must be only one interface to the core
+- Tauri integration should appear later as a separate interface to the same core
+
+---
+
+## Notifications
+
+The `notifications/` directory is not created yet, until system notifications are implemented.
+
+Future rule:
+
+- notifications should be a shared service, not part of desktop only
+- the CLI can use notifications if the platform supports it and it is enabled in config
+- platform differences must be isolated inside the notifications module
+
+---
+
+## Rule for Agents
+
+When making changes, first identify the business area of the task:
+
+- terminal behavior — `cli/`
+- settings — `config/`
+- data fetching — `providers/`
+- limits-fetching scenario — `get_limits.rs`
+- process execution, HTTP, timeouts — `infra/`
+- shared data structures — `types.rs`
+
+If a task spans more than one area, describe the overlap explicitly before making changes.

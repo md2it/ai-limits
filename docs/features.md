@@ -1,83 +1,83 @@
-# ФУНКЦИОНАЛ
+# FEATURES
 
 ## ✅ PoC Codex
-- Предполагает, что уже есть CLI для Codex
-- Просто прослойка между пользователем и Codex CLI
-- Shell команда `ai-usage` возвращает текущий ответ CLI Codex `/status` "как есть"
+- Assumes the Codex CLI is already installed
+- A simple wrapper between the user and the Codex CLI
+- Shell command `ai-usage` returns the current Codex CLI `/status` response as-is
 
 ## ✅ PoC Claude
-- Аналогично, но Claude CLI
+- Same as above, but for the Claude CLI
 
 ## ❌ PoC Cursor
-- Аналогично, но Cursor -- для Cursor не сработало, нашли обходной вариант через недокументированное API
+- Same as above for Cursor, but that approach did not work; we found a workaround via an undocumented API
 
 ## ✅ MVP
-- Поддерживает Claude, Codex, Cursor
-- Предполагает, что уже есть CLI для Claude, Codex
-- Shell команда `ai-usage`
+- Supports Claude, Codex, and Cursor
+- Assumes the Claude and Codex CLIs are already installed
+- Shell command `ai-usage`
 
-## Фичи после MVP
+## Post-MVP features
 
-- Демон для регулярного простукивания
-   - Задать частоту простукивания
-   - Явная команда запуска демона
-   - Явная команда остановки демона
-- Сценарий работы "с нуля", если у пользователя нет CLI
-   - Для Claude, Codex, Cursor
-   - Должно решаться в 1 команду: установка CLI
-   - Соответствующая документация для людей и агентов (En, Ru)
-- Нативный вызов команды с устройства
-   - Команда доступна из любой директории
-   - Процесс подключения естественный для пользователя
+- Daemon for regular polling
+   - Configurable polling frequency
+   - Explicit command to start the daemon
+   - Explicit command to stop the daemon
+- "From scratch" workflow when the user has no CLI
+   - For Claude, Codex, and Cursor
+   - Should be solvable in one command: install the CLI
+   - Corresponding documentation for people and agents (En, Ru)
+- Native command invocation from the device
+   - Command available from any directory
+   - Onboarding flow that feels natural to the user
 - Mac
-   - Десктопное приложение Mac (Tauri?)
-   - Виджеты Mac
-   - Системные уведормления
-      - На каких цифрах задавать уведомления
-      - Дефолтный набор уведомлений
-      - Явный сценарий, чтобы пользователь включил уведомления
-      - Настройка через терминал
-      - Настройка через конфиг
-      - Настройка через UI десктопного приложения
-- Жёсткая остановка расхода при достижении лимитов
-- Аналитика
-   - Минимальная БД (SQLite?)
-   - Сравнение двух последних запросов
-   - Динамика в prettified-формате: токенов стало больше или меньше, и на сколько
-   - Простые графики
-   - Очистка БД ручная
-   - Очистка по лимитам (период или количество)
-   - Интерфейс в десктопе
-   - Самоанализ данного инструмента: сколько потребляет токенов сам `ai-usage-mit`
-   - Потом подумаем, что там анализировать
-      - По провайдеру
-      - По модели
+   - Mac desktop app (Tauri?)
+   - Mac widgets
+   - System notifications
+      - Thresholds for triggering notifications
+      - Default notification set
+      - Explicit flow for the user to enable notifications
+      - Configuration via terminal
+      - Configuration via config file
+      - Configuration via desktop app UI
+- Hard stop on spending when limits are reached
+- Analytics
+   - Minimal database (SQLite?)
+   - Comparison of the two most recent requests
+   - Trends in prettified format: whether token usage went up or down, and by how much
+   - Simple charts
+   - Manual database cleanup
+   - Cleanup by limits (period or count)
+   - Desktop interface
+   - Self-analysis of this tool: how many tokens `ai-usage-mit` itself consumes
+   - Later, decide what else to analyze
+      - By provider
+      - By model
 - Via API
    - Codex
    - Claude
    - Cursor
-- Иные способы установки
+- Other installation methods
    - NPM?
    - Pip?
 - Windows
-   - Десктопное приложение
-   - Системные уведомления
-   - Виджеты
+   - Desktop app
+   - System notifications
+   - Widgets
 - Linux
-   - Десктопное приложение
-   - Системные уведомления 
-- Командные инструменты
-   - Флаги вывода `prettified` и `raw`
-   - `prettified` как формат по умолчанию
-   - Более красивый `prettified`-формат
-   - Лоудер в терминале на время выполнения команды
-   - Несколько подписок одного провайдера
-   - Аналитика другого устройства
-   - Туннель?
+   - Desktop app
+   - System notifications 
+- Command-line tools
+   - Output flags `prettified` and `raw`
+   - `prettified` as the default format
+   - Nicer `prettified` format
+   - Terminal loader while the command runs
+   - Multiple subscriptions for one provider
+   - Analytics from another device
+   - Tunnel?
 
-- Больше провайдеров
+- More providers
    - OpenAI API.
-   - ChatGPT subscription usage, если данные доступны локально или через экспорт.
+   - ChatGPT subscription usage, if data is available locally or via export.
    - Anthropic API.
    - Claude Code.
    - Google Gemini API.
@@ -98,12 +98,12 @@
    - AWS Bedrock.
    - Google Vertex AI.
    - Cursor.
-   - GitHub Copilot CLI/agentic tools, если доступна локальная статистика.
+   - GitHub Copilot CLI/agentic tools, if local stats are available.
    - Codex CLI.
    - Aider.
    - Continue.
    - Cline/Roo Code.
    - OpenCode.
    - LiteLLM logs.
-   - LangChain/LangSmith exports, если нужен импорт.
-   - Custom provider через адаптер.
+   - LangChain/LangSmith exports, if import is needed.
+   - Custom provider via adapter.

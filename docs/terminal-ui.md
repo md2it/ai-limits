@@ -1,20 +1,20 @@
 # Terminal UI
 
-Документ описывает фактический терминальный интерфейс `ai-usage`.
+This document describes the actual terminal interface of `ai-usage`.
 
 ---
 
-## Общий Формат
+## General Format
 
-Каждый ответ `ai-usage` печатается внутри общей рамки.
+Each `ai-usage` response is printed inside a common frame.
 
-Верхняя рамка:
+Top frame:
 
 ```text
 =-=-=-=-=-=-=-=-=-=-=-=-= AI USAGE =-=-=-=-=-=-=-=-=-=-=-=-=
 ```
 
-Нижняя рамка:
+Bottom frame:
 
 ```text
 =-=-=-=-=-=-=-=-=-=-=-=-=-= DONE =-=-=-=-=-=-=-=-=-=-=-=-=-=
@@ -22,23 +22,23 @@
 =-=-=-=-=-=-=-=-=-=-=-=-=-= FAIL =-=-=-=-=-=-=-=-=-=-=-=-=-=
 ```
 
-Перед верхней рамкой, после верхней рамки, перед нижней рамкой и после нижней рамки печатается пустая строка.
+An empty line is printed before the top frame, after the top frame, before the bottom frame, and after the bottom frame.
 
-Статусы:
+Statuses:
 
-| Статус | Значение |
+| Status | Meaning |
 | --- | --- |
-| `DONE` | Все запрошенные источники вернули результат или корректное unavailable-состояние. |
-| `PART` | Часть источников вернула результат, часть завершилась ошибкой. |
-| `FAIL` | Команда не получила пригодный результат. |
+| `DONE` | All requested sources returned a result or a valid unavailable state. |
+| `PART` | Some sources returned a result; some ended with an error. |
+| `FAIL` | The command did not obtain a usable result. |
 
 ---
 
 ## Help
 
-`ai-usage --help` использует общую рамку.
+`ai-usage --help` uses the common frame.
 
-Формат:
+Format:
 
 ```text
 
@@ -67,11 +67,11 @@ Config:
 
 ---
 
-## Ошибки CLI
+## CLI Errors
 
-Ошибки CLI печатаются внутри общей рамки.
+CLI errors are printed inside the common frame.
 
-Формат:
+Format:
 
 ```text
 
@@ -85,11 +85,11 @@ ai-usage: unknown argument `--bad`
 
 ---
 
-## Блок Источника
+## Source Block
 
-Каждый готовый источник печатается отдельным блоком.
+Each completed source is printed as a separate block.
 
-Заголовок блока:
+Block header:
 
 ```text
             ~~~~~~~~~~ CURSOR-API2 ~~~~~~~~~~
@@ -97,9 +97,9 @@ ai-usage: unknown argument `--bad`
             ~~~~~~~~~~ CLAUDE-CLI ~~~~~~~~~~
 ```
 
-После заголовка печатается пустая строка, затем результат источника.
+An empty line is printed after the header, then the source result.
 
-Формат:
+Format:
 
 ```text
             ~~~~~~~~~~ CURSOR-API2 ~~~~~~~~~~
@@ -113,9 +113,9 @@ Cursor api2 usage unavailable: token not found; run `cursor agent login`
 
 ## Loader
 
-Loader показывает активную работу источника и не показывает процент прогресса.
+The loader shows active work for a source and does not show a progress percentage.
 
-Формат:
+Format:
 
 ```text
 ⠋ waiting codex-cli
@@ -134,21 +134,21 @@ ASCII spinner frames:
 - \ | /
 ```
 
-ASCII spinner используется, когда stdout не является TTY или окружение не выглядит как UTF-8.
+The ASCII spinner is used when stdout is not a TTY or the environment does not appear to be UTF-8.
 
-Loader начинает отображаться, если источник работает дольше `350ms`.
+The loader starts displaying if a source runs longer than `350ms`.
 
-Если источник завершился до первого показа loader-а, loader не печатается.
+If a source finishes before the loader is first shown, the loader is not printed.
 
-После завершения источника loader очищается, затем печатается блок результата источника.
+After a source finishes, the loader is cleared, then the source result block is printed.
 
 ---
 
-## Параллельная Модель
+## Parallel Model
 
-Выбранные источники запускаются параллельно.
+Selected sources are started in parallel.
 
-Модель выполнения:
+Execution model:
 
 ```text
 provider worker threads
@@ -160,66 +160,66 @@ cli event loop
 terminal renderer
 ```
 
-Если несколько источников ожидаются одновременно, отображается несколько строк loader-а.
+If multiple sources are waiting at the same time, multiple loader lines are displayed.
 
-Формат:
+Format:
 
 ```text
 ⠋ waiting codex-cli
 ⠙ waiting claude-cli
 ```
 
-Когда источник завершился, его loader очищается, результат печатается сразу по готовности.
+When a source finishes, its loader is cleared and the result is printed as soon as it is ready.
 
 ---
 
-## Цвет
+## Color
 
-Terminal UI не использует цвет.
+Terminal UI does not use color.
 
-Вывод не содержит ANSI color codes для рамок, заголовков, loader-а и контента.
-
----
-
-## Очистка Loader-А
-
-В интерактивном терминале loader перерисовывается на месте.
-
-При каждом обновлении:
-
-1. предыдущие loader-строки очищаются;
-2. текущие loader-строки печатаются заново;
-3. курсор остается в зоне loader-а.
-
-При завершении источника loader очищается перед печатью результата.
-
-При завершении работы `TerminalUi` loader очищается через `Drop`.
+Output does not contain ANSI color codes for frames, headers, the loader, or content.
 
 ---
 
-## Архитектурные Границы
+## Loader Cleanup
 
-Размещение:
+In an interactive terminal, the loader is redrawn in place.
+
+On each update:
+
+1. previous loader lines are cleared;
+2. current loader lines are printed again;
+3. the cursor stays in the loader area.
+
+When a source finishes, the loader is cleared before the result is printed.
+
+When `TerminalUi` shuts down, the loader is cleared via `Drop`.
+
+---
+
+## Architectural Boundaries
+
+Layout:
 
 ```text
 src/cli/mod.rs
-  - парсит аргументы
-  - запускает provider worker threads
-  - получает события через channel
-  - передает состояние в terminal renderer
-  - печатает результаты источников
+  - parses arguments
+  - starts provider worker threads
+  - receives events via channel
+  - passes state to terminal renderer
+  - prints source results
 
 src/infra/loader.rs
-  - выбирает unicode/ascii spinner
-  - рисует loader-строки
-  - очищает loader-строки
-  - печатает рамки и заголовки
+  - selects unicode/ascii spinner
+  - draws loader lines
+  - clears loader lines
+  - prints frames and headers
 
 src/get_limits.rs
-  - вызывает provider methods
-  - возвращает нормализованный SourceReport
+  - calls provider methods
+  - returns normalized SourceReport
 
 src/providers/*
-  - получают данные источника
-  - не рисуют terminal UI
+  - fetches source data
+  - does not render terminal UI
 ```

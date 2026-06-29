@@ -51,7 +51,7 @@
 - Last release: v1.9.1 — June 26, 2026
 - Stack: TypeScript/React 19 frontend, Go 1.24 backend, SQLite
 - Sources:
-  - [GitHub репозиторий](https://github.com/seakee/CPA-Manager-Plus)
+  - [GitHub repository](https://github.com/seakee/CPA-Manager-Plus)
   - [README](https://github.com/seakee/CPA-Manager-Plus#readme)
   - [Wiki](https://github.com/seakee/CPA-Manager-Plus/wiki)
   - [Releases / Changelog](https://github.com/seakee/CPA-Manager-Plus/releases)

@@ -28,7 +28,7 @@ kind: references-index
 #   - notifications: true/false when verified, null when not checked.
 #   - hard_stop: true/false when verified, null when not checked. Use for enforced spend/usage stop or limit-control capabilities.
 #   - conclusion: final visual research outcome, one of [💎, 👍, 🤷‍♂️, ❓, 👀, 🌚].
-#     💎 ideal; 👍 good; 🤷‍♂️ not relevant; ❓ unclear; 👀 needs more research; 🌚 совсем нет.
+#     💎 ideal; 👍 good; 🤷‍♂️ not relevant; ❓ unclear; 👀 needs more research; 🌚 not at all.
 # - Summary is a short human-readable description (positioning, data source, relevance vs ai-usage-mit).
 #   Do not repeat capability tags; use summary for scope caveats (e.g. "Claude only", "Codex: usage only").
 # - Details, comparison, sources and custom sections are maintained in document.

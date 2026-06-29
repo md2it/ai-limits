@@ -1,23 +1,23 @@
-# ПРОДУКТ
+# PRODUCT
 
-## Проблема
+## Problem
 
-Расходы на AI сложно контролировать, когда использование распределено между несколькими CLI, моделями и провайдерами. Дашборды API-биллинга помогают только тогда, когда запросы проходят через API-аккаунты, а подписочные тарифы обычно показывают квоты косвенно, непоследовательно или только внутри интерфейсов поставщика.
+AI spending is hard to control when usage is spread across multiple CLIs, models, and providers. API billing dashboards only help when requests go through API accounts, while subscription plans usually show quotas indirectly, inconsistently, or only inside vendor interfaces.
 
-Это создает несколько практических рисков:
+This creates several practical risks:
 
-- Использование становится заметно только после достижения лимита
-- Разные провайдеры используют разные правила квот и окна сброса
-- Потребление токенов и запросов сложно сравнивать между инструментами
-- Платные превышения лимитов или вынужденные апгрейды могут произойти до того, как пользователь увидит тренд
-- Рабочего бесплатного решения найти не удалось:
-   - Большинство не показывают расход тарифов, а лишь расход API
-   - Слишком тяжелые
-   - Слишком дорогие
-   - Требуют отправлять трафик через еще одного поставщика
-   - Очень много нерабочих
-   - Многие сложны в запуске и настройке
+- Usage only becomes noticeable after hitting the limit
+- Different providers use different quota rules and reset windows
+- Token and request consumption is hard to compare across tools
+- Paid overages or forced upgrades can happen before the user sees a trend
+- No working free solution was found:
+   - Most tools show API spending, not subscription plan usage
+   - Too heavy
+   - Too expensive
+   - Require routing traffic through another vendor
+   - Many simply do not work
+   - Many are difficult to run and configure
 
-## Целевое решение
+## Target solution
 
-Легковесный локальный трекер, ориентированный на использование AI через CLI.
+A lightweight local tracker focused on AI usage through CLIs.
