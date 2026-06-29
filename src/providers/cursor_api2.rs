@@ -122,8 +122,6 @@ fn parse_cursor_api_usage(response: &str) -> Option<String> {
     let billing_cycle_end = json_string_after_key(response, "billingCycleEnd")
         .and_then(|value| value.parse::<i64>().ok())
         .or_else(|| json_number_after_key(response, "billingCycleEnd").map(|value| value as i64));
-    let display_message = json_string_after_key(response, "displayMessage");
-
     if remaining.is_none()
         && limit.is_none()
         && total_percent_used.is_none()
@@ -169,11 +167,6 @@ fn parse_cursor_api_usage(response: &str) -> Option<String> {
             format_unix_ms_date(start),
             format_unix_ms_date(end)
         ));
-    }
-
-    if let Some(message) = display_message.filter(|value| !value.is_empty()) {
-        summary.push_str(&message);
-        summary.push('\n');
     }
 
     Some(summary)

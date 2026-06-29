@@ -36,18 +36,11 @@ pub fn get_source_limits(source: Source) -> io::Result<SourceReport> {
                 stderr: result.stderr,
             })
         }
-        Source::ClaudeHook => {
-            let summary = match claude_hook::get_usage_summary_from_stdin()? {
-                Some(summary) => summary,
-                None => "Claude usage:\nClaude hook live limits unavailable: stdin hook payload is missing\nFallback: Claude CLI /usage or claude_local history\n".to_string(),
-            };
-
-            Ok(SourceReport {
-                source,
-                summary,
-                stderr: String::new(),
-            })
-        }
+        Source::ClaudeHook => Ok(SourceReport {
+            source,
+            summary: claude_hook::get_usage_summary()?,
+            stderr: String::new(),
+        }),
         Source::ClaudeCli => {
             let result = claude_cli::get_usage()?;
             let summary = claude_cli::extract_usage_summary(&result.compacted_stdout)
