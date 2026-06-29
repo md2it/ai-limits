@@ -21,6 +21,7 @@ Options:
   --help, -h       Show this help
   --init-config    Create / overwrite the user config file
   --all, -a        Query all current sources, ignoring config defaults
+  --usage          Show user-facing usage summary
   --raw, -r        Return raw source data
   --structured, -s Return structured source data
 
@@ -32,17 +33,11 @@ Technical source options:
   --claude-local   Query Claude from local transcript JSONL files
   --cursor-api2    Query Cursor through api2.cursor.sh
 
-Output:
-  default          User-facing provider summary
-  --raw, -r        Data as received or extracted from each source
-  --structured, -s Data converted to the common structured format
-
 Examples:
   ai-usage --all
-  ai-usage --all -r
+  ai-usage --all --usage
+  ai-usage --all --raw
   ai-usage --all --structured
-  ai-usage --codex-cli --raw
-  ai-usage --cursor-api2 -s
 
 Config:
   ~/.config/ai-usage/config.toml
@@ -54,7 +49,7 @@ Config:
 
 ```
 
-Default output is the user-facing terminal presentation. `--raw` and `--structured` are technical output modes for source-level data. They support development, testing, and provider contract checks.
+Default output is the user-facing limits presentation. `--usage` is the user-facing usage presentation. `--raw` and `--structured` are technical output modes for source-level data. They support development, testing, and provider contract checks.
 
 Technical source options are working source selectors, but they are primarily intended for intermediate source-level workflows.
 
@@ -112,7 +107,7 @@ ai-usage: unknown argument `--bad`
 
 ### Provider Block
 
-Default output prints each provider as a separate block.
+Default limits output prints each provider as a separate block.
 
 Block header:
 
@@ -176,6 +171,43 @@ If the source is available but has no supported limit data, print the provider b
 No limit data from this source
 Data as of: Jul 3, 21:41 UTC-2
 ```
+
+---
+
+### Usage Block
+
+`--usage` prints each provider as a separate block using the same provider header format as default limits output.
+
+The usage block contains only available user-facing usage facts. Fields with `null` values are not printed.
+
+Example:
+
+```text
+            ---------- CODEX ----------
+
+Tokens        input 120k | cached 80k | output 30k | total 230k
+Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2
+Models        top: gpt-5
+Money         $12.40 used
+
+Data as of: Jul 3, 21:41 UTC-2
+```
+
+Supported usage rows:
+
+- `Tokens` — input, cached input, output, reasoning output, cache read/write, and total, when available;
+- `Activity` — sessions, turns, files, events, and latest activity, when available;
+- `Models` — top model, when available;
+- `Money` — used, remaining, total, and currency, when available;
+- `Data as of` — structured `data_as_of`.
+
+If `data_as_of` is unavailable, print:
+
+```text
+Data as of: unknown
+```
+
+If the source is unavailable, use the same unavailable format as default limits output.
 
 ---
 
