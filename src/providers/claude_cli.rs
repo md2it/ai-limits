@@ -141,7 +141,7 @@ fn parse_claude_cli_output(input: &str) -> ParsedClaudeCliOutput {
     }
 
     let mut limits = Vec::new();
-    if let Some(limit) = structured_limit_block(&lines, "Current session", None) {
+    if let Some(limit) = structured_limit_block(&lines, "Current session", Some(300)) {
         limits.push(limit);
     }
     if let Some(limit) = structured_limit_block(&lines, "Current week", Some(10080)) {
@@ -429,7 +429,7 @@ Usage: 0input,0output,0cacheread,0cachewrite
         assert_eq!(session.used_percent, Some(40.0));
         assert_eq!(session.remaining_percent, Some(60.0));
         assert_eq!(session.resets_at.as_deref(), Some("2:20am (Asia/Nicosia)"));
-        assert!(session.window_minutes.is_none());
+        assert_eq!(session.window_minutes, Some(300));
 
         let week = &structured.limits[1];
         assert_eq!(week.name, "Current week");

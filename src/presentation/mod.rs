@@ -1,9 +1,11 @@
 mod common;
 mod limits;
+mod time;
 mod usage;
 
 pub use common::{ColorConfig, ProviderBlock};
 pub use limits::limits_block;
+pub use time::TimeContext;
 pub use usage::usage_block;
 
 pub fn format_raw_output(data: &crate::types::SourceData) -> String {
@@ -123,6 +125,31 @@ mod tests {
     }
 
     #[test]
+    fn limit_rows_align_reset_column() {
+        let info = sample_limits_info();
+        let block = limits_block(&info, &ColorConfig { enabled: false });
+        let reset_positions = block
+            .body
+            .lines()
+            .filter_map(|line| line.find(" | reset "))
+            .collect::<Vec<_>>();
+
+        assert_eq!(reset_positions.len(), 2);
+        assert_eq!(reset_positions[0], reset_positions[1]);
+    }
+
+    #[test]
+    fn pad_visible_right_ignores_ansi_color_codes() {
+        let bar = format!(
+            "\x1b[32m{}\x1b[0m",
+            common::visible_limit_bar(54.0)
+        );
+        let padded = common::pad_visible_right(&bar, common::LIMIT_BAR_WIDTH);
+
+        assert_eq!(common::visible_width(&padded), common::LIMIT_BAR_WIDTH);
+    }
+
+    #[test]
     fn limits_block_renders_rows_credits_and_data_as_of() {
         let block = limits_block(&sample_limits_info(), &ColorConfig { enabled: false });
 
@@ -206,5 +233,41 @@ mod tests {
     fn format_percent_omits_trailing_zero() {
         assert_eq!(common::format_percent(84.0), "84");
         assert_eq!(common::format_percent(62.5), "62.5");
+    }
+
+    #[test]
+    fn limits_block_formats_iso_data_as_of_for_display() {
+        let mut info = sample_limits_info();
+        info.collected_at = Some("2026-06-29T23:09:29Z".to_string());
+        info.data_as_of = Some("2026-06-29T23:09:29Z".to_string());
+        info.limits[0].resets_at = Some("2:20am (Asia/Nicosia)".to_string());
+
+        let block = limits_block(&info, &ColorConfig { enabled: false });
+
+        assert!(!block.body.contains("2026-06-29T23:09:29Z"));
+        assert!(block.body.contains("Data as of:"));
+        assert!(block.body.contains(" | reset Jun 30, 02:20 UTC"));
+    }
+
+    #[test]
+    fn window_label_maps_claude_cli_session_and_week() {
+        assert_eq!(
+            common::window_label_for_display(&LimitInfo {
+                name: "Current session".to_string(),
+                window_label: Some("Current session".to_string()),
+                window_minutes: Some(300),
+                ..Default::default()
+            }),
+            "5h"
+        );
+        assert_eq!(
+            common::window_label_for_display(&LimitInfo {
+                name: "Current week".to_string(),
+                window_label: Some("Current week".to_string()),
+                window_minutes: Some(10080),
+                ..Default::default()
+            }),
+            "7d"
+        );
     }
 }

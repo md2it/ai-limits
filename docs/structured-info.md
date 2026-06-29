@@ -109,6 +109,8 @@ If only two amount values are available and the third can be calculated reliably
 
 `data_as_of` is the time when the source data itself was last current. For local files, transcripts, or hook payloads, this is usually the timestamp of the latest relevant source record or session. For live API or CLI responses, this may be the response or snapshot time.
 
+Structured time fields may keep source-specific formats or UTC timestamps. The default terminal presentation converts them to the user's local time in the format documented in [terminal-ui.md](terminal-ui.md).
+
 The default terminal presentation uses `data_as_of` for the `Data as of` line. It does not use `collected_at` for this line.
 
 `usage.activity.latest_activity_at` is a separate business fact about user activity. It must not be treated as the default `Data as of` value unless it is also the best known timestamp for the source data itself.

@@ -1,5 +1,7 @@
 use crate::types::{LimitInfo, StructuredSourceInfo};
 
+use super::time::{format_user_timestamp, TimeContext};
+
 pub struct ProviderBlock {
     pub provider_label: String,
     pub body: String,
@@ -24,7 +26,10 @@ pub fn provider_label(info: &StructuredSourceInfo) -> String {
 
 pub fn format_data_as_of(info: &StructuredSourceInfo) -> String {
     match info.data_as_of.as_deref() {
-        Some(value) => format!("Data as of: {value}"),
+        Some(value) => {
+            let context = TimeContext::from_structured(info);
+            format!("Data as of: {}", format_user_timestamp(value, &context))
+        }
         None => "Data as of: unknown".to_string(),
     }
 }
@@ -96,8 +101,11 @@ fn compact_window_from_minutes(minutes: u64) -> String {
 fn compact_window_label(label: &str) -> String {
     let normalized = label.trim().to_ascii_lowercase();
     match normalized.as_str() {
-        "5h" | "5-hour window" | "5 hour" | "five_hour" | "primary window" => "5h".to_string(),
-        "7d" | "7-day window" | "7 day" | "seven_day" | "weekly" | "secondary window" => {
+        "5h" | "5-hour window" | "5 hour" | "five_hour" | "primary window" | "current session" => {
+            "5h".to_string()
+        }
+        "7d" | "7-day window" | "7 day" | "seven_day" | "weekly" | "secondary window"
+        | "current week" => {
             "7d".to_string()
         }
         _ if normalized.contains("5") && normalized.contains("hour") => "5h".to_string(),
@@ -144,6 +152,43 @@ pub fn color_for_remaining(remaining_percent: f64, color: &ColorConfig) -> &'sta
 }
 
 pub const COLOR_RESET: &str = "\x1b[0m";
+
+pub const LIMIT_WINDOW_WIDTH: usize = 4;
+pub const LIMIT_BAR_WIDTH: usize = 25;
+pub const LIMIT_LEFT_WIDTH: usize = 11;
+
+pub fn visible_width(text: &str) -> usize {
+    strip_ansi(text).chars().count()
+}
+
+pub fn pad_visible_right(text: &str, width: usize) -> String {
+    let padding = width.saturating_sub(visible_width(text));
+    format!("{text}{}", " ".repeat(padding))
+}
+
+pub fn pad_visible_left(text: &str, width: usize) -> String {
+    let padding = width.saturating_sub(visible_width(text));
+    format!("{}{text}", " ".repeat(padding))
+}
+
+fn strip_ansi(text: &str) -> String {
+    let mut stripped = String::with_capacity(text.len());
+    let mut chars = text.chars().peekable();
+
+    while let Some(character) = chars.next() {
+        if character == '\x1b' {
+            while let Some(next) = chars.next() {
+                if next == 'm' {
+                    break;
+                }
+            }
+            continue;
+        }
+        stripped.push(character);
+    }
+
+    stripped
+}
 
 pub fn render_limit_bar(remaining_percent: f64, color: &ColorConfig) -> String {
     let visible = visible_limit_bar(remaining_percent);

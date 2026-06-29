@@ -2,8 +2,10 @@ use crate::types::{LimitInfo, StructuredSourceInfo};
 
 use super::common::{
     format_data_as_of, format_decimal, format_percent, format_unavailable_block, normalize_percent,
-    provider_label, render_limit_bar, window_label_for_display, ColorConfig, ProviderBlock,
+    pad_visible_left, pad_visible_right, provider_label, render_limit_bar, window_label_for_display,
+    ColorConfig, ProviderBlock, LIMIT_BAR_WIDTH, LIMIT_LEFT_WIDTH, LIMIT_WINDOW_WIDTH,
 };
+use super::time::{format_user_timestamp, TimeContext};
 
 pub fn limits_block(info: &StructuredSourceInfo, color: &ColorConfig) -> ProviderBlock {
     ProviderBlock {
@@ -17,10 +19,11 @@ fn format_limits_body(info: &StructuredSourceInfo, color: &ColorConfig) -> Strin
         return format_unavailable_block(info);
     }
 
+    let time_context = TimeContext::from_structured(info);
     let limit_rows = info
         .limits
         .iter()
-        .filter_map(|limit| format_limit_row(limit, color))
+        .filter_map(|limit| format_limit_row(limit, color, &time_context))
         .collect::<Vec<_>>();
 
     if limit_rows.is_empty() {
@@ -40,7 +43,7 @@ fn format_limits_body(info: &StructuredSourceInfo, color: &ColorConfig) -> Strin
     body
 }
 
-fn format_limit_row(limit: &LimitInfo, color: &ColorConfig) -> Option<String> {
+fn format_limit_row(limit: &LimitInfo, color: &ColorConfig, time_context: &TimeContext) -> Option<String> {
     let remaining_percent = limit.remaining_percent.or_else(|| {
         limit
             .used_percent
@@ -48,14 +51,21 @@ fn format_limit_row(limit: &LimitInfo, color: &ColorConfig) -> Option<String> {
     })?;
     let remaining_display = normalize_percent(remaining_percent);
 
-    let window = format!("{:<4}", window_label_for_display(limit));
-    let bar = render_limit_bar(remaining_display, color);
-    let left = format!("{}% left", format_percent(remaining_percent));
-    let reset = limit
-        .resets_at
-        .as_deref()
-        .map(|value| format!(" | reset {value}"))
-        .unwrap_or_default();
+    let window = pad_visible_right(
+        &format!("{:<width$}", window_label_for_display(limit), width = LIMIT_WINDOW_WIDTH),
+        LIMIT_WINDOW_WIDTH,
+    );
+    let bar = pad_visible_right(&render_limit_bar(remaining_display, color), LIMIT_BAR_WIDTH);
+    let left = pad_visible_left(
+        &format!("{}% left", format_percent(remaining_percent)),
+        LIMIT_LEFT_WIDTH,
+    );
 
-    Some(format!("{window} {bar} {left:>8}{reset}"))
+    let mut line = format!("{window} {bar} {left}");
+    if let Some(value) = limit.resets_at.as_deref() {
+        line.push_str(" | reset ");
+        line.push_str(&format_user_timestamp(value, time_context));
+    }
+
+    Some(line)
 }

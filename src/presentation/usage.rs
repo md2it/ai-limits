@@ -4,6 +4,7 @@ use super::common::{
     format_data_as_of, format_decimal, format_number, format_unavailable_block, provider_label,
     ProviderBlock,
 };
+use super::time::{format_user_timestamp, TimeContext};
 
 pub fn usage_block(info: &StructuredSourceInfo) -> ProviderBlock {
     ProviderBlock {
@@ -17,12 +18,13 @@ fn format_usage_body(info: &StructuredSourceInfo) -> String {
         return format_unavailable_block(info);
     }
 
+    let time_context = TimeContext::from_structured(info);
     let mut rows = Vec::new();
 
     if let Some(line) = format_tokens_row(info) {
         rows.push(line);
     }
-    if let Some(line) = format_activity_row(info) {
+    if let Some(line) = format_activity_row(info, &time_context) {
         rows.push(line);
     }
     if let Some(line) = format_models_row(info) {
@@ -78,7 +80,7 @@ fn format_tokens_row(info: &StructuredSourceInfo) -> Option<String> {
     }
 }
 
-fn format_activity_row(info: &StructuredSourceInfo) -> Option<String> {
+fn format_activity_row(info: &StructuredSourceInfo, time_context: &TimeContext) -> Option<String> {
     let activity = &info.usage.activity;
     let mut parts = Vec::new();
 
@@ -111,7 +113,10 @@ fn format_activity_row(info: &StructuredSourceInfo) -> Option<String> {
         ));
     }
     if let Some(value) = activity.latest_activity_at.as_deref() {
-        parts.push(format!("latest {value}"));
+        parts.push(format!(
+            "latest {}",
+            format_user_timestamp(value, time_context)
+        ));
     }
 
     if parts.is_empty() {

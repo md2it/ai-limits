@@ -27,6 +27,7 @@ Verified PoC details:
 - the PoC waits for the prompt to be ready based on the bottom line `for shortcuts`
 - `/usage` is sent as regular input without bracketed paste
 - user-facing output shows the matched lines `Current session`, `Current week`, `Total cost`, and token usage
+- structured limits map `Current session` to a 5-hour window (`window_minutes = 300`) and `Current week` to a 7-day window (`window_minutes = 10080`)
 - the parser accounts for some lines arriving via bare carriage return, so cleaned/compacted output is split on `\n` and `\r`
 
 ---
