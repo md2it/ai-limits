@@ -154,7 +154,7 @@ mod tests {
         assert!(block.body.contains("8.0% left | reset Jun 30, 21:41 UTC-2"));
         assert!(block.body.contains("54.0% left | reset Jul 3, 21:41 UTC-2"));
         assert!(block.body.contains("344.2 credits available"));
-        assert!(block.body.contains("Data as of: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41 UTC-2"));
     }
 
     #[test]
@@ -171,7 +171,7 @@ mod tests {
         let block = limits_block(&info, &ColorConfig { enabled: false });
 
         assert!(block.body.contains("Unavailable: not logged in"));
-        assert!(block.body.contains("Data as of: unknown"));
+        assert!(block.body.contains("Source codex-cli: unknown"));
     }
 
     #[test]
@@ -184,7 +184,7 @@ mod tests {
         let block = limits_block(&info, &ColorConfig { enabled: false });
 
         assert!(block.body.contains("No limit data from this source"));
-        assert!(block.body.contains("Data as of: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41 UTC-2"));
     }
 
     #[test]
@@ -200,7 +200,7 @@ mod tests {
             .contains("Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2"));
         assert!(block.body.contains("Models        top: gpt-5"));
         assert!(block.body.contains("Money         $12.40 used"));
-        assert!(block.body.contains("Data as of: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-local: Jul 3, 21:41 UTC-2"));
     }
 
     #[test]
@@ -252,7 +252,7 @@ mod tests {
         let block = limits_block(&info, &ColorConfig { enabled: false });
 
         assert!(!block.body.contains("2026-06-29T23:09:29Z"));
-        assert!(block.body.contains("Data as of:"));
+        assert!(block.body.contains("Source codex-cli:"));
         assert!(block.body.contains(" | reset Jun 30, 02:20 UTC"));
     }
 

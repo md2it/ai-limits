@@ -25,18 +25,23 @@ pub fn provider_label(info: &StructuredSourceInfo) -> String {
 }
 
 pub fn format_data_as_of(info: &StructuredSourceInfo) -> String {
+    let source = source_label_for_display(&info.source);
     match info.data_as_of.as_deref() {
         Some(value) => {
             let context = TimeContext::from_structured(info);
-            format!("Data as of: {}", format_user_timestamp(value, &context))
+            format!("Source {source}: {}", format_user_timestamp(value, &context))
         }
-        None => "Data as of: unknown".to_string(),
+        None => format!("Source {source}: unknown"),
     }
 }
 
 pub fn format_unavailable_block(info: &StructuredSourceInfo) -> String {
     let message = info.status.message.as_deref().unwrap_or("unavailable");
     format!("Unavailable: {message}\n{}", format_data_as_of(info))
+}
+
+fn source_label_for_display(source: &str) -> String {
+    source.replace('_', "-")
 }
 
 pub fn format_decimal(value: f64) -> String {

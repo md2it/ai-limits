@@ -111,9 +111,9 @@ If only two amount values are available and the third can be calculated reliably
 
 Structured time fields may keep source-specific formats or UTC timestamps. The default terminal presentation converts them to the user's local time in the format documented in [terminal-ui.md](terminal-ui.md).
 
-The default terminal presentation uses `data_as_of` for the `Data as of` line. It does not use `collected_at` for this line.
+The default terminal presentation uses `source` and `data_as_of` for the `Source {source}` line. It does not use `collected_at` for this line.
 
-`usage.activity.latest_activity_at` is a separate business fact about user activity. It must not be treated as the default `Data as of` value unless it is also the best known timestamp for the source data itself.
+`usage.activity.latest_activity_at` is a separate business fact about user activity. It must not be treated as the default `Source {source}` timestamp unless it is also the best known timestamp for the source data itself.
 
 ## Empty and unavailable values
 

@@ -127,7 +127,7 @@ Responsibilities:
 - choose user-facing provider labels;
 - convert limits into fixed-width rows;
 - build 25-character remaining-limit bars;
-- choose `Data as of` text from structured `data_as_of`;
+- choose `Source {source}` text from structured `source` and `data_as_of`;
 - prepare unavailable or no-data messages from structured status data.
 
 Boundaries:

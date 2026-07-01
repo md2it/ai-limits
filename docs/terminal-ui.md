@@ -123,7 +123,7 @@ Each provider block contains:
 
 - zero or more limit rows;
 - credits or balance, when available;
-- `Data as of`, using structured `data_as_of`.
+- `Source {source}`, using structured `source` and `data_as_of`.
 
 Limit row format:
 
@@ -141,7 +141,7 @@ Example:
 5h   ■■□□□□□□□□□□□□□□□□□□□□□□□  8.0% left | reset Jun 30, 21:41 UTC-2
 7d   ■■■■■■■■■■■■■■□□□□□□□□□ 54.0% left | reset Jul  3, 21:41 UTC-2
 344.2 credits available
-Data as of: Jul 3, 21:41 UTC-2
+Source codex-cli: Jul 3, 21:41 UTC-2
 ```
 
 The bar width is `25` characters. Each filled bar character `■` represents `4%`. Remaining limit is rounded to the nearest number of filled characters. Empty bar characters use `□`. ANSI color codes in the bar do not affect column width.
@@ -157,7 +157,7 @@ The filled bar characters show available remaining limit, not used limit. The wh
 If `data_as_of` is unavailable, print:
 
 ```text
-Data as of: unknown
+Source codex-cli: unknown
 ```
 
 If the source is unavailable, print the provider block with the status message:
@@ -166,7 +166,7 @@ If the source is unavailable, print the provider block with the status message:
             ---------- CLAUDE ----------
 
 Unavailable: not logged in
-Data as of: unknown
+Source claude-cli: unknown
 ```
 
 If the source is available but has no supported limit data, print the provider block with a short reason:
@@ -175,7 +175,7 @@ If the source is available but has no supported limit data, print the provider b
             ---------- CODEX ----------
 
 No limit data from this source
-Data as of: Jul 3, 21:41 UTC-2
+Source codex-cli: Jul 3, 21:41 UTC-2
 ```
 
 ---
@@ -196,7 +196,7 @@ Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2
 Models        top: gpt-5
 Money         $12.40 used
 
-Data as of: Jul 3, 21:41 UTC-2
+Source codex-local: Jul 3, 21:41 UTC-2
 ```
 
 Supported usage rows:
@@ -205,12 +205,12 @@ Supported usage rows:
 - `Activity` — sessions, turns, files, events, and latest activity, when available;
 - `Models` — top model, when available;
 - `Money` — used, remaining, total, and currency, when available;
-- `Data as of` — structured `data_as_of`.
+- `Source {source}` — structured `source` and `data_as_of`.
 
 If `data_as_of` is unavailable, print:
 
 ```text
-Data as of: unknown
+Source codex-local: unknown
 ```
 
 If the source is unavailable, use the same unavailable format as default limits output.

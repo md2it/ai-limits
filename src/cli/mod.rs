@@ -239,7 +239,7 @@ fn failed_source_block(source: Source, error: &str) -> ProviderBlock {
 
     ProviderBlock {
         provider_label: provider.to_string(),
-        body: format!("Unavailable: {error}\nData as of: unknown"),
+        body: format!("Unavailable: {error}\nSource {}: unknown", source.label()),
     }
 }
 
