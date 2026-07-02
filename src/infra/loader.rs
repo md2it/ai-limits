@@ -2,10 +2,11 @@ use std::env;
 use std::io::{self, IsTerminal, Write};
 use std::time::Duration;
 
+use chrono::{DateTime, Local};
+
 const TOP_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-";
-const DONE_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-=-= DONE =-=-=-=-=-=-=-=-=-=-=-=-=-=";
-const PART_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-=-= PART =-=-=-=-=-=-=-=-=-=-=-=-=-=";
-const FAIL_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-=-= FAIL =-=-=-=-=-=-=-=-=-=-=-=-=-=";
+const FRAME_WIDTH: usize = 60;
+const BOTTOM_DECORATION: &str = "=-=-=-=-=-=-=-=-=";
 const LOADER_SHOW_DELAY: Duration = Duration::from_millis(350);
 const UNICODE_SPINNER_FRAMES: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const ASCII_SPINNER_FRAMES: [&str; 4] = ["-", "\\", "|", "/"];
@@ -15,6 +16,16 @@ pub enum TerminalStatus {
     Done,
     Part,
     Fail,
+}
+
+impl TerminalStatus {
+    fn label(self) -> &'static str {
+        match self {
+            TerminalStatus::Done => "DONE",
+            TerminalStatus::Part => "PART",
+            TerminalStatus::Fail => "FAIL",
+        }
+    }
 }
 
 pub struct TerminalUi {
@@ -45,11 +56,7 @@ impl TerminalUi {
     }
 
     pub fn print_bottom(&mut self, status: TerminalStatus) -> io::Result<()> {
-        let frame = match status {
-            TerminalStatus::Done => DONE_FRAME,
-            TerminalStatus::Part => PART_FRAME,
-            TerminalStatus::Fail => FAIL_FRAME,
-        };
+        let frame = format_bottom_frame(status, Local::now());
 
         println!();
         println!("{frame}");
@@ -160,5 +167,54 @@ fn environment_is_utf8() -> bool {
 fn move_cursor_up(lines: usize) {
     if lines > 0 {
         print!("\x1b[{lines}A");
+    }
+}
+
+fn format_bottom_frame(status: TerminalStatus, completed_at: DateTime<Local>) -> String {
+    let body = format!(
+        " {} {} ",
+        status.label(),
+        completed_at.format("%Y-%m-%d %H:%M:%S")
+    );
+    let decoration_width = FRAME_WIDTH
+        .checked_sub(body.len())
+        .expect("bottom frame body must fit into frame width");
+    let side_width = decoration_width / 2;
+
+    debug_assert_eq!(decoration_width % 2, 0);
+    debug_assert_eq!(BOTTOM_DECORATION.len(), side_width);
+
+    format!("{BOTTOM_DECORATION}{body}{BOTTOM_DECORATION}")
+}
+
+#[cfg(test)]
+mod tests {
+    use chrono::{Local, TimeZone};
+
+    use super::{format_bottom_frame, TerminalStatus, BOTTOM_DECORATION, FRAME_WIDTH};
+
+    #[test]
+    fn bottom_frame_keeps_width_and_symmetric_decoration() {
+        let completed_at = Local
+            .with_ymd_and_hms(2026, 7, 2, 15, 4, 5)
+            .single()
+            .expect("valid local time");
+
+        for status in [
+            TerminalStatus::Done,
+            TerminalStatus::Part,
+            TerminalStatus::Fail,
+        ] {
+            let frame = format_bottom_frame(status, completed_at);
+
+            assert_eq!(frame.len(), FRAME_WIDTH);
+            assert!(frame.starts_with(BOTTOM_DECORATION));
+            assert!(frame.ends_with(BOTTOM_DECORATION));
+        }
+
+        assert_eq!(
+            format_bottom_frame(TerminalStatus::Done, completed_at),
+            "=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-="
+        );
     }
 }

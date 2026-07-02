@@ -49,7 +49,7 @@ Config:
   watch_interval = "5m"
 
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-= DONE =-=-=-=-=-=-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
 
 ```
 
@@ -74,12 +74,13 @@ Top frame:
 Bottom frame:
 
 ```text
-=-=-=-=-=-=-=-=-=-=-=-=-=-= DONE =-=-=-=-=-=-=-=-=-=-=-=-=-=
-=-=-=-=-=-=-=-=-=-=-=-=-=-= PART =-=-=-=-=-=-=-=-=-=-=-=-=-=
-=-=-=-=-=-=-=-=-=-=-=-=-=-= FAIL =-=-=-=-=-=-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-= PART 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-= FAIL 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
 ```
 
 An empty line is printed before the top frame, after the top frame, before the bottom frame, and after the bottom frame.
+The bottom frame timestamp is the local date and time when the response completed, formatted as `YYYY-MM-DD HH:MM:SS`.
 
 Statuses:
 
@@ -103,7 +104,7 @@ Format:
 
 ai-limits: unknown argument `--bad`
 
-=-=-=-=-=-=-=-=-=-=-=-=-=-= FAIL =-=-=-=-=-=-=-=-=-=-=-=-=-=
+=-=-=-=-=-=-=-=-= FAIL 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
 
 ```
 
