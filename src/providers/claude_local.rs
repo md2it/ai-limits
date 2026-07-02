@@ -4,7 +4,7 @@ use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Duration, Timelike, Utc};
+use chrono::{DateTime, Duration, Utc};
 use serde_json::{json, Value};
 
 use crate::types::{
@@ -30,6 +30,7 @@ struct ClaudeLocalUsage {
     latest_timestamp: Option<String>,
     models: HashMap<String, u64>,
     turns_by_time: Vec<TurnUsage>,
+    latest_server_reset_anchor: Option<DateTime<Utc>>,
 }
 
 pub fn collect() -> io::Result<SourceData> {
@@ -126,6 +127,15 @@ fn scan_jsonl_file(path: &Path, usage: &mut ClaudeLocalUsage) -> io::Result<()> 
             continue;
         };
 
+        if let Some(anchor) = extract_server_reset_anchor(&record) {
+            if usage
+                .latest_server_reset_anchor
+                .is_none_or(|current| anchor > current)
+            {
+                usage.latest_server_reset_anchor = Some(anchor);
+            }
+        }
+
         let Some(turn) = extract_turn_usage(&record) else {
             continue;
         };
@@ -186,6 +196,13 @@ struct ActiveSessionLimit {
     resets_at: DateTime<Utc>,
     used_tokens: u64,
     token_limit: u64,
+    reset_source: ResetSource,
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum ResetSource {
+    ServerAnchor,
+    TranscriptEstimate,
 }
 
 fn extract_turn_usage(record: &Value) -> Option<TurnUsage> {
@@ -228,6 +245,48 @@ fn extract_turn_usage(record: &Value) -> Option<TurnUsage> {
 
 fn number_field(value: &Value, key: &str) -> u64 {
     value.get(key).and_then(Value::as_u64).unwrap_or(0)
+}
+
+fn extract_server_reset_anchor(record: &Value) -> Option<DateTime<Utc>> {
+    let candidates = [
+        record.pointer("/rate_limits/five_hour/resets_at"),
+        record.pointer("/rate_limits/primary/resets_at"),
+        record.pointer("/payload/rate_limits/five_hour/resets_at"),
+        record.pointer("/payload/rate_limits/primary/resets_at"),
+        record.pointer("/message/rate_limits/five_hour/resets_at"),
+        record.pointer("/message/rate_limits/primary/resets_at"),
+        record.pointer("/rate_limit_event/resets_at"),
+        record.pointer("/payload/rate_limit_event/resets_at"),
+        record.get("resets_at"),
+        record.get("reset_at"),
+    ];
+
+    candidates
+        .into_iter()
+        .flatten()
+        .filter_map(parse_reset_timestamp_value)
+        .max()
+}
+
+fn parse_reset_timestamp_value(value: &Value) -> Option<DateTime<Utc>> {
+    if let Some(timestamp) = value.as_u64() {
+        return DateTime::from_timestamp(timestamp as i64, 0);
+    }
+
+    if let Some(timestamp) = value.as_i64() {
+        return DateTime::from_timestamp(timestamp, 0);
+    }
+
+    let text = value.as_str()?.trim();
+    if text.is_empty() {
+        return None;
+    }
+
+    if let Ok(timestamp) = text.parse::<i64>() {
+        return DateTime::from_timestamp(timestamp, 0);
+    }
+
+    parse_timestamp(text)
 }
 
 fn encode_raw(
@@ -330,9 +389,8 @@ fn structured_from_usage(usage: &ClaudeLocalUsage) -> StructuredSourceInfo {
         + usage.cache_creation_tokens;
     let active_session_limit = active_session_limit(usage, Utc::now());
     let mut diagnostics = vec![
-        "5h limit is a local estimate from transcript input+output tokens".to_string(),
+        "5h token usage is reconstructed from transcript input+output tokens".to_string(),
         "5h local estimate uses Claude Max5 token limit: 88,000".to_string(),
-        "official remaining limit/reset unavailable in local transcripts".to_string(),
     ];
     let data_as_of = usage.latest_timestamp.clone();
     if data_as_of.is_none() {
@@ -340,6 +398,14 @@ fn structured_from_usage(usage: &ClaudeLocalUsage) -> StructuredSourceInfo {
     }
     if active_session_limit.is_none() {
         diagnostics.push("no active 5h local transcript window found".to_string());
+    } else if usage.latest_server_reset_anchor.is_some() {
+        diagnostics
+            .push("5h reset uses latest server reset anchor found in local data".to_string());
+    } else {
+        diagnostics.push(
+            "5h reset is estimated from local transcript timing; official reset unavailable"
+                .to_string(),
+        );
     }
 
     StructuredSourceInfo {
@@ -404,6 +470,25 @@ fn active_session_limit(
     let mut previous_timestamp: Option<DateTime<Utc>> = None;
     let session_duration = Duration::minutes(CLAUDE_LOCAL_SESSION_WINDOW_MINUTES as i64);
 
+    if let Some(resets_at) = usage
+        .latest_server_reset_anchor
+        .filter(|resets_at| *resets_at > now)
+    {
+        let window_start = resets_at - session_duration;
+        let used_tokens = turns
+            .iter()
+            .filter(|(timestamp, _)| *timestamp >= window_start && *timestamp < resets_at)
+            .map(|(_, turn)| turn.input_tokens + turn.output_tokens)
+            .sum();
+
+        return Some(ActiveSessionLimit {
+            resets_at,
+            used_tokens,
+            token_limit: CLAUDE_LOCAL_MAX5_TOKEN_LIMIT,
+            reset_source: ResetSource::ServerAnchor,
+        });
+    }
+
     for (timestamp, turn) in turns {
         let should_start_new = current
             .as_ref()
@@ -411,11 +496,11 @@ fn active_session_limit(
             || previous_timestamp.is_some_and(|previous| timestamp - previous >= session_duration);
 
         if should_start_new {
-            let start_at = round_down_to_hour(timestamp);
             current = Some(ActiveSessionLimit {
-                resets_at: start_at + session_duration,
+                resets_at: timestamp + session_duration,
                 used_tokens: 0,
                 token_limit: CLAUDE_LOCAL_MAX5_TOKEN_LIMIT,
+                reset_source: ResetSource::TranscriptEstimate,
             });
         }
 
@@ -437,7 +522,10 @@ fn limit_info_from_active_session(session: &ActiveSessionLimit) -> LimitInfo {
     let remaining_amount = session.token_limit.saturating_sub(session.used_tokens);
 
     LimitInfo {
-        name: "5h local estimate".to_string(),
+        name: match session.reset_source {
+            ResetSource::ServerAnchor => "5h local estimate (server reset anchor)".to_string(),
+            ResetSource::TranscriptEstimate => "5h local estimate (estimated reset)".to_string(),
+        },
         window_label: Some("5h".to_string()),
         window_minutes: Some(CLAUDE_LOCAL_SESSION_WINDOW_MINUTES),
         resets_at: Some(
@@ -458,14 +546,6 @@ fn parse_timestamp(value: &str) -> Option<DateTime<Utc>> {
     DateTime::parse_from_rfc3339(value)
         .map(|timestamp| timestamp.with_timezone(&Utc))
         .ok()
-}
-
-fn round_down_to_hour(timestamp: DateTime<Utc>) -> DateTime<Utc> {
-    timestamp
-        .with_minute(0)
-        .and_then(|value| value.with_second(0))
-        .and_then(|value| value.with_nanosecond(0))
-        .unwrap_or(timestamp)
 }
 
 fn top_model(models: &HashMap<String, u64>) -> Option<&str> {
@@ -572,7 +652,97 @@ mod tests {
         assert!(structured
             .diagnostics
             .iter()
-            .any(|entry| entry.contains("official remaining limit/reset unavailable")));
+            .any(|entry| entry.contains("transcript input+output tokens")));
+    }
+
+    #[test]
+    fn transcript_estimate_does_not_round_reset_down_to_hour() {
+        let mut usage = ClaudeLocalUsage::default();
+        usage.turns_by_time.push(TurnUsage {
+            session_id: "s1".to_string(),
+            timestamp: Some("2026-06-28T10:37:12Z".to_string()),
+            model: None,
+            message_id: Some("m1".to_string()),
+            input_tokens: 100,
+            output_tokens: 40,
+            cache_read_tokens: 1_000,
+            cache_creation_tokens: 2_000,
+        });
+
+        let now = parse_timestamp("2026-06-28T11:00:00Z").expect("parse now");
+        let limit = active_session_limit(&usage, now).expect("active limit");
+
+        assert_eq!(
+            limit
+                .resets_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-06-28T15:37:12Z"
+        );
+        assert_eq!(limit.used_tokens, 140);
+        assert_eq!(limit.reset_source, ResetSource::TranscriptEstimate);
+
+        let info = limit_info_from_active_session(&limit);
+        assert_eq!(info.name.as_str(), "5h local estimate (estimated reset)");
+    }
+
+    #[test]
+    fn server_reset_anchor_overrides_transcript_estimated_window() {
+        let mut usage = ClaudeLocalUsage::default();
+        usage.latest_server_reset_anchor =
+            Some(parse_timestamp("2026-06-28T15:00:00Z").expect("parse anchor"));
+        usage.turns_by_time.push(TurnUsage {
+            session_id: "old".to_string(),
+            timestamp: Some("2026-06-28T09:59:59Z".to_string()),
+            model: None,
+            message_id: Some("old".to_string()),
+            input_tokens: 1_000,
+            output_tokens: 1_000,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
+        });
+        usage.turns_by_time.push(TurnUsage {
+            session_id: "current".to_string(),
+            timestamp: Some("2026-06-28T10:00:00Z".to_string()),
+            model: None,
+            message_id: Some("current".to_string()),
+            input_tokens: 20,
+            output_tokens: 5,
+            cache_read_tokens: 0,
+            cache_creation_tokens: 0,
+        });
+
+        let now = parse_timestamp("2026-06-28T11:00:00Z").expect("parse now");
+        let limit = active_session_limit(&usage, now).expect("active limit");
+
+        assert_eq!(
+            limit
+                .resets_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-06-28T15:00:00Z"
+        );
+        assert_eq!(limit.used_tokens, 25);
+        assert_eq!(limit.reset_source, ResetSource::ServerAnchor);
+
+        let info = limit_info_from_active_session(&limit);
+        assert_eq!(
+            info.name.as_str(),
+            "5h local estimate (server reset anchor)"
+        );
+    }
+
+    #[test]
+    fn extracts_server_reset_anchor_from_rate_limits_payload() {
+        let record: Value = serde_json::from_str(
+            r#"{"type":"assistant","payload":{"rate_limits":{"five_hour":{"resets_at":"1782721800"}}}}"#,
+        )
+        .expect("parse record");
+
+        let anchor = extract_server_reset_anchor(&record).expect("server reset anchor");
+
+        assert_eq!(
+            anchor.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-06-29T08:30:00Z"
+        );
     }
 
     #[test]
