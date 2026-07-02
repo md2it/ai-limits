@@ -17,11 +17,15 @@ const CACHE_MAX_AGE: Duration = Duration::from_secs(600);
 const PROVIDER: &str = "claude";
 const SOURCE: &str = "claude_statusline_rate_limits";
 const SOURCE_LINK: &str = "docs/get-info/providers/claude.md";
-const CACHE_FILE_NAME: &str = "claude-statusline-rate-limits.json";
+const CACHE_FILE_NAME: &str = "claude-statusline.json";
 const STATUSLINE_NOT_CONFIGURED_MESSAGE: &str = concat!(
     "Claude statusline is not configured yet. ",
     "To enable live Claude Code limits, give Claude Code this setup prompt: ",
     "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-statusline.md"
+);
+const STATUSLINE_CONFIGURED_NO_DATA_MESSAGE: &str = concat!(
+    "Claude statusline is configured, but no supported rate_limits payload has been captured yet. ",
+    "Send one normal Claude Code request, then run ai-limits again."
 );
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -51,17 +55,32 @@ struct RateLimitWindow {
 
 pub fn collect() -> io::Result<SourceData> {
     if let Some(payload) = read_hook_payload_from_stdin()? {
-        if payload_has_supported_rate_limits(&payload) {
-            write_cache(&payload)?;
-        }
+        write_cache(&payload)?;
         return Ok(build_source_data_with_origin(payload, PayloadOrigin::Hook));
     }
 
-    if let Some((payload, modified_at)) = read_fresh_cache()? {
-        return Ok(build_source_data_with_origin(
-            payload,
-            PayloadOrigin::Cache(Some(modified_at)),
-        ));
+    match read_cache()? {
+        Some((payload, modified_at)) if payload.trim().is_empty() => {
+            return Ok(configured_without_rate_limits_source_data(
+                STATUSLINE_CONFIGURED_NO_DATA_MESSAGE,
+                Some(modified_at),
+            ));
+        }
+        Some((payload, modified_at))
+            if modified_at.elapsed().unwrap_or(CACHE_MAX_AGE) <= CACHE_MAX_AGE =>
+        {
+            return Ok(build_source_data_with_origin(
+                payload,
+                PayloadOrigin::Cache(Some(modified_at)),
+            ));
+        }
+        Some((_payload, modified_at)) => {
+            return Ok(configured_without_rate_limits_source_data(
+                "Claude statusline cache exists, but the latest captured payload is stale. Send one normal Claude Code request, then run ai-limits again.",
+                Some(modified_at),
+            ));
+        }
+        None => {}
     }
 
     Ok(unavailable_source_data(STATUSLINE_NOT_CONFIGURED_MESSAGE))
@@ -286,6 +305,35 @@ fn unavailable_source_data(message: &str) -> SourceData {
     }
 }
 
+fn configured_without_rate_limits_source_data(
+    message: &str,
+    modified_at: Option<SystemTime>,
+) -> SourceData {
+    SourceData {
+        raw: None,
+        structured: StructuredSourceInfo {
+            provider: PROVIDER.to_string(),
+            source: SOURCE.to_string(),
+            source_link: SOURCE_LINK.to_string(),
+            status: SourceStatus {
+                data_available: false,
+                access_available: true,
+                message: Some(message.to_string()),
+            },
+            raw_data_available: false,
+            collected_at: Some(utc_now()),
+            data_as_of: modified_at.and_then(system_time_to_rfc3339),
+            account: AccountInfo::default(),
+            limits: Vec::new(),
+            usage: Default::default(),
+            diagnostics: vec![format!(
+                "statusline cache is present: ~/.config/ai-limits/{CACHE_FILE_NAME}"
+            )],
+        },
+        stderr: String::new(),
+    }
+}
+
 fn origin_diagnostics(origin: PayloadOrigin) -> Vec<String> {
     match origin {
         PayloadOrigin::Hook => vec!["data origin: hook stdin".to_string()],
@@ -398,7 +446,7 @@ fn write_cache(payload: &str) -> io::Result<()> {
     fs::write(path, payload)
 }
 
-fn read_fresh_cache() -> io::Result<Option<(String, SystemTime)>> {
+fn read_cache() -> io::Result<Option<(String, SystemTime)>> {
     let path = cache_path()?;
     let metadata = match fs::metadata(&path) {
         Ok(metadata) => metadata,
@@ -407,36 +455,14 @@ fn read_fresh_cache() -> io::Result<Option<(String, SystemTime)>> {
     };
 
     let modified = metadata.modified().unwrap_or(SystemTime::UNIX_EPOCH);
-    if modified.elapsed().unwrap_or(CACHE_MAX_AGE) > CACHE_MAX_AGE {
-        return Ok(None);
-    }
-
     let payload = fs::read_to_string(&path)?;
-    if payload.trim().is_empty() {
-        Ok(None)
-    } else {
-        Ok(Some((payload, modified)))
-    }
+    Ok(Some((payload, modified)))
 }
 
 fn locate_rate_limits(record: &Value) -> Option<&Value> {
     record
         .get("rate_limits")
         .or_else(|| record.pointer("/payload/rate_limits"))
-}
-
-fn payload_has_supported_rate_limits(payload: &str) -> bool {
-    let Ok(record) = serde_json::from_str::<Value>(payload.trim()) else {
-        return false;
-    };
-    let Some(rate_limits_value) = locate_rate_limits(&record) else {
-        return false;
-    };
-
-    let rate_limits = parse_rate_limits(rate_limits_value);
-    !build_structured_limits(&rate_limits).is_empty()
-        || rate_limits.credits.is_some()
-        || rate_limits.plan_type.is_some()
 }
 
 fn parse_rate_limits(value: &Value) -> RateLimits {
@@ -689,18 +715,6 @@ mod tests {
             structured.limits[0].resets_at.as_deref(),
             Some("2026-06-29T08:30:00Z")
         );
-    }
-
-    #[test]
-    fn only_supported_rate_limit_payloads_are_cacheable() {
-        assert!(payload_has_supported_rate_limits(STATUSLINE_PAYLOAD));
-        assert!(!payload_has_supported_rate_limits(
-            r#"{"rate_limits":{"five_hour":{"foo":"bar"}}}"#
-        ));
-        assert!(!payload_has_supported_rate_limits(
-            r#"{"payload":{"session_id":"abc"}}"#
-        ));
-        assert!(!payload_has_supported_rate_limits("{invalid"));
     }
 
     #[test]
