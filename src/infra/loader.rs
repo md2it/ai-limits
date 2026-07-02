@@ -4,9 +4,9 @@ use std::time::Duration;
 
 use chrono::{DateTime, Local};
 
-const TOP_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-";
-const FRAME_WIDTH: usize = 60;
-const BOTTOM_DECORATION: &str = "=-=-=-=-=-=-=-=-=";
+const TOP_FRAME: &str = "=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=";
+const BOTTOM_DECORATION_LEFT: &str = "=-=-=";
+const BOTTOM_DECORATION_RIGHT: &str = "=-=-=";
 const PROVIDER_HEADING_INDENT: usize = 5;
 const PROVIDER_HEADING_WIDTH: usize = 25;
 const LOADER_SHOW_DELAY: Duration = Duration::from_millis(350);
@@ -35,6 +35,7 @@ pub struct TerminalUi {
     unicode: bool,
     loader_lines: usize,
     provider_block_printed: bool,
+    top_printed: bool,
     static_loaders_rendered: bool,
 }
 
@@ -48,6 +49,7 @@ impl TerminalUi {
             unicode,
             loader_lines: 0,
             provider_block_printed: false,
+            top_printed: false,
             static_loaders_rendered: false,
         }
     }
@@ -56,6 +58,7 @@ impl TerminalUi {
         println!();
         println!("{TOP_FRAME}");
         println!();
+        self.top_printed = true;
         Ok(())
     }
 
@@ -69,7 +72,9 @@ impl TerminalUi {
     }
 
     pub fn print_provider_heading(&mut self, heading: &str) -> io::Result<()> {
-        println!();
+        if !self.top_printed || self.provider_block_printed {
+            println!();
+        }
         println!("{}", format_provider_heading(heading));
         Ok(())
     }
@@ -201,20 +206,11 @@ fn format_provider_heading(heading: &str) -> String {
 }
 
 fn format_bottom_frame(status: TerminalStatus, completed_at: DateTime<Local>) -> String {
-    let body = format!(
-        " {} {} ",
+    format!(
+        "{BOTTOM_DECORATION_LEFT} {} {} {BOTTOM_DECORATION_RIGHT}",
         status.label(),
         completed_at.format("%Y-%m-%d %H:%M:%S")
-    );
-    let decoration_width = FRAME_WIDTH
-        .checked_sub(body.len())
-        .expect("bottom frame body must fit into frame width");
-    let side_width = decoration_width / 2;
-
-    debug_assert_eq!(decoration_width % 2, 0);
-    debug_assert_eq!(BOTTOM_DECORATION.len(), side_width);
-
-    format!("{BOTTOM_DECORATION}{body}{BOTTOM_DECORATION}")
+    )
 }
 
 #[cfg(test)]
@@ -223,31 +219,18 @@ mod tests {
 
     use super::{
         format_bottom_frame, format_provider_heading, loader_display_lines, TerminalStatus,
-        BOTTOM_DECORATION, FRAME_WIDTH,
     };
 
     #[test]
-    fn bottom_frame_keeps_width_and_symmetric_decoration() {
+    fn bottom_frame_uses_compact_decoration() {
         let completed_at = Local
             .with_ymd_and_hms(2026, 7, 2, 15, 4, 5)
             .single()
             .expect("valid local time");
 
-        for status in [
-            TerminalStatus::Done,
-            TerminalStatus::Part,
-            TerminalStatus::Fail,
-        ] {
-            let frame = format_bottom_frame(status, completed_at);
-
-            assert_eq!(frame.len(), FRAME_WIDTH);
-            assert!(frame.starts_with(BOTTOM_DECORATION));
-            assert!(frame.ends_with(BOTTOM_DECORATION));
-        }
-
         assert_eq!(
             format_bottom_frame(TerminalStatus::Done, completed_at),
-            "=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-="
+            "=-=-= DONE 2026-07-02 15:04:05 =-=-="
         );
     }
 

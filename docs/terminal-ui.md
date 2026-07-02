@@ -12,7 +12,7 @@ Format:
 
 ```text
 
-=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-
+=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=
 
 Usage:
   ai-limits [OPTIONS]
@@ -49,7 +49,7 @@ Config:
   watch_interval = "5m"
 
 
-=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
+=-=-= DONE 2026-07-02 15:04:05 =-=-=
 
 ```
 
@@ -68,18 +68,19 @@ Each `ai-limits` response is printed inside a common frame.
 Top frame:
 
 ```text
-=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-
+=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=
 ```
 
 Bottom frame:
 
 ```text
-=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
-=-=-=-=-=-=-=-=-= PART 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
-=-=-=-=-=-=-=-=-= FAIL 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
+=-=-= DONE 2026-07-02 15:04:05 =-=-=
+=-=-= PART 2026-07-02 15:04:05 =-=-=
+=-=-= FAIL 2026-07-02 15:04:05 =-=-=
 ```
 
 An empty line is printed before the top frame, after the top frame, before the bottom frame, and after the bottom frame.
+The first provider header follows the top-frame gap directly, so there is one empty line between the top frame and the first provider header.
 The bottom frame timestamp is the local date and time when the response completed, formatted as `YYYY-MM-DD HH:MM:SS`.
 
 Statuses:
@@ -100,11 +101,11 @@ Format:
 
 ```text
 
-=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-
+=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=
 
 ai-limits: unknown argument `--bad`
 
-=-=-=-=-=-=-=-=-= FAIL 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-=
+=-=-= FAIL 2026-07-02 15:04:05 =-=-=
 
 ```
 
@@ -117,12 +118,12 @@ Default limits output prints each provider as a separate block.
 Block header:
 
 ```text
-            ---------- CODEX ----------
-            ---------- CLAUDE ----------
-            ---------- CURSOR ----------
+     --------- CODEX ---------
+     --------- CLAUDE --------
+     --------- CURSOR --------
 ```
 
-An empty line is printed before each provider header and after the header.
+Provider headers are 25 visible characters wide and indented by 5 spaces, matching the start column of the limit bar. An empty line is printed before each provider header except the first header after the top frame. No empty line is printed between a provider header and its body.
 
 Each provider block contains:
 
@@ -141,8 +142,7 @@ Format:
 Example:
 
 ```text
-            ---------- CODEX ----------
-
+     --------- CODEX ---------
 5h   ■■□□□□□□□□□□□□□□□□□□□□□□□  8.0% left | reset Jun 30, 21:41 UTC-2
 7d   ■■■■■■■■■■■■■■□□□□□□□□□ 54.0% left | reset Jul  3, 21:41 UTC-2
 344.2 credits available
@@ -168,8 +168,7 @@ Source codex-cli: unknown
 If the source is unavailable, print the provider block with the status message:
 
 ```text
-            ---------- CLAUDE ----------
-
+     --------- CLAUDE --------
 Unavailable: not logged in
 Source claude-cli: unknown
 ```
@@ -177,8 +176,7 @@ Source claude-cli: unknown
 If the source is available but has no supported limit data, print the provider block with a short reason:
 
 ```text
-            ---------- CODEX ----------
-
+     --------- CODEX ---------
 No limit data from this source
 Source codex-cli: Jul 3, 21:41 UTC-2
 ```
@@ -194,8 +192,7 @@ The usage block contains only available user-facing usage facts. Fields with `nu
 Example:
 
 ```text
-            ---------- CODEX ----------
-
+     --------- CODEX ---------
 Tokens        input 120k | cached 80k | output 30k | total 230k
 Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2
 Models        top: gpt-5
@@ -252,6 +249,8 @@ The loader starts displaying if a source runs longer than `350ms`.
 If a source finishes before the loader is first shown, the loader is not printed.
 
 After a source finishes, the loader is cleared, then the source result block is printed.
+
+If at least one provider block has already been printed and other sources are still waiting, one empty line is printed between the completed provider output and the loader area.
 
 ---
 
