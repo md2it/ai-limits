@@ -44,6 +44,7 @@ What is extracted:
 
 - `assistant` records with non-zero `message.usage`
 - deduplicated turns by `message.id` (latest record wins in file)
+- latest server reset anchor found in local JSONL records when a reset timestamp appears inside rate-limit, usage-limit, quota, or 429 payload context
 - scope summary: files, sessions, turns
 - token totals: input/output/cache-read/cache-write/total
 - top model and latest activity timestamp
@@ -78,8 +79,9 @@ Current ai-limits implementation state:
 - `--claude-local` reconstructs an active 5-hour window from local transcripts.
 - The current implementation uses `input_tokens + output_tokens` and a local `88_000` token denominator for the 5-hour window.
 - This is a local estimate, not an official Claude limit signal.
-- Current reset calculation uses a local reconstructed window and is less reliable than the token numerator.
-- The reset estimate must not be presented as official when no live `rate_limits` snapshot is available.
+- Reset calculation first uses the latest future server reset anchor found in local data, then falls back to a local reconstructed window.
+- The raw `claude_local_usage` output exposes `usage.latest_server_reset_anchor` with `resets_at` and JSON `source_path` for diagnostics.
+- If no server anchor is found, the reset estimate must not be presented as official.
 
 Reset reconstruction findings from 2026-07-02:
 
@@ -89,6 +91,7 @@ Reset reconstruction findings from 2026-07-02:
 - In observed data, this gap-only heuristic still missed the trusted reset because the true server window boundary can fall inside an active transcript period.
 - The best local improvement is to use the latest known server reset as an anchor when one has been captured from `rate_limits`, `/usage`, `rate_limit_event`, or a 429 payload.
 - Without a server anchor, `claude_local_usage` remains an estimate for reset timing.
+- The scanner now searches nested local JSONL records for reset timestamp keys such as `resets_at`, `reset_at`, and `reset_time` when they appear under rate-limit, usage-limit, usage, quota, or 429-related objects.
 
 Important 5-hour observation from 2026-06-30:
 
@@ -166,6 +169,7 @@ Behavior:
 - for `claude_statusline_rate_limits`, data is available only after a properly configured Claude Code statusline command receives a payload
 - for `claude_statusline_rate_limits`, unavailable statusline context means live limits are unavailable even if transcript history exists
 - for `claude_local_usage`, reset remains an estimate unless a server reset anchor is available
+- for Claude Desktop and browser-extension flows, local-file coverage remains unverified separately from Claude Code statusline behavior
 
 ---
 

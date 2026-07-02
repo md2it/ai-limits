@@ -1,5 +1,7 @@
 # Get Info TODO
 
+Status: implemented in `claude_local_usage`; remaining items are validation gaps that require real Claude CLI/web/desktop observations.
+
 ## Problem
 
 Claude local transcript scanning reconstructs token usage but does not reliably provide official reset timestamps. The current local reset estimate can diverge from Claude CLI, web, and desktop values.
@@ -10,11 +12,11 @@ Improve `claude_local_usage` reset accuracy when local files contain or can be l
 
 ## Tasks
 
-- Extend `claude_local_usage` server-reset anchoring beyond reset fields already embedded in scanned transcript JSONL.
-- Check whether Claude local files contain CLI `/usage`, 429 payloads, or other reset-bearing records not covered by the current parser.
-- Persist or expose the discovered server reset anchor in the raw `claude_local_usage` output for diagnostics.
-- Validate local reset reconstruction against observed Claude CLI, web, and desktop reset timestamps.
-- Document remaining Claude Desktop and browser-extension local-file gaps separately from Claude Code statusline behavior.
+- Done: extended `claude_local_usage` server-reset anchoring beyond fixed transcript reset paths.
+- Done: added coverage for nested rate-limit, usage-limit, quota, and 429 reset-bearing records when present in local JSONL.
+- Done: exposed the discovered server reset anchor in raw `claude_local_usage` output as `usage.latest_server_reset_anchor`.
+- Pending validation: compare local reset reconstruction against observed Claude CLI, web, and desktop reset timestamps.
+- Done: documented remaining Claude Desktop and browser-extension local-file gaps separately from Claude Code statusline behavior.
 
 ## Related Documents
 

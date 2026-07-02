@@ -30,7 +30,7 @@ struct ClaudeLocalUsage {
     latest_timestamp: Option<String>,
     models: HashMap<String, u64>,
     turns_by_time: Vec<TurnUsage>,
-    latest_server_reset_anchor: Option<DateTime<Utc>>,
+    latest_server_reset_anchor: Option<ServerResetAnchor>,
 }
 
 pub fn collect() -> io::Result<SourceData> {
@@ -130,7 +130,8 @@ fn scan_jsonl_file(path: &Path, usage: &mut ClaudeLocalUsage) -> io::Result<()> 
         if let Some(anchor) = extract_server_reset_anchor(&record) {
             if usage
                 .latest_server_reset_anchor
-                .is_none_or(|current| anchor > current)
+                .as_ref()
+                .is_none_or(|current| anchor > *current)
             {
                 usage.latest_server_reset_anchor = Some(anchor);
             }
@@ -199,6 +200,24 @@ struct ActiveSessionLimit {
     reset_source: ResetSource,
 }
 
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct ServerResetAnchor {
+    resets_at: DateTime<Utc>,
+    source_path: String,
+}
+
+impl PartialOrd for ServerResetAnchor {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for ServerResetAnchor {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.resets_at.cmp(&other.resets_at)
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum ResetSource {
     ServerAnchor,
@@ -247,25 +266,80 @@ fn number_field(value: &Value, key: &str) -> u64 {
     value.get(key).and_then(Value::as_u64).unwrap_or(0)
 }
 
-fn extract_server_reset_anchor(record: &Value) -> Option<DateTime<Utc>> {
-    let candidates = [
-        record.pointer("/rate_limits/five_hour/resets_at"),
-        record.pointer("/rate_limits/primary/resets_at"),
-        record.pointer("/payload/rate_limits/five_hour/resets_at"),
-        record.pointer("/payload/rate_limits/primary/resets_at"),
-        record.pointer("/message/rate_limits/five_hour/resets_at"),
-        record.pointer("/message/rate_limits/primary/resets_at"),
-        record.pointer("/rate_limit_event/resets_at"),
-        record.pointer("/payload/rate_limit_event/resets_at"),
-        record.get("resets_at"),
-        record.get("reset_at"),
-    ];
+fn extract_server_reset_anchor(record: &Value) -> Option<ServerResetAnchor> {
+    let mut candidates = Vec::new();
+    collect_server_reset_anchor_candidates(record, "", false, &mut candidates);
+    candidates.into_iter().max()
+}
 
-    candidates
-        .into_iter()
-        .flatten()
-        .filter_map(parse_reset_timestamp_value)
-        .max()
+fn collect_server_reset_anchor_candidates(
+    value: &Value,
+    path: &str,
+    in_reset_context: bool,
+    candidates: &mut Vec<ServerResetAnchor>,
+) {
+    match value {
+        Value::Object(object) => {
+            for (key, child) in object {
+                let child_path = join_json_path(path, key);
+                let key_is_reset_context = in_reset_context || is_server_reset_context_key(key);
+
+                if is_reset_timestamp(key) && key_is_reset_context {
+                    if let Some(resets_at) = parse_reset_timestamp_value(child) {
+                        candidates.push(ServerResetAnchor {
+                            resets_at,
+                            source_path: child_path.clone(),
+                        });
+                    }
+                }
+
+                collect_server_reset_anchor_candidates(
+                    child,
+                    &child_path,
+                    key_is_reset_context,
+                    candidates,
+                );
+            }
+        }
+        Value::Array(items) => {
+            for (index, child) in items.iter().enumerate() {
+                let child_path = format!("{path}/{index}");
+                collect_server_reset_anchor_candidates(
+                    child,
+                    &child_path,
+                    in_reset_context,
+                    candidates,
+                );
+            }
+        }
+        _ => {}
+    }
+}
+
+fn join_json_path(path: &str, key: &str) -> String {
+    let escaped = key.replace('~', "~0").replace('/', "~1");
+    if path.is_empty() {
+        format!("/{escaped}")
+    } else {
+        format!("{path}/{escaped}")
+    }
+}
+
+fn is_server_reset_context_key(key: &str) -> bool {
+    let normalized = key.to_ascii_lowercase().replace(['-', '_'], "");
+    normalized.contains("ratelimit")
+        || normalized.contains("usagelimit")
+        || normalized.contains("usage")
+        || normalized.contains("quota")
+        || normalized.contains("429")
+}
+
+fn is_reset_timestamp(key: &str) -> bool {
+    let normalized = key.to_ascii_lowercase().replace(['-', '_'], "");
+    matches!(
+        normalized.as_str(),
+        "resetsat" | "resetat" | "resettime" | "resettimestamp" | "limitresetat"
+    )
 }
 
 fn parse_reset_timestamp_value(value: &Value) -> Option<DateTime<Utc>> {
@@ -322,6 +396,12 @@ fn encode_raw(
             "total_tokens": total_tokens,
             "models": Value::Object(models.into_iter().collect()),
             "latest_timestamp": usage.latest_timestamp,
+            "latest_server_reset_anchor": usage.latest_server_reset_anchor.as_ref().map(|anchor| {
+                json!({
+                    "resets_at": anchor.resets_at.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+                    "source_path": anchor.source_path,
+                })
+            }),
         });
     }
 
@@ -396,16 +476,23 @@ fn structured_from_usage(usage: &ClaudeLocalUsage) -> StructuredSourceInfo {
     if data_as_of.is_none() {
         diagnostics.push("latest transcript record timestamp is unavailable".to_string());
     }
-    if active_session_limit.is_none() {
-        diagnostics.push("no active 5h local transcript window found".to_string());
-    } else if usage.latest_server_reset_anchor.is_some() {
-        diagnostics
-            .push("5h reset uses latest server reset anchor found in local data".to_string());
-    } else {
-        diagnostics.push(
+    match active_session_limit
+        .as_ref()
+        .map(|limit| limit.reset_source)
+    {
+        None => diagnostics.push("no active 5h local transcript window found".to_string()),
+        Some(ResetSource::ServerAnchor) => {
+            if let Some(anchor) = usage.latest_server_reset_anchor.as_ref() {
+                diagnostics.push(format!(
+                    "5h reset uses latest server reset anchor found in local data at {}",
+                    anchor.source_path
+                ));
+            }
+        }
+        Some(ResetSource::TranscriptEstimate) => diagnostics.push(
             "5h reset is estimated from local transcript timing; official reset unavailable"
                 .to_string(),
-        );
+        ),
     }
 
     StructuredSourceInfo {
@@ -470,10 +557,12 @@ fn active_session_limit(
     let mut previous_timestamp: Option<DateTime<Utc>> = None;
     let session_duration = Duration::minutes(CLAUDE_LOCAL_SESSION_WINDOW_MINUTES as i64);
 
-    if let Some(resets_at) = usage
+    if let Some(anchor) = usage
         .latest_server_reset_anchor
-        .filter(|resets_at| *resets_at > now)
+        .as_ref()
+        .filter(|anchor| anchor.resets_at > now)
     {
+        let resets_at = anchor.resets_at;
         let window_start = resets_at - session_duration;
         let used_tokens = turns
             .iter()
@@ -688,8 +777,10 @@ mod tests {
     #[test]
     fn server_reset_anchor_overrides_transcript_estimated_window() {
         let mut usage = ClaudeLocalUsage::default();
-        usage.latest_server_reset_anchor =
-            Some(parse_timestamp("2026-06-28T15:00:00Z").expect("parse anchor"));
+        usage.latest_server_reset_anchor = Some(ServerResetAnchor {
+            resets_at: parse_timestamp("2026-06-28T15:00:00Z").expect("parse anchor"),
+            source_path: "/payload/rate_limits/five_hour/resets_at".to_string(),
+        });
         usage.turns_by_time.push(TurnUsage {
             session_id: "old".to_string(),
             timestamp: Some("2026-06-28T09:59:59Z".to_string()),
@@ -740,9 +831,33 @@ mod tests {
         let anchor = extract_server_reset_anchor(&record).expect("server reset anchor");
 
         assert_eq!(
-            anchor.to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            anchor
+                .resets_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
             "2026-06-29T08:30:00Z"
         );
+        assert_eq!(
+            anchor.source_path,
+            "/payload/rate_limits/five_hour/resets_at"
+        );
+    }
+
+    #[test]
+    fn extracts_server_reset_anchor_from_nested_429_usage_limit_payload() {
+        let record: Value = serde_json::from_str(
+            r#"{"type":"error","payload":{"status":429,"error":{"usage_limit":{"reset_time":"2026-06-29T08:30:00Z"}}}}"#,
+        )
+        .expect("parse record");
+
+        let anchor = extract_server_reset_anchor(&record).expect("server reset anchor");
+
+        assert_eq!(
+            anchor
+                .resets_at
+                .to_rfc3339_opts(chrono::SecondsFormat::Secs, true),
+            "2026-06-29T08:30:00Z"
+        );
+        assert_eq!(anchor.source_path, "/payload/error/usage_limit/reset_time");
     }
 
     #[test]
@@ -790,6 +905,30 @@ mod tests {
         assert_eq!(
             payload["usage"]["latest_timestamp"].as_str(),
             Some("2026-06-28T10:01:00Z")
+        );
+        assert!(payload["usage"]["latest_server_reset_anchor"].is_null());
+    }
+
+    #[test]
+    fn raw_payload_exposes_latest_server_reset_anchor_for_diagnostics() {
+        let candidate_roots = vec![PathBuf::from("/tmp/.config/claude/projects")];
+        let scanned_roots = candidate_roots.clone();
+        let mut usage = sample_usage();
+        usage.latest_server_reset_anchor = Some(ServerResetAnchor {
+            resets_at: parse_timestamp("2026-06-29T08:30:00Z").expect("parse anchor"),
+            source_path: "/payload/error/usage_limit/reset_time".to_string(),
+        });
+
+        let raw = encode_raw(&candidate_roots, &scanned_roots, Some(&usage)).expect("encode raw");
+        let payload: Value = serde_json::from_str(&raw).expect("parse raw json");
+
+        assert_eq!(
+            payload["usage"]["latest_server_reset_anchor"]["resets_at"].as_str(),
+            Some("2026-06-29T08:30:00Z")
+        );
+        assert_eq!(
+            payload["usage"]["latest_server_reset_anchor"]["source_path"].as_str(),
+            Some("/payload/error/usage_limit/reset_time")
         );
     }
 }
