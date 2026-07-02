@@ -1,4 +1,5 @@
 use std::io;
+use std::process::{Command, Stdio};
 
 use chrono::Utc;
 
@@ -10,9 +11,19 @@ use crate::types::{
 const CODEX_COMMAND: &str = "codex";
 const PROVIDER: &str = "codex";
 const SOURCE: &str = "codex_cli";
-const SOURCE_LINK: &str = "docs/get-info/providers/codex.md";
+const SOURCE_LINK: &str = "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md";
+const SETUP_LINK: &str = SOURCE_LINK;
 
 pub fn collect_usage() -> io::Result<SourceData> {
+    if !command_is_available(CODEX_COMMAND) {
+        return Ok(unavailable_source_data(
+            None,
+            &format!(
+                "Codex CLI is not installed or is not available in PATH; install `codex` and try again. Setup: {SETUP_LINK}"
+            ),
+        ));
+    }
+
     let run = run_provider(&expect_script())?;
     let raw = run.compacted_stdout;
     let mut structured = build_structured(&raw);
@@ -64,12 +75,28 @@ pub fn build_structured(raw: &str) -> StructuredSourceInfo {
         }
     }
 
-    let (data_available, message) = if found_data {
-        (true, None)
+    let auth_required = output_requires_authorization(raw);
+    let (access_available, data_available, message) = if found_data {
+        (true, true, None)
+    } else if auth_required {
+        (
+            false,
+            false,
+            Some(
+                format!(
+                    "Codex CLI is installed but not authorized; run `codex login` and try again. Setup: {SETUP_LINK}"
+                ),
+            ),
+        )
     } else if raw.trim().is_empty() {
-        (false, Some("Codex CLI returned empty output".to_string()))
+        (
+            true,
+            false,
+            Some("Codex CLI returned empty output".to_string()),
+        )
     } else {
         (
+            true,
             false,
             Some("supported limit lines not found in Codex CLI output".to_string()),
         )
@@ -83,7 +110,7 @@ pub fn build_structured(raw: &str) -> StructuredSourceInfo {
         source_link: SOURCE_LINK.to_string(),
         status: SourceStatus {
             data_available,
-            access_available: true,
+            access_available,
             message,
         },
         raw_data_available: !raw.trim().is_empty(),
@@ -94,6 +121,56 @@ pub fn build_structured(raw: &str) -> StructuredSourceInfo {
         usage: UsageInfo::default(),
         diagnostics,
     }
+}
+
+fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
+    let raw_data_available = raw.as_ref().is_some_and(|value| !value.trim().is_empty());
+
+    SourceData {
+        raw,
+        structured: StructuredSourceInfo {
+            provider: PROVIDER.to_string(),
+            source: SOURCE.to_string(),
+            source_link: SOURCE_LINK.to_string(),
+            status: SourceStatus {
+                data_available: false,
+                access_available: false,
+                message: Some(message.to_string()),
+            },
+            raw_data_available,
+            collected_at: Some(Utc::now().format("%Y-%m-%dT%H:%M:%SZ").to_string()),
+            data_as_of: None,
+            account: AccountInfo::default(),
+            limits: Vec::new(),
+            usage: UsageInfo::default(),
+            diagnostics: Vec::new(),
+        },
+        stderr: String::new(),
+    }
+}
+
+fn command_is_available(command: &str) -> bool {
+    Command::new(command)
+        .arg("--version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok()
+}
+
+fn output_requires_authorization(raw: &str) -> bool {
+    let compact = raw
+        .chars()
+        .filter(|character| character.is_ascii_alphanumeric())
+        .collect::<String>()
+        .to_ascii_lowercase();
+
+    compact.contains("signin")
+        || compact.contains("login")
+        || compact.contains("notauthenticated")
+        || compact.contains("authenticationrequired")
+        || compact.contains("authorizationrequired")
 }
 
 fn normalize_line(raw_line: &str) -> String {
@@ -305,6 +382,35 @@ Credits: 335 credits
         assert_eq!(
             info.status.message.as_deref(),
             Some("Codex CLI returned empty output")
+        );
+    }
+
+    #[test]
+    fn build_structured_marks_authorization_required() {
+        let info = build_structured("OpenAI Codex\nSign in with ChatGPT to continue\n");
+
+        assert!(!info.status.access_available);
+        assert!(!info.status.data_available);
+        assert!(info.raw_data_available);
+        assert_eq!(
+            info.status.message.as_deref(),
+            Some("Codex CLI is installed but not authorized; run `codex login` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md")
+        );
+    }
+
+    #[test]
+    fn unavailable_source_data_marks_cli_not_installed() {
+        let data = unavailable_source_data(
+            None,
+            "Codex CLI is not installed or is not available in PATH; install `codex` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md",
+        );
+
+        assert!(!data.structured.status.access_available);
+        assert!(!data.structured.status.data_available);
+        assert!(!data.structured.raw_data_available);
+        assert_eq!(
+            data.structured.status.message.as_deref(),
+            Some("Codex CLI is not installed or is not available in PATH; install `codex` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md")
         );
     }
 

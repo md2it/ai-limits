@@ -1,4 +1,5 @@
 use std::io;
+use std::process::{Command, Stdio};
 
 use chrono::Utc;
 
@@ -11,9 +12,19 @@ use crate::types::{
 const CLAUDE_COMMAND: &str = "claude";
 const PROVIDER: &str = "claude";
 const SOURCE: &str = "claude_cli";
-const SOURCE_LINK: &str = "docs/get-info";
+const SOURCE_LINK: &str = "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md";
+const SETUP_LINK: &str = SOURCE_LINK;
 
 pub fn get_usage() -> io::Result<SourceData> {
+    if !command_is_available(CLAUDE_COMMAND) {
+        return Ok(unavailable_source_data(
+            None,
+            &format!(
+                "Claude CLI is not installed or is not available in PATH; install `claude` and try again. Setup: {SETUP_LINK}"
+            ),
+        ));
+    }
+
     let run = capture_provider_run()?;
     Ok(build_source_data(&run))
 }
@@ -50,8 +61,12 @@ pub fn structured_from_output(stdout: &str) -> StructuredSourceInfo {
         (
             SourceStatus {
                 data_available: false,
-                access_available: true,
-                message: Some("Claude CLI is not ready: interactive setup is required".to_string()),
+                access_available: false,
+                message: Some(
+                    format!(
+                        "Claude CLI is installed but not authorized; run `claude login` and try again. Setup: {SETUP_LINK}"
+                    )
+                ),
             },
             Vec::new(),
             UsageInfo::default(),
@@ -95,6 +110,42 @@ pub fn structured_from_output(stdout: &str) -> StructuredSourceInfo {
         usage,
         diagnostics,
     }
+}
+
+fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
+    let raw_data_available = raw.as_ref().is_some_and(|value| !value.trim().is_empty());
+
+    SourceData {
+        raw,
+        structured: StructuredSourceInfo {
+            provider: PROVIDER.to_string(),
+            source: SOURCE.to_string(),
+            source_link: SOURCE_LINK.to_string(),
+            status: SourceStatus {
+                data_available: false,
+                access_available: false,
+                message: Some(message.to_string()),
+            },
+            raw_data_available,
+            collected_at: Some(utc_now()),
+            data_as_of: None,
+            account: Default::default(),
+            limits: Vec::new(),
+            usage: UsageInfo::default(),
+            diagnostics: Vec::new(),
+        },
+        stderr: String::new(),
+    }
+}
+
+fn command_is_available(command: &str) -> bool {
+    Command::new(command)
+        .arg("--version")
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .is_ok()
 }
 
 fn utc_now() -> String {
@@ -405,7 +456,7 @@ Usage: 0input,0output,0cacheread,0cachewrite
 
         assert_eq!(structured.provider, "claude");
         assert_eq!(structured.source, "claude_cli");
-        assert_eq!(structured.source_link, "docs/get-info");
+        assert_eq!(structured.source_link, SOURCE_LINK);
         assert!(structured.status.access_available);
         assert!(structured.status.data_available);
         assert!(structured.status.message.is_none());
@@ -449,13 +500,29 @@ Usage: 0input,0output,0cacheread,0cachewrite
         let input = "Select login method\nChoose the text style\n";
         let structured = structured_from_output(input);
 
-        assert!(structured.status.access_available);
+        assert!(!structured.status.access_available);
         assert!(!structured.status.data_available);
         assert_eq!(
             structured.status.message.as_deref(),
-            Some("Claude CLI is not ready: interactive setup is required")
+            Some("Claude CLI is installed but not authorized; run `claude login` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md")
         );
         assert!(structured.limits.is_empty());
+    }
+
+    #[test]
+    fn unavailable_source_data_marks_cli_not_installed() {
+        let data = unavailable_source_data(
+            None,
+            "Claude CLI is not installed or is not available in PATH; install `claude` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md",
+        );
+
+        assert!(!data.structured.status.access_available);
+        assert!(!data.structured.status.data_available);
+        assert!(!data.structured.raw_data_available);
+        assert_eq!(
+            data.structured.status.message.as_deref(),
+            Some("Claude CLI is not installed or is not available in PATH; install `claude` and try again. Setup: https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md")
+        );
     }
 
     #[test]
