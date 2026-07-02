@@ -27,6 +27,7 @@ The config file is TOML.
 ```toml
 default_sources = [
   "codex_local",
+  "claude_statusline_rate_limits",
   "claude_local",
   "cursor_api2"
 ]
@@ -44,7 +45,7 @@ Valid identifiers: `codex_local`, `codex_cli`, `claude_statusline_rate_limits`, 
 Built-in default, used when the config does not set this key or the config file does not exist:
 
 ```toml
-default_sources = ["codex_local", "claude_local", "cursor_api2"]
+default_sources = ["codex_local", "claude_statusline_rate_limits", "claude_local", "cursor_api2"]
 ```
 
 `--all`/`-a` ignores `default_sources` and queries every current source.
