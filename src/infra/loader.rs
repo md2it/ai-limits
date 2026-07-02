@@ -7,6 +7,8 @@ use chrono::{DateTime, Local};
 const TOP_FRAME: &str = "=-=-=-=-=-=-=-=-=-=-=-=-= AI LIMITS =-=-=-=-=-=-=-=-=-=-=-=-";
 const FRAME_WIDTH: usize = 60;
 const BOTTOM_DECORATION: &str = "=-=-=-=-=-=-=-=-=";
+const PROVIDER_HEADING_INDENT: usize = 5;
+const PROVIDER_HEADING_WIDTH: usize = 25;
 const LOADER_SHOW_DELAY: Duration = Duration::from_millis(350);
 const UNICODE_SPINNER_FRAMES: [&str; 10] = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
 const ASCII_SPINNER_FRAMES: [&str; 4] = ["-", "\\", "|", "/"];
@@ -32,6 +34,7 @@ pub struct TerminalUi {
     interactive: bool,
     unicode: bool,
     loader_lines: usize,
+    provider_block_printed: bool,
     static_loaders_rendered: bool,
 }
 
@@ -44,6 +47,7 @@ impl TerminalUi {
             interactive,
             unicode,
             loader_lines: 0,
+            provider_block_printed: false,
             static_loaders_rendered: false,
         }
     }
@@ -66,8 +70,7 @@ impl TerminalUi {
 
     pub fn print_provider_heading(&mut self, heading: &str) -> io::Result<()> {
         println!();
-        println!("            ---------- {heading} ----------");
-        println!();
+        println!("{}", format_provider_heading(heading));
         Ok(())
     }
 
@@ -76,17 +79,21 @@ impl TerminalUi {
         self.print_provider_heading(heading)?;
         print!("{}", body.trim_end());
         println!();
-        println!();
+        self.provider_block_printed = true;
         io::stdout().flush()
     }
 
     pub fn render_loaders(&mut self, loaders: &[LoaderView<'_>]) -> io::Result<()> {
         if self.interactive {
             self.clear_loaders()?;
+            let leading_gap = self.provider_block_printed;
+            if leading_gap {
+                println!();
+            }
             for loader in loaders {
                 println!("{}", self.format_loader(loader));
             }
-            self.loader_lines = loaders.len();
+            self.loader_lines = loader_display_lines(loaders.len(), leading_gap);
             io::stdout().flush()?;
             return Ok(());
         }
@@ -95,6 +102,10 @@ impl TerminalUi {
             return Ok(());
         }
 
+        let leading_gap = self.provider_block_printed;
+        if leading_gap {
+            println!();
+        }
         for loader in loaders {
             println!("{}", self.format_loader(loader));
         }
@@ -170,6 +181,25 @@ fn move_cursor_up(lines: usize) {
     }
 }
 
+fn loader_display_lines(loader_count: usize, leading_gap: bool) -> usize {
+    loader_count + usize::from(leading_gap)
+}
+
+fn format_provider_heading(heading: &str) -> String {
+    let dash_count = PROVIDER_HEADING_WIDTH
+        .saturating_sub(heading.len())
+        .saturating_sub(2);
+    let left_dashes = (dash_count + 1) / 2;
+    let right_dashes = dash_count / 2;
+
+    format!(
+        "{}{} {heading} {}",
+        " ".repeat(PROVIDER_HEADING_INDENT),
+        "-".repeat(left_dashes),
+        "-".repeat(right_dashes)
+    )
+}
+
 fn format_bottom_frame(status: TerminalStatus, completed_at: DateTime<Local>) -> String {
     let body = format!(
         " {} {} ",
@@ -191,7 +221,10 @@ fn format_bottom_frame(status: TerminalStatus, completed_at: DateTime<Local>) ->
 mod tests {
     use chrono::{Local, TimeZone};
 
-    use super::{format_bottom_frame, TerminalStatus, BOTTOM_DECORATION, FRAME_WIDTH};
+    use super::{
+        format_bottom_frame, format_provider_heading, loader_display_lines, TerminalStatus,
+        BOTTOM_DECORATION, FRAME_WIDTH,
+    };
 
     #[test]
     fn bottom_frame_keeps_width_and_symmetric_decoration() {
@@ -216,5 +249,23 @@ mod tests {
             format_bottom_frame(TerminalStatus::Done, completed_at),
             "=-=-=-=-=-=-=-=-= DONE 2026-07-02 15:04:05 =-=-=-=-=-=-=-=-="
         );
+    }
+
+    #[test]
+    fn provider_heading_aligns_with_limit_bar_column() {
+        assert_eq!(
+            format_provider_heading("CURSOR"),
+            "     --------- CURSOR --------"
+        );
+        assert_eq!(
+            format_provider_heading("CODEX"),
+            "     --------- CODEX ---------"
+        );
+    }
+
+    #[test]
+    fn loader_display_lines_include_gap_after_provider_block() {
+        assert_eq!(loader_display_lines(2, false), 2);
+        assert_eq!(loader_display_lines(2, true), 3);
     }
 }
