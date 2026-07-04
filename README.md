@@ -35,6 +35,7 @@ For the user, the app acts as a local assistant: it collects available usage and
 - `--help`, `-h`
 - `--init-config`
 - `--all`, `-a`
+- `--best`, `-b`
 - `--watch`, `-w`
 - `--usage`
 - `--raw`, `-r`
@@ -79,7 +80,7 @@ raw -> structured -> default
 - **Claude**
   - **statusline** (`--claude-statusline`) — reads live `rate_limits` from Claude Code statusline cache/stdin payload (5h/7d windows, reset).
   - **CLI** (`--claude-cli`) — reads limits via the Claude CLI `/usage` command.
-  - **local** (`--claude-local`, default) — aggregates token usage history from local transcript JSONL files.
+  - **local** (`--claude-local`) — aggregates token usage history from local transcript JSONL files.
 - **Cursor** (`--cursor-api2`) — reads usage from `api2.cursor.sh` using a token from `cursor agent login`; if the API is unavailable, falls back to `cursor agent about/status`.
 - **Watch mode** (`--watch`, `-w`) — repeats the query on an interval (`--watch=10m`); without a value, the interval comes from the config.
 - **Config** — optional `~/.config/ai-limits/config.toml`; create with `--init-config`.
@@ -104,7 +105,7 @@ Query only selected sources by passing source flags:
 ./bin/ai-limits --codex-local --cursor-api2
 ```
 
-`--all` and `-a` force all current sources, even when the config defines a narrower default. When no source is selected, the command uses config defaults.
+When no source is selected and no config is present, the command uses fast free sources. `--best`/`-b` asks for the best available result per provider and may fall back to CLI-backed sources. `--all`/`-a` forces all current sources separately, even when the config defines a narrower default.
 
 Repeat the query on an interval:
 

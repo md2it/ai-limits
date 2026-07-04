@@ -25,12 +25,8 @@ ai-limits --init-config
 The config file is TOML.
 
 ```toml
-default_sources = [
-  "codex_local",
-  "claude_statusline",
-  "claude_local",
-  "cursor_api2"
-]
+# Leave empty to use the built-in fast free provider chains.
+default_sources = []
 watch_interval = "5m"
 ```
 
@@ -38,17 +34,19 @@ watch_interval = "5m"
 
 ### `default_sources`
 
-A list of source identifiers queried when the command runs without explicit source flags and without `--all`.
+A list of source identifiers queried when the command runs without explicit source flags and without `--all` or `--best`.
 
 Valid identifiers: `codex_local`, `codex_cli`, `claude_statusline`, `claude_cli`, `claude_local`, `cursor_api2`.
 
-Built-in default, used when the config does not set this key or the config file does not exist:
+When `default_sources` is empty, not set, or the config file does not exist, the command uses built-in fast free provider chains:
 
-```toml
-default_sources = ["codex_local", "claude_statusline", "claude_local", "cursor_api2"]
+```text
+Codex: codex_local
+Claude: claude_statusline -> claude_local
+Cursor: cursor_api2
 ```
 
-`--all`/`-a` ignores `default_sources` and queries every current source.
+`--best`/`-b` ignores `default_sources` and uses best-source provider chains. `--all`/`-a` ignores `default_sources` and queries every current source separately.
 
 ### `watch_interval`
 

@@ -21,10 +21,11 @@ Options:
   --help, -h       Show this help
   --init-config    Create / overwrite the user config file
   --all, -a        Query all current sources, ignoring config defaults
+  --best, -b       Query best available source per provider
+  --watch, -w      Repeat the query on an interval
   --usage          Show user-facing usage summary
   --raw, -r        Return raw source data
   --structured, -s Return structured source data
-  --watch, -w      Repeat the query on an interval
 
 Technical source options:
   --codex-local       Query Codex from local session JSONL files
@@ -36,16 +37,18 @@ Technical source options:
 
 Examples:
   ai-limits --all
+  ai-limits --best
+  ai-limits --watch
+  ai-limits --watch=10m
   ai-limits --all --usage
   ai-limits --all --raw
   ai-limits --all --structured
-  ai-limits --watch
-  ai-limits --watch=10m
 
 Config:
   ~/.config/ai-limits/config.toml
 
-  default_sources = ["codex_local", "claude_local", "cursor_api2"]
+  # Leave empty to use the built-in fast free provider chains.
+  default_sources = []
   watch_interval = "5m"
 
 
@@ -54,6 +57,28 @@ Config:
 ```
 
 Default output is the user-facing limits presentation. `--usage` is the user-facing usage presentation. `--raw` and `--structured` are technical output modes for source-level data. They support development, testing, and provider contract checks. `--watch` repeats the default query on an interval; see [Watch Mode](#watch-mode).
+
+Without a config file and without explicit source flags, default limits output uses fast free provider chains:
+
+```text
+Codex: codex-local
+Claude: claude-statusline -> claude-local
+Cursor: cursor-api2
+```
+
+`--best`/`-b` uses provider fallback chains and prints one selected block per provider:
+
+```text
+Codex: codex-local -> codex-cli
+Claude: claude-statusline -> claude-local -> claude-cli
+Cursor: cursor-api2
+```
+
+Fallback chains print only the selected source report for each provider. Failed earlier attempts are not printed unless that source is selected directly or through `--all`.
+
+`--best` applies to limits output and can be combined with `--raw` or `--structured` for the selected source reports. It cannot be combined with `--usage`.
+
+`--all` prints every current source separately and does not apply best-source fallback.
 
 Technical source options are working source selectors, but they are primarily intended for intermediate source-level workflows.
 
@@ -353,6 +378,7 @@ src/infra/loader.rs
 
 src/get_limits.rs
   - calls provider methods
+  - selects fallback chains for default and best-source runs
   - returns normalized SourceReport
 
 src/providers/*

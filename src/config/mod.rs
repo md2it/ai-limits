@@ -8,12 +8,8 @@ pub struct Config {
 }
 
 const DEFAULT_CONFIG: &str = "\
-default_sources = [
-  \"codex_local\",
-  \"claude_statusline\",
-  \"claude_local\",
-  \"cursor_api2\"
-]
+# Leave empty to use the built-in fast free provider chains.
+default_sources = []
 watch_interval = \"5m\"
 ";
 
@@ -183,15 +179,7 @@ mod tests {
     fn parses_default_config_sources() {
         let parsed = parse_config(DEFAULT_CONFIG).expect("default config should parse");
 
-        assert_eq!(
-            parsed.default_sources,
-            vec![
-                Source::CodexLocal,
-                Source::ClaudeStatusline,
-                Source::ClaudeLocal,
-                Source::CursorApi2
-            ]
-        );
+        assert_eq!(parsed.default_sources, Vec::<Source>::new());
         assert_eq!(parsed.watch_interval, Duration::from_secs(5 * 60));
     }
 

@@ -36,7 +36,7 @@ src/
 
 Purpose:
 
-- `cli/` — terminal interface, arguments, output, exit codes
+- `cli/` — terminal interface, arguments, retrieval scenario flags, output, exit codes
 - `config/` — user settings, defaults, and paths to config files
 - `infra/` — technical primitives for processes, HTTP, and timeouts
 - `presentation/` — user-facing display models built from structured data
@@ -53,11 +53,14 @@ Module rules:
 
 - `cli/` does not fetch data from providers directly
 - `cli/` calls the shared core and is responsible only for terminal behavior
+- `cli/` parses `--best`/`-b` and passes the selected retrieval scenario to the shared core
 - `cli/` renders presentation output but does not decide user-facing limit semantics
 - `presentation/` converts structured data into user-facing provider blocks
 - `presentation/` selects display labels, limit rows, bar values, and fallback messages
+- `presentation/` renders the selected source report and does not decide fallback order
 - `presentation/` does not fetch data, read files, run commands, or call provider methods
-- `get_limits.rs` coordinates config, providers, and fallback logic
+- `get_limits.rs` coordinates provider method selection and fallback logic
+- `get_limits.rs` owns provider fallback chains for default and best-source runs
 - `get_limits.rs` does not run processes or HTTP directly when that can be delegated to provider/infra
 - `get_limits.rs` does not format terminal output
 - `providers/` does not format terminal output
@@ -103,7 +106,7 @@ Purpose:
 
 - select enabled provider methods
 - call provider methods in the right order
-- apply fallback logic
+- apply provider fallback-chain logic for default and best-source runs
 - assemble a shared result for the CLI and the future desktop
 
 Boundaries:
@@ -129,6 +132,7 @@ Responsibilities:
 - build 25-character remaining-limit bars;
 - choose `Source {source}` text from structured `source` and `data_as_of`;
 - prepare unavailable or no-data messages from structured status data.
+- render the selected source report; fallback order is decided before presentation.
 
 Boundaries:
 

@@ -5,6 +5,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, Instant};
 
+use crate::get_limits::SourcePlan;
 use crate::infra::loader::{
     loader_show_delay, loader_tick, LoaderView, TerminalStatus, TerminalUi,
 };
@@ -42,10 +43,10 @@ fn run_cli() -> io::Result<TerminalStatus> {
     }
 
     if args.init_config {
-        if args.all || !args.sources.is_empty() || args.watch.is_some() {
+        if args.all || args.best || !args.sources.is_empty() || args.watch.is_some() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "--init-config cannot be combined with source flags, --all, or --watch",
+                "--init-config cannot be combined with source flags, --all, --best, or --watch",
             ));
         }
 
@@ -56,37 +57,37 @@ fn run_cli() -> io::Result<TerminalStatus> {
     let config = crate::config::load()?;
     let watch_interval = resolve_watch_interval(&args, config.as_ref());
     let output_mode = args.output_mode;
-    let sources = resolve_sources(args, config)?;
+    let plan = resolve_source_plan(args, config)?;
 
     if let Some(interval) = watch_interval {
         loop {
-            run_once(&sources, output_mode)?;
+            run_once(&plan, output_mode)?;
             thread::sleep(interval);
         }
     }
 
-    let status = run_once(&sources, output_mode)?;
+    let status = run_once(&plan, output_mode)?;
 
     Ok(status)
 }
 
-fn run_once(sources: &[Source], output_mode: OutputMode) -> io::Result<TerminalStatus> {
+fn run_once(plan: &[SourcePlan], output_mode: OutputMode) -> io::Result<TerminalStatus> {
     let mut ui = TerminalUi::new();
     ui.print_top()?;
-    let status = run_sources_with_terminal_ui(&mut ui, sources, output_mode)?;
+    let status = run_sources_with_terminal_ui(&mut ui, plan, output_mode)?;
     ui.print_bottom(status)?;
     Ok(status)
 }
 
 struct RunningSource {
-    source: Source,
+    label: &'static str,
     started_at: Instant,
     loader_shown: bool,
     loader_frame: usize,
 }
 
 struct SourceEvent {
-    source: Source,
+    label: &'static str,
     result: io::Result<SourceReport>,
 }
 
@@ -149,10 +150,10 @@ fn read_overwrite_confirmation(
 
 fn run_sources_with_terminal_ui(
     ui: &mut TerminalUi,
-    sources: &[Source],
+    plan: &[SourcePlan],
     output_mode: OutputMode,
 ) -> io::Result<TerminalStatus> {
-    if sources.is_empty() {
+    if plan.is_empty() {
         return Ok(TerminalStatus::Fail);
     }
 
@@ -160,18 +161,19 @@ fn run_sources_with_terminal_ui(
     let (sender, receiver) = mpsc::channel::<SourceEvent>();
     let mut running = Vec::new();
 
-    for source in sources {
-        let source = *source;
+    for target in plan {
+        let target = *target;
+        let label = target.label();
         let sender = sender.clone();
         running.push(RunningSource {
-            source,
+            label,
             started_at: Instant::now(),
             loader_shown: false,
             loader_frame: 0,
         });
         thread::spawn(move || {
-            let result = crate::get_limits::get_source_limits(source);
-            let _ = sender.send(SourceEvent { source, result });
+            let result = crate::get_limits::get_source_plan_limits(target);
+            let _ = sender.send(SourceEvent { label, result });
         });
     }
     drop(sender);
@@ -187,7 +189,7 @@ fn run_sources_with_terminal_ui(
             Ok(event) => {
                 if let Some(index) = running
                     .iter()
-                    .position(|running| running.source == event.source)
+                    .position(|running| running.label == event.label)
                 {
                     running.remove(index);
                 }
@@ -200,7 +202,7 @@ fn run_sources_with_terminal_ui(
                     }
                     Err(error) => {
                         failures += 1;
-                        let block = failed_source_block(event.source, &error.to_string());
+                        let block = failed_source_block(event.label, &error.to_string());
                         ui.print_provider_block(&block.provider_label, &block.body)?;
                     }
                 }
@@ -245,16 +247,17 @@ fn print_source_report(
     ui.print_provider_block(&block.provider_label, &block.body)
 }
 
-fn failed_source_block(source: Source, error: &str) -> ProviderBlock {
-    let provider = match source {
-        Source::CodexLocal | Source::CodexCli => "CODEX",
-        Source::ClaudeStatusline | Source::ClaudeCli | Source::ClaudeLocal => "CLAUDE",
-        Source::CursorApi2 => "CURSOR",
+fn failed_source_block(label: &str, error: &str) -> ProviderBlock {
+    let provider = match label {
+        "codex" | "codex-local" | "codex-cli" => "CODEX",
+        "claude" | "claude-statusline" | "claude-cli" | "claude-local" => "CLAUDE",
+        "cursor" | "cursor-api2" => "CURSOR",
+        _ => "AI LIMITS",
     };
 
     ProviderBlock {
         provider_label: provider.to_string(),
-        body: format!("Unavailable: {error}\nSource {}: unknown", source.label()),
+        body: format!("Unavailable: {error}\nSource {label}: unknown"),
     }
 }
 
@@ -272,7 +275,7 @@ fn render_running_loaders(ui: &mut TerminalUi, running: &mut [RunningSource]) ->
         .iter()
         .filter(|running| running.loader_shown)
         .map(|running| LoaderView {
-            label: running.source.label(),
+            label: running.label,
             frame: running.loader_frame,
         })
         .collect::<Vec<_>>();
@@ -288,6 +291,7 @@ struct CliArgs {
     help: bool,
     init_config: bool,
     all: bool,
+    best: bool,
     watch: Option<Option<Duration>>,
     output_mode: OutputMode,
     sources: Vec<Source>,
@@ -306,6 +310,7 @@ fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
         help: false,
         init_config: false,
         all: false,
+        best: false,
         watch: None,
         output_mode: OutputMode::Limits,
         sources: Vec::new(),
@@ -323,6 +328,9 @@ fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
             }
             "-a" | "--all" => {
                 parsed.all = true;
+            }
+            "-b" | "--best" => {
+                parsed.best = true;
             }
             "-w" | "--watch" => {
                 parsed.watch = Some(None);
@@ -416,6 +424,7 @@ Options:
   --help, -h       Show this help
   --init-config    Create / overwrite the user config file
   --all, -a        Query all current sources, ignoring config defaults
+  --best, -b       Query best available source per provider
   --watch, -w      Repeat the query on an interval
   --usage          Show user-facing usage summary
   --raw, -r        Return raw source data
@@ -431,6 +440,7 @@ Technical source options:
 
 Examples:
   ai-limits --all
+  ai-limits --best
   ai-limits --watch
   ai-limits --watch=10m
   ai-limits --all --usage
@@ -440,7 +450,8 @@ Examples:
 Config:
   ~/.config/ai-limits/config.toml
 
-  default_sources = [\"codex_local\", \"claude_statusline\", \"claude_local\", \"cursor_api2\"]
+  # Leave empty to use the built-in fast free provider chains.
+  default_sources = []
   watch_interval = \"5m\"
 "
     );
@@ -461,10 +472,10 @@ fn resolve_watch_interval(
     }
 }
 
-fn resolve_sources(
+fn resolve_source_plan(
     args: CliArgs,
     config: Option<crate::config::Config>,
-) -> io::Result<Vec<Source>> {
+) -> io::Result<Vec<SourcePlan>> {
     if args.all && !args.sources.is_empty() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidInput,
@@ -472,22 +483,47 @@ fn resolve_sources(
         ));
     }
 
+    if args.best && args.all {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--best cannot be combined with --all",
+        ));
+    }
+
+    if args.best && !args.sources.is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--best cannot be combined with source flags",
+        ));
+    }
+
+    if args.best && args.output_mode == OutputMode::Usage {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "--best cannot be combined with --usage",
+        ));
+    }
+
+    if args.best {
+        return Ok(crate::get_limits::best_source_plan());
+    }
+
     if args.all {
-        return Ok(Source::ALL.to_vec());
+        return Ok(crate::get_limits::source_list_plan(Source::ALL.to_vec()));
     }
 
     if !args.sources.is_empty() {
-        return Ok(args.sources);
+        return Ok(crate::get_limits::source_list_plan(args.sources));
     }
 
     let Some(config) = config else {
-        return Ok(Source::DEFAULTS.to_vec());
+        return Ok(crate::get_limits::default_source_plan());
     };
 
     if config.default_sources.is_empty() {
-        Ok(Source::DEFAULTS.to_vec())
+        Ok(crate::get_limits::default_source_plan())
     } else {
-        Ok(config.default_sources)
+        Ok(crate::get_limits::source_list_plan(config.default_sources))
     }
 }
 
@@ -503,9 +539,9 @@ mod tests {
     #[test]
     fn uses_required_defaults_without_config() {
         let args = parse(&[]);
-        let selected = resolve_sources(args, None).expect("defaults should resolve");
+        let selected = resolve_source_plan(args, None).expect("defaults should resolve");
 
-        assert_eq!(selected, Source::DEFAULTS.to_vec());
+        assert_eq!(selected, crate::get_limits::default_source_plan());
     }
 
     #[test]
@@ -516,9 +552,29 @@ mod tests {
             watch_interval: Duration::from_secs(60),
         };
         let selected =
-            resolve_sources(args, Some(config)).expect("explicit source flags should win");
+            resolve_source_plan(args, Some(config)).expect("explicit source flags should win");
 
-        assert_eq!(selected, vec![Source::CodexCli, Source::ClaudeLocal]);
+        assert_eq!(
+            selected,
+            vec![
+                SourcePlan::Single(Source::CodexCli),
+                SourcePlan::Single(Source::ClaudeLocal)
+            ]
+        );
+    }
+
+    #[test]
+    fn supports_best_flag_and_short_alias() {
+        assert!(parse(&["--best"]).best);
+        assert!(parse(&["-b"]).best);
+    }
+
+    #[test]
+    fn best_flag_selects_best_source_plan() {
+        let args = parse(&["--best"]);
+        let selected = resolve_source_plan(args, None).expect("best plan should resolve");
+
+        assert_eq!(selected, crate::get_limits::best_source_plan());
     }
 
     #[test]
@@ -591,6 +647,13 @@ mod tests {
         assert!(parse_args(["--raw", "--structured"].into_iter().map(String::from)).is_err());
         assert!(parse_args(["--usage", "--raw"].into_iter().map(String::from)).is_err());
         assert!(parse_args(["-s", "-r"].into_iter().map(String::from)).is_err());
+    }
+
+    #[test]
+    fn rejects_best_with_all_usage_or_source_flags() {
+        assert!(resolve_source_plan(parse(&["--best", "--all"]), None).is_err());
+        assert!(resolve_source_plan(parse(&["--best", "--usage"]), None).is_err());
+        assert!(resolve_source_plan(parse(&["--best", "--claude-local"]), None).is_err());
     }
 
     #[test]
