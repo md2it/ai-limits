@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 
 use chrono::Utc;
 
-use crate::infra::process::run_provider;
+use crate::infra::process::{cli_process_path, run_provider};
 use crate::types::{
     LimitInfo, MoneyUsage, ProviderRun, SourceData, SourceStatus, StructuredSourceInfo, TokenUsage,
     UsageInfo,
@@ -141,6 +141,7 @@ fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
 fn command_is_available(command: &str) -> bool {
     Command::new(command)
         .arg("--version")
+        .env("PATH", cli_process_path())
         .stdin(Stdio::null())
         .stdout(Stdio::null())
         .stderr(Stdio::null())

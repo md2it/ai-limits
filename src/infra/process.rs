@@ -1,3 +1,5 @@
+use std::env;
+use std::ffi::OsString;
 use std::io::{self, Read};
 use std::process::{Command, Stdio};
 use std::thread;
@@ -13,6 +15,7 @@ const PROCESS_TIMEOUT: Duration = Duration::from_secs(60);
 pub fn run_provider(expect_script: &str) -> io::Result<ProviderRun> {
     let mut child = Command::new(EXPECT_COMMAND)
         .args(["-c", expect_script])
+        .env("PATH", cli_process_path())
         .env("TERM", "xterm-256color")
         .env("COLUMNS", "120")
         .env("LINES", "40")
@@ -59,6 +62,27 @@ pub fn run_provider(expect_script: &str) -> io::Result<ProviderRun> {
         compacted_stdout,
         stderr,
     })
+}
+
+pub fn cli_process_path() -> OsString {
+    let current_path = env::var_os("PATH").unwrap_or_default();
+    let mut paths: Vec<_> = env::split_paths(&current_path).collect();
+
+    for path in [
+        "/usr/local/bin",
+        "/usr/bin",
+        "/bin",
+        "/usr/sbin",
+        "/sbin",
+        "/opt/homebrew/bin",
+    ] {
+        let path = path.into();
+        if !paths.contains(&path) {
+            paths.push(path);
+        }
+    }
+
+    env::join_paths(paths).unwrap_or(current_path)
 }
 
 fn read_stream<R>(mut stream: R) -> thread::JoinHandle<String>
