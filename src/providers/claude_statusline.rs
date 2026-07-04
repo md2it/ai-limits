@@ -15,7 +15,7 @@ use crate::types::{
 const STDIN_HOOK_READ_TIMEOUT: Duration = Duration::from_millis(500);
 const CACHE_MAX_AGE: Duration = Duration::from_secs(600);
 const PROVIDER: &str = "claude";
-const SOURCE: &str = "claude_statusline_rate_limits";
+const SOURCE: &str = "claude_statusline";
 const SOURCE_LINK: &str = "docs/get-info/providers/claude.md";
 const CACHE_FILE_NAME: &str = "claude-statusline.json";
 const STATUSLINE_NOT_CONFIGURED_MESSAGE: &str = concat!(
@@ -609,7 +609,7 @@ mod tests {
 
         assert_eq!(data.raw.as_deref(), Some(SAMPLE_PAYLOAD));
         assert_eq!(structured.provider, "claude");
-        assert_eq!(structured.source, "claude_statusline_rate_limits");
+        assert_eq!(structured.source, "claude_statusline");
         assert_eq!(structured.source_link, SOURCE_LINK);
         assert!(structured.status.data_available);
         assert!(structured.status.access_available);

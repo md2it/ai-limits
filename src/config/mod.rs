@@ -10,7 +10,7 @@ pub struct Config {
 const DEFAULT_CONFIG: &str = "\
 default_sources = [
   \"codex_local\",
-  \"claude_statusline_rate_limits\",
+  \"claude_statusline\",
   \"claude_local\",
   \"cursor_api2\"
 ]
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     fn parse_config_accepts_claude_statusline() {
-        let parsed = parse_config("default_sources = [\"claude_statusline_rate_limits\"]")
+        let parsed = parse_config("default_sources = [\"claude_statusline\"]")
             .expect("claude statusline should be accepted");
 
         assert_eq!(parsed.default_sources, vec![Source::ClaudeStatusline]);

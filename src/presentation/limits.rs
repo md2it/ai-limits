@@ -28,7 +28,10 @@ fn format_limits_body(info: &StructuredSourceInfo, color: &ColorConfig) -> Strin
         .collect::<Vec<_>>();
 
     if limit_rows.is_empty() {
-        let mut body = String::from("No limit data from this source\n");
+        let mut body = String::from(
+            "No usable limit records from this source\n\
+Other sources may still provide limit data.\n",
+        );
         body.push_str(&format_data_as_of(info));
         return body;
     }

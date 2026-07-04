@@ -34,4 +34,4 @@ Expected state after setup but before the first captured limits payload:
 
 The file can be empty at this point. `ai-limits --claude-statusline` should treat that as "configured, data not captured yet", not as "not configured".
 
-This setup enables Claude Code live limits/reset through `claude_statusline_rate_limits`. It does not confirm coverage for Claude Desktop, Claude web, or browser-extension usage.
+This setup enables Claude Code live limits/reset through `claude_statusline`. It does not confirm coverage for Claude Desktop, Claude web, or browser-extension usage.

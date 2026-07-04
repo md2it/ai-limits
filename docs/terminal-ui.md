@@ -177,7 +177,8 @@ If the source is available but has no supported limit data, print the provider b
 
 ```text
      --------- CODEX ---------
-No limit data from this source
+No usable limit records from this source
+Other sources may still provide limit data.
 Source codex-cli: Jul 3, 21:41 UTC-2
 ```
 

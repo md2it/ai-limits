@@ -6,7 +6,7 @@ PoC uses two Claude sources and one live-limit method:
 
 - `claude_cli_usage`: launches `claude --no-chrome`, sends `/usage`, parses TUI lines.
 - `claude_local_usage`: scans local transcript JSONL files and aggregates token usage history.
-- `claude_statusline_rate_limits`: reads Claude Code statusline stdin payload and extracts live `rate_limits` when available.
+- `claude_statusline`: reads Claude Code statusline stdin payload and extracts live `rate_limits` when available.
 
 ---
 
@@ -135,7 +135,7 @@ Do not treat as confirmed yet:
 
 ---
 
-## Provider Method: `claude_statusline_rate_limits`
+## Provider Method: `claude_statusline`
 
 Method details: [../methods/statusline.md](../methods/statusline.md).
 
@@ -166,8 +166,8 @@ Behavior:
 
 - for `claude_cli_usage`, full output remains a TUI stream and depends on current CLI text/layout
 - for `claude_cli_usage`, request/parse can take noticeable time
-- for `claude_statusline_rate_limits`, data is available only after a properly configured Claude Code statusline command receives a payload
-- for `claude_statusline_rate_limits`, unavailable statusline context means live limits are unavailable even if transcript history exists
+- for `claude_statusline`, data is available only after a properly configured Claude Code statusline command receives a payload
+- for `claude_statusline`, unavailable statusline context means live limits are unavailable even if transcript history exists
 - for `claude_local_usage`, reset remains an estimate unless a server reset anchor is available
 - for Claude Desktop and browser-extension flows, local-file coverage remains unverified separately from Claude Code statusline behavior
 

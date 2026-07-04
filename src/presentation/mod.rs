@@ -183,7 +183,12 @@ mod tests {
         };
         let block = limits_block(&info, &ColorConfig { enabled: false });
 
-        assert!(block.body.contains("No limit data from this source"));
+        assert!(block
+            .body
+            .contains("No usable limit records from this source"));
+        assert!(block
+            .body
+            .contains("Other sources may still provide limit data."));
         assert!(block.body.contains("Source codex-cli: Jul 3, 21:41 UTC-2"));
     }
 

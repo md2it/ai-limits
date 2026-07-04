@@ -29,12 +29,12 @@ impl Source {
         match value {
             "codex_local" => Ok(Self::CodexLocal),
             "codex_cli" => Ok(Self::CodexCli),
-            "claude_statusline_rate_limits" | "claude_statusline" => Ok(Self::ClaudeStatusline),
+            "claude_statusline" => Ok(Self::ClaudeStatusline),
             "claude_cli" => Ok(Self::ClaudeCli),
             "claude_local" => Ok(Self::ClaudeLocal),
             "cursor_api2" => Ok(Self::CursorApi2),
             _ => Err(format!(
-                "unknown source `{value}`; expected one of: codex_local, codex_cli, claude_statusline_rate_limits, claude_cli, claude_local, cursor_api2"
+                "unknown source `{value}`; expected one of: codex_local, codex_cli, claude_statusline, claude_cli, claude_local, cursor_api2"
             )),
         }
     }
