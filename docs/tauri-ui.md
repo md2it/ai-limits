@@ -5,7 +5,7 @@
 - [Purpose](#purpose)
 - [Window Layout](#window-layout)
   - [Main Content](#main-content)
-  - [Bottom Actions](#bottom-actions)
+  - [Top Actions](#top-actions)
 - [Provider Blocks](#provider-blocks)
   - [Block Structure](#block-structure)
   - [Limit Rows](#limit-rows)
@@ -35,9 +35,9 @@ The UI should remain compact and operational rather than marketing-oriented.
 
 The UI contains:
 
+- top action row with global manual update and settings
+- centered last update line below the top action row
 - provider blocks as the main content
-- bottom action row with global manual update and settings
-- centered last update line below the bottom action row
 - three inline rounded squares for providers:
   - Codex
   - Cursor
@@ -47,11 +47,11 @@ Each provider square represents one provider and contains that provider's limit 
 
 The window must not show a visible `AI Limits` title in the content area.
 
-### Bottom Actions
+### Top Actions
 
-Global update controls live at the bottom of the window, below provider blocks.
+Global update controls live above provider blocks.
 
-The bottom action row contains:
+The top action row contains:
 
 - `UPDATE ALL MANUALLY` button
 - settings button
@@ -60,9 +60,9 @@ The `UPDATE ALL MANUALLY` button takes all available row width except the settin
 
 The settings button is a small square button on the right side of the same row.
 
-The last update text is shown under the bottom action row, centered. It uses the same information that was previously shown in the top toolbar.
+The last update text is shown under the top action row and above provider blocks, centered.
 
-The settings dropdown opens upward from the bottom settings button. It must remain visible and usable across supported window sizes, including narrow and short windows.
+The settings dropdown opens from the top settings button and must remain visible and usable across supported window sizes, including narrow and short windows.
 
 ## Provider Blocks
 
@@ -161,7 +161,7 @@ If checked sources return no fresh usable limit records, the provider block must
 Short copy:
 
 ```text
-No fresh usage data. Try this:
+No fresh limits' data. Try this:
 ```
 
 Show the existing CLI fallback toggle directly in this state, labeled:
@@ -314,11 +314,11 @@ Update the Tauri frontend according to docs/tauri-ui.md.
 
 Scope:
 - Remove the visible AI Limits title from the content area.
-- Move the global refresh controls to the bottom.
+- Move the global refresh controls above provider blocks.
 - Rename Refresh to UPDATE ALL MANUALLY and make it fill the row except the settings square.
-- Move settings to the right side of the same bottom row.
-- Show the centered Last updated line below this row.
-- Make the settings dropdown open upward and stay visible at supported window sizes.
+- Move settings to the right side of the same top row.
+- Show the centered Last updated line below this row and above provider blocks.
+- Make the settings dropdown open from this top settings button and stay visible at supported window sizes.
 
 Do not change provider data fetching semantics beyond wiring the existing global refresh button in its new location.
 ```
