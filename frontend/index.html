@@ -571,12 +571,12 @@
               <h2>${escapeHtml(provider.label)}</h2>
             </div>
             <div class="limits">${buildLimitRowsHtml(provider)}</div>
+          </div>
+          <div class="provider-actions">
             <p class="source-info">
               <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
               <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
             </p>
-          </div>
-          <div class="provider-actions">
             <label class="frequency-row">
               <span>Upd&nbsp;every</span>
               <select aria-label="${escapeHtml(provider.label)} update interval">${frequencyOptions}</select>
