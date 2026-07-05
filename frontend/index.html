@@ -38,13 +38,81 @@
         "30 min",
         "1 hour",
       ];
+      const DEFAULT_UPDATE_FREQUENCY = "5 min";
 
       const providerList = document.querySelector("#provider-list");
       const statusLine = document.querySelector("#status-line");
       const refreshButton = document.querySelector("#refresh-button");
       const lastUpdatedLine = document.querySelector("#last-updated");
 
+      const providerRefreshIntervals = new Map();
+      const providerRefreshTimers = new Map();
+      const providerRefreshInFlight = new Set();
+
       let isLoading = false;
+
+      function frequencyToMs(frequency) {
+        switch (frequency) {
+          case "1 min":
+            return 60_000;
+          case "5 min":
+            return 300_000;
+          case "10 min":
+            return 600_000;
+          case "30 min":
+            return 1_800_000;
+          case "1 hour":
+            return 3_600_000;
+          default:
+            return null;
+        }
+      }
+
+      function getProviderInterval(providerId) {
+        return providerRefreshIntervals.get(providerId) ?? DEFAULT_UPDATE_FREQUENCY;
+      }
+
+      function ensureProviderInterval(providerId, fallbackFrequency) {
+        if (!providerRefreshIntervals.has(providerId)) {
+          const frequency = updateFrequencyOptions.includes(fallbackFrequency)
+            ? fallbackFrequency
+            : DEFAULT_UPDATE_FREQUENCY;
+          providerRefreshIntervals.set(providerId, frequency);
+        }
+      }
+
+      function stopProviderRefreshTimer(providerId) {
+        const timerId = providerRefreshTimers.get(providerId);
+        if (timerId == null) {
+          return;
+        }
+
+        clearInterval(timerId);
+        providerRefreshTimers.delete(providerId);
+      }
+
+      function restartProviderRefreshTimer(providerId) {
+        stopProviderRefreshTimer(providerId);
+
+        const intervalMs = frequencyToMs(getProviderInterval(providerId));
+        if (intervalMs == null) {
+          return;
+        }
+
+        const timerId = setInterval(() => {
+          refreshSingleProvider(providerId);
+        }, intervalMs);
+        providerRefreshTimers.set(providerId, timerId);
+      }
+
+      function setProviderInterval(providerId, frequency) {
+        if (!updateFrequencyOptions.includes(frequency)) {
+          return;
+        }
+
+        providerRefreshIntervals.set(providerId, frequency);
+        restartProviderRefreshTimer(providerId);
+      }
 
       function escapeHtml(value) {
         return String(value)
@@ -83,7 +151,7 @@
 
         const frequencyOptions = updateFrequencyOptions
           .map((option) => {
-            const selected = option === provider.selectedUpdateFrequency ? "selected" : "";
+            const selected = option === getProviderInterval(provider.id) ? "selected" : "";
             return `<option ${selected}>${option}</option>`;
           })
           .join("");
@@ -99,6 +167,33 @@
         `;
 
         return block;
+      }
+
+      function attachProviderBlockHandlers(block, providerId) {
+        const select = block.querySelector("select");
+        select.value = getProviderInterval(providerId);
+        select.addEventListener("change", (event) => {
+          setProviderInterval(providerId, event.target.value);
+        });
+      }
+
+      function mountProviderBlock(provider) {
+        ensureProviderInterval(provider.id, provider.selectedUpdateFrequency);
+        const block = renderProvider(provider);
+        attachProviderBlockHandlers(block, provider.id);
+        restartProviderRefreshTimer(provider.id);
+        return block;
+      }
+
+      function replaceProviderBlock(provider) {
+        const existingBlock = providerList.querySelector(`[data-provider-id="${provider.id}"]`);
+        const block = mountProviderBlock(provider);
+        if (existingBlock) {
+          existingBlock.replaceWith(block);
+          return;
+        }
+
+        providerList.appendChild(block);
       }
 
       function formatLastUpdated(date) {
@@ -136,6 +231,38 @@
         lastUpdatedLine.textContent = `Last updated: ${formatLastUpdated(date)}`;
       }
 
+      async function fetchProviderLimits() {
+        const invoke = window.__TAURI__?.core?.invoke;
+        if (!invoke) {
+          throw new Error("Tauri API is unavailable");
+        }
+
+        return invoke("get_provider_limits");
+      }
+
+      async function refreshSingleProvider(providerId) {
+        if (providerRefreshInFlight.has(providerId)) {
+          return;
+        }
+
+        providerRefreshInFlight.add(providerId);
+
+        try {
+          const providers = await fetchProviderLimits();
+          const provider = providers.find((entry) => entry.id === providerId);
+          if (!provider) {
+            return;
+          }
+
+          replaceProviderBlock(provider);
+          setLastUpdated(new Date());
+        } catch (error) {
+          setErrorState(`Error loading provider limits: ${error.message || error}`);
+        } finally {
+          providerRefreshInFlight.delete(providerId);
+        }
+      }
+
       async function refreshProviderLimits() {
         if (isLoading) {
           return;
@@ -144,13 +271,8 @@
         setLoadingState(true);
 
         try {
-          const invoke = window.__TAURI__?.core?.invoke;
-          if (!invoke) {
-            throw new Error("Tauri API is unavailable");
-          }
-
-          const providers = await invoke("get_provider_limits");
-          providerList.replaceChildren(...providers.map(renderProvider));
+          const providers = await fetchProviderLimits();
+          providerList.replaceChildren(...providers.map((provider) => mountProviderBlock(provider)));
           setLastUpdated(new Date());
           clearStatusState();
         } catch (error) {
