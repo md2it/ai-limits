@@ -124,6 +124,7 @@
       const DEFAULT_UPDATE_FREQUENCY = "5 min";
       const PROVIDER_STATUS_HIDE_MS = 4000;
       const SETTINGS_STORAGE_KEY = "ai-limits-settings";
+      const PROVIDER_INTERVALS_STORAGE_KEY = "ai-limits-provider-intervals";
       const PROVIDER_IDS = ["codex", "claude", "cursor"];
       const CLI_SETUP_LINKS = {
         claude: "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md",
@@ -190,6 +191,56 @@
 
       function saveAppSettings() {
         localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+      }
+
+      function normalizeUpdateFrequency(frequency) {
+        if (typeof frequency !== "string") {
+          return DEFAULT_UPDATE_FREQUENCY;
+        }
+
+        return updateFrequencyOptions.includes(frequency)
+          ? frequency
+          : DEFAULT_UPDATE_FREQUENCY;
+      }
+
+      function loadProviderIntervalsFromStorage() {
+        try {
+          const stored = localStorage.getItem(PROVIDER_INTERVALS_STORAGE_KEY);
+          if (!stored) {
+            return {};
+          }
+
+          const parsed = JSON.parse(stored);
+          if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+            return {};
+          }
+
+          const intervals = {};
+          for (const providerId of PROVIDER_IDS) {
+            intervals[providerId] = normalizeUpdateFrequency(parsed[providerId]);
+          }
+          return intervals;
+        } catch {
+          return {};
+        }
+      }
+
+      function initProviderIntervals() {
+        const stored = loadProviderIntervalsFromStorage();
+        for (const providerId of PROVIDER_IDS) {
+          providerRefreshIntervals.set(
+            providerId,
+            stored[providerId] ?? DEFAULT_UPDATE_FREQUENCY,
+          );
+        }
+      }
+
+      function saveProviderIntervals() {
+        const payload = {};
+        for (const providerId of PROVIDER_IDS) {
+          payload[providerId] = getProviderInterval(providerId);
+        }
+        localStorage.setItem(PROVIDER_INTERVALS_STORAGE_KEY, JSON.stringify(payload));
       }
 
       function syncSettingsInputs() {
@@ -423,10 +474,7 @@
 
       function ensureProviderInterval(providerId, fallbackFrequency) {
         if (!providerRefreshIntervals.has(providerId)) {
-          const frequency = updateFrequencyOptions.includes(fallbackFrequency)
-            ? fallbackFrequency
-            : DEFAULT_UPDATE_FREQUENCY;
-          providerRefreshIntervals.set(providerId, frequency);
+          providerRefreshIntervals.set(providerId, normalizeUpdateFrequency(fallbackFrequency));
         }
       }
 
@@ -464,6 +512,7 @@
         }
 
         providerRefreshIntervals.set(providerId, frequency);
+        saveProviderIntervals();
         restartProviderRefreshTimer(providerId);
       }
 
@@ -864,6 +913,7 @@
         }
       });
 
+      initProviderIntervals();
       syncSettingsInputs();
       refreshButton.addEventListener("click", () => {
         refreshEnabledProviders();
