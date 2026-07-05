@@ -96,30 +96,9 @@ Outcome:
 
 ### 2. Design Unsigned CI Builds
 
-Status: ready for implementation.
+Status: implemented, pending CI run.
 
-Plan:
-
-- Create a manual GitHub Actions workflow using `workflow_dispatch`.
-- Build each platform on its native runner.
-- Use separate jobs first. A matrix can be introduced later after platform
-  commands and artifact paths are stable.
-- Avoid running this workflow on every push because private repository minutes,
-  especially macOS runner minutes, can be expensive.
-- Consider adding tag-based runs only after manual CI builds are stable.
-
-Initial platform strategy:
-
-```text
-macOS:   macos-latest   -> npm exec tauri -- build --bundles app
-Windows: windows-latest -> unsigned Tauri build, exact bundle target to confirm
-Linux:   ubuntu-latest  -> unsigned Tauri build, exact bundle target to confirm
-```
-
-The Windows and Linux artifact targets should be treated as CI discovery until
-their build outputs are confirmed.
-
-First workflow file:
+Implemented workflow:
 
 ```text
 .github/workflows/desktop-build.yml
@@ -131,19 +110,15 @@ Workflow name:
 Desktop unsigned build
 ```
 
-Required trigger:
+Trigger:
 
 ```text
 workflow_dispatch
 ```
 
-Do not add these triggers in the first workflow:
+No automatic `push`, `pull_request`, or tag trigger is included.
 
-- `push`
-- `pull_request`
-- tag-based release trigger
-
-Recommended jobs:
+Implemented jobs:
 
 ```text
 build-macos
@@ -151,59 +126,79 @@ build-windows
 build-linux
 ```
 
-Common setup for every job:
+Common setup:
 
 - checkout repository;
-- install Node.js;
-- install Rust stable;
-- install npm dependencies with `npm install` or `npm ci`, depending on whether
-  a lockfile is present and valid;
-- run the Tauri production build command for the platform;
-- upload the resulting artifact.
+- install Node.js 22;
+- install Rust stable through `dtolnay/rust-toolchain@stable`;
+- install npm dependencies with `npm ci`;
+- run a platform-specific unsigned Tauri production build;
+- upload artifacts with `actions/upload-artifact@v4`;
+- keep artifact retention at 14 days.
 
 macOS job:
 
 ```text
 runner: macos-latest
 command: npm exec tauri -- build --bundles app
-required artifact: target/release/bundle/macos/AI Limits.app
+artifact name: ai-limits-macos-app
+artifact path: target/release/bundle/macos/AI Limits.app.zip
 ```
 
-The `.app` bundle should be archived before upload so the directory structure is
-preserved. The first implementation may use a zip artifact produced by the
-workflow step.
+The `.app` bundle is archived with `ditto` before upload to preserve the bundle
+structure.
 
 Windows job:
 
 ```text
 runner: windows-latest
-command: npm exec tauri -- build
-artifact: discover from actual CI output
+command: npm exec tauri -- build --bundles nsis,msi
+artifact name: ai-limits-windows-unsigned
+artifact paths:
+  target/release/bundle/nsis/*.exe
+  target/release/bundle/msi/*.msi
 ```
 
-The first Windows run should report which bundle files were produced under
-`target/release/bundle/`. Do not add Windows signing.
+Windows signing is not included.
 
 Linux job:
 
 ```text
 runner: ubuntu-latest
-command: npm exec tauri -- build
-artifact: discover from actual CI output
+command: npm exec tauri -- build --bundles deb,appimage
+artifact name: ai-limits-linux-unsigned
+artifact paths:
+  target/release/bundle/deb/*.deb
+  target/release/bundle/appimage/*.AppImage
 ```
 
-Linux may need system packages for WebKitGTK and related Tauri dependencies.
-The first implementation should use Tauri 2 Linux CI requirements from the
-current official documentation or established Tauri action examples. Any added
-Linux packages must be documented in the workflow implementation report.
-
-First artifact naming:
+Linux system dependencies added to the workflow:
 
 ```text
-ai-limits-macos-app
-ai-limits-windows-unsigned
-ai-limits-linux-unsigned
+libwebkit2gtk-4.1-dev
+libgtk-3-dev
+libayatana-appindicator3-dev
+librsvg2-dev
+patchelf
 ```
+
+Implementation checks completed:
+
+- YAML syntax was checked by the implementing agent.
+- Release publishing was not added.
+- Signing, notarization, and secret requirements were not added.
+- Application code was not changed by the workflow implementation.
+
+Known implementation limitation:
+
+- `actionlint` was not available locally, so GitHub Actions-specific linting was
+  not run.
+
+Remaining CI risks:
+
+- Windows artifact paths must still be confirmed by the first CI run.
+- Linux artifact paths must still be confirmed by the first CI run.
+- The Linux runner may require an additional system dependency.
 
 First workflow success criteria:
 
@@ -237,13 +232,22 @@ Plan:
 - Do not attach artifacts to GitHub Releases until the CI artifact stage is
   stable.
 
-Expected first macOS artifact:
+Expected first artifacts:
 
 ```text
-target/release/bundle/macos/AI Limits.app
+macOS:
+  target/release/bundle/macos/AI Limits.app.zip
+
+Windows:
+  target/release/bundle/nsis/*.exe
+  target/release/bundle/msi/*.msi
+
+Linux:
+  target/release/bundle/deb/*.deb
+  target/release/bundle/appimage/*.AppImage
 ```
 
-Windows and Linux artifact paths must be confirmed by the first CI runs.
+Windows and Linux artifact paths must still be confirmed by the first CI run.
 
 ### 4. Stabilize Platform Builds
 
