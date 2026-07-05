@@ -69,6 +69,43 @@ pub fn best_source_plan() -> Vec<SourcePlan> {
     ]
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub struct UiSourcePlanOptions {
+    pub enabled_codex: bool,
+    pub enabled_claude: bool,
+    pub enabled_cursor: bool,
+    pub use_cli_fallback: bool,
+}
+
+impl Default for UiSourcePlanOptions {
+    fn default() -> Self {
+        Self {
+            enabled_codex: true,
+            enabled_claude: true,
+            enabled_cursor: true,
+            use_cli_fallback: false,
+        }
+    }
+}
+
+pub fn ui_source_plan(options: UiSourcePlanOptions) -> Vec<SourcePlan> {
+    let plans = if options.use_cli_fallback {
+        best_source_plan()
+    } else {
+        default_source_plan()
+    };
+
+    plans
+        .into_iter()
+        .filter(|plan| match plan.label() {
+            "codex" => options.enabled_codex,
+            "claude" => options.enabled_claude,
+            "cursor" => options.enabled_cursor,
+            _ => false,
+        })
+        .collect()
+}
+
 pub fn source_list_plan(sources: Vec<Source>) -> Vec<SourcePlan> {
     sources.into_iter().map(SourcePlan::Single).collect()
 }
@@ -215,6 +252,50 @@ mod tests {
                 SourcePlan::Chain {
                     label: "cursor",
                     sources: BEST_CURSOR_CHAIN
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn ui_source_plan_filters_disabled_providers() {
+        assert_eq!(
+            ui_source_plan(UiSourcePlanOptions {
+                enabled_codex: true,
+                enabled_claude: false,
+                enabled_cursor: true,
+                use_cli_fallback: false,
+            }),
+            vec![
+                SourcePlan::Chain {
+                    label: "codex",
+                    sources: DEFAULT_CODEX_CHAIN
+                },
+                SourcePlan::Chain {
+                    label: "cursor",
+                    sources: DEFAULT_CURSOR_CHAIN
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn ui_source_plan_uses_cli_fallback_chains_when_enabled() {
+        assert_eq!(
+            ui_source_plan(UiSourcePlanOptions {
+                enabled_codex: true,
+                enabled_claude: true,
+                enabled_cursor: false,
+                use_cli_fallback: true,
+            }),
+            vec![
+                SourcePlan::Chain {
+                    label: "codex",
+                    sources: BEST_CODEX_CHAIN
+                },
+                SourcePlan::Chain {
+                    label: "claude",
+                    sources: BEST_CLAUDE_CHAIN
                 },
             ]
         );

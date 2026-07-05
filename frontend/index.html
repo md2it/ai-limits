@@ -14,14 +14,61 @@
 
       <section class="app-toolbar" aria-label="Refresh controls">
         <p class="last-updated" id="last-updated">Last updated: —</p>
-        <button type="button" class="refresh-button" id="refresh-button">Refresh</button>
-      </section>
-
-      <section class="settings" aria-label="Settings">
-        <label class="toggle-row">
-          <span>Notifications</span>
-          <input type="checkbox" />
-        </label>
+        <div class="toolbar-actions">
+          <div class="settings-menu" id="settings-menu">
+            <button
+              type="button"
+              class="settings-button"
+              id="settings-button"
+              aria-label="Settings"
+              aria-haspopup="true"
+              aria-expanded="false"
+              aria-controls="settings-dropdown"
+            >
+              <svg
+                class="settings-icon"
+                xmlns="http://www.w3.org/2000/svg"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path
+                  d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"
+                />
+                <circle cx="12" cy="12" r="3" />
+              </svg>
+            </button>
+            <div class="settings-dropdown" id="settings-dropdown" hidden>
+              <label class="settings-toggle">
+                <span>Notifications</span>
+                <input type="checkbox" id="setting-notifications" checked />
+              </label>
+              <label class="settings-toggle">
+                <span>Cursor</span>
+                <input type="checkbox" id="setting-cursor" checked />
+              </label>
+              <label class="settings-toggle">
+                <span>Cloud</span>
+                <input type="checkbox" id="setting-cloud" checked />
+              </label>
+              <label class="settings-toggle">
+                <span>Codex</span>
+                <input type="checkbox" id="setting-codex" checked />
+              </label>
+              <label class="settings-toggle">
+                <span>Use CLI fallback</span>
+                <input type="checkbox" id="setting-cli-fallback" />
+              </label>
+            </div>
+          </div>
+          <button type="button" class="refresh-button" id="refresh-button">Refresh</button>
+        </div>
       </section>
 
       <section class="providers" aria-label="Provider limits" id="provider-list"></section>
@@ -40,11 +87,31 @@
       ];
       const DEFAULT_UPDATE_FREQUENCY = "5 min";
       const PROVIDER_STATUS_HIDE_MS = 4000;
+      const SETTINGS_STORAGE_KEY = "ai-limits-settings";
+      const PROVIDER_IDS = ["codex", "claude", "cursor"];
+
+      const DEFAULT_APP_SETTINGS = {
+        notifications: true,
+        cursor: true,
+        cloud: true,
+        codex: true,
+        useCliFallback: false,
+      };
 
       const providerList = document.querySelector("#provider-list");
       const statusLine = document.querySelector("#status-line");
       const refreshButton = document.querySelector("#refresh-button");
       const lastUpdatedLine = document.querySelector("#last-updated");
+      const settingsMenu = document.querySelector("#settings-menu");
+      const settingsButton = document.querySelector("#settings-button");
+      const settingsDropdown = document.querySelector("#settings-dropdown");
+      const settingInputs = {
+        notifications: document.querySelector("#setting-notifications"),
+        cursor: document.querySelector("#setting-cursor"),
+        cloud: document.querySelector("#setting-cloud"),
+        codex: document.querySelector("#setting-codex"),
+        useCliFallback: document.querySelector("#setting-cli-fallback"),
+      };
 
       const providerRefreshIntervals = new Map();
       const providerRefreshTimers = new Map();
@@ -52,6 +119,98 @@
       const providerStatusHideTimers = new Map();
 
       let isRefreshing = false;
+      let appSettings = loadAppSettings();
+
+      function loadAppSettings() {
+        try {
+          const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
+          if (!stored) {
+            return { ...DEFAULT_APP_SETTINGS };
+          }
+
+          const parsed = JSON.parse(stored);
+          return {
+            notifications:
+              typeof parsed.notifications === "boolean"
+                ? parsed.notifications
+                : DEFAULT_APP_SETTINGS.notifications,
+            cursor:
+              typeof parsed.cursor === "boolean" ? parsed.cursor : DEFAULT_APP_SETTINGS.cursor,
+            cloud: typeof parsed.cloud === "boolean" ? parsed.cloud : DEFAULT_APP_SETTINGS.cloud,
+            codex: typeof parsed.codex === "boolean" ? parsed.codex : DEFAULT_APP_SETTINGS.codex,
+            useCliFallback:
+              typeof parsed.useCliFallback === "boolean"
+                ? parsed.useCliFallback
+                : DEFAULT_APP_SETTINGS.useCliFallback,
+          };
+        } catch {
+          return { ...DEFAULT_APP_SETTINGS };
+        }
+      }
+
+      function saveAppSettings() {
+        localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(appSettings));
+      }
+
+      function syncSettingsInputs() {
+        settingInputs.notifications.checked = appSettings.notifications;
+        settingInputs.cursor.checked = appSettings.cursor;
+        settingInputs.cloud.checked = appSettings.cloud;
+        settingInputs.codex.checked = appSettings.codex;
+        settingInputs.useCliFallback.checked = appSettings.useCliFallback;
+      }
+
+      function settingsToQuery() {
+        return {
+          enabledCodex: appSettings.codex,
+          enabledClaude: appSettings.cloud,
+          enabledCursor: appSettings.cursor,
+          useCliFallback: appSettings.useCliFallback,
+          notificationsEnabled: appSettings.notifications,
+        };
+      }
+
+      function isProviderEnabled(providerId) {
+        switch (providerId) {
+          case "codex":
+            return appSettings.codex;
+          case "claude":
+            return appSettings.cloud;
+          case "cursor":
+            return appSettings.cursor;
+          default:
+            return false;
+        }
+      }
+
+      function removeDisabledProviderBlocks() {
+        for (const providerId of PROVIDER_IDS) {
+          if (isProviderEnabled(providerId)) {
+            continue;
+          }
+
+          stopProviderRefreshTimer(providerId);
+          clearProviderStatusHideTimer(providerId);
+          getProviderBlock(providerId)?.remove();
+        }
+      }
+
+      function setSettingsMenuOpen(isOpen) {
+        settingsDropdown.hidden = !isOpen;
+        settingsButton.setAttribute("aria-expanded", String(isOpen));
+      }
+
+      function handleSettingsChange() {
+        appSettings = {
+          notifications: settingInputs.notifications.checked,
+          cursor: settingInputs.cursor.checked,
+          cloud: settingInputs.cloud.checked,
+          codex: settingInputs.codex.checked,
+          useCliFallback: settingInputs.useCliFallback.checked,
+        };
+        saveAppSettings();
+        removeDisabledProviderBlocks();
+      }
 
       function frequencyToMs(frequency) {
         switch (frequency) {
@@ -95,6 +254,10 @@
 
       function restartProviderRefreshTimer(providerId) {
         stopProviderRefreshTimer(providerId);
+
+        if (!isProviderEnabled(providerId)) {
+          return;
+        }
 
         const intervalMs = frequencyToMs(getProviderInterval(providerId));
         if (intervalMs == null) {
@@ -237,12 +400,6 @@
         }
       }
 
-      function setAllProviderStatuses(statusType, statusText = "") {
-        for (const block of providerList.querySelectorAll(".provider-block")) {
-          setProviderStatus(block.dataset.providerId, statusType, statusText);
-        }
-      }
-
       function updateProviderBlockData(block, provider) {
         block.querySelector(".limits").innerHTML = buildLimitRowsHtml(provider);
         block.querySelector(".source-line").textContent =
@@ -330,11 +487,11 @@
           throw new Error("Tauri API is unavailable");
         }
 
-        return invoke("get_provider_limits");
+        return invoke("get_provider_limits", { query: settingsToQuery() });
       }
 
       async function refreshSingleProvider(providerId) {
-        if (providerRefreshInFlight.has(providerId)) {
+        if (!isProviderEnabled(providerId) || providerRefreshInFlight.has(providerId)) {
           return;
         }
 
@@ -379,19 +536,33 @@
           return;
         }
 
+        removeDisabledProviderBlocks();
+
+        const enabledProviders = PROVIDER_IDS.filter(isProviderEnabled);
+        if (!enabledProviders.length) {
+          providerList.replaceChildren();
+          clearStatusState();
+          setErrorState("Enable at least one provider in settings.");
+          return;
+        }
+
         isRefreshing = true;
         setRefreshButtonState(true);
 
         if (initial) {
           setInitialLoadingState(true);
         } else {
-          setAllProviderStatuses("loading");
+          for (const providerId of enabledProviders) {
+            setProviderStatus(providerId, "loading");
+          }
         }
 
         await waitForNextPaint();
 
         try {
           const providers = await fetchProviderLimits();
+
+          removeDisabledProviderBlocks();
 
           if (initial) {
             providerList.replaceChildren(...providers.map((provider) => mountProviderBlock(provider)));
@@ -407,7 +578,9 @@
           if (initial) {
             setErrorState(`Error loading provider limits: ${error.message || error}`);
           } else {
-            setAllProviderStatuses("failed", "Failed");
+            for (const providerId of enabledProviders) {
+              setProviderStatus(providerId, "failed", "Failed");
+            }
           }
         } finally {
           isRefreshing = false;
@@ -415,6 +588,30 @@
         }
       }
 
+      settingsButton.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setSettingsMenuOpen(settingsDropdown.hidden);
+      });
+
+      settingsDropdown.addEventListener("click", (event) => {
+        event.stopPropagation();
+      });
+
+      for (const input of Object.values(settingInputs)) {
+        input.addEventListener("change", handleSettingsChange);
+      }
+
+      document.addEventListener("click", () => {
+        setSettingsMenuOpen(false);
+      });
+
+      document.addEventListener("keydown", (event) => {
+        if (event.key === "Escape") {
+          setSettingsMenuOpen(false);
+        }
+      });
+
+      syncSettingsInputs();
       refreshButton.addEventListener("click", () => {
         refreshProviderLimits();
       });

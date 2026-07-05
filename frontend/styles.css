@@ -33,7 +33,6 @@ h1 {
 }
 
 .app-toolbar,
-.settings,
 .status-line {
   width: min(100%, 1120px);
   margin: 0 auto 16px;
@@ -44,6 +43,62 @@ h1 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
+}
+
+.toolbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.settings-menu {
+  position: relative;
+}
+
+.settings-button {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #c4cfcb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172026;
+  cursor: pointer;
+}
+
+.settings-button:hover {
+  background: #eef3f1;
+}
+
+.settings-button[aria-expanded="true"] {
+  border-color: #2f7664;
+  background: #eef3f1;
+}
+
+.settings-icon {
+  display: block;
+}
+
+.settings-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 10;
+  display: grid;
+  gap: 10px;
+  width: max-content;
+  min-width: 100%;
+  border: 1px solid #d7dfdc;
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(23, 32, 38, 0.12);
+}
+
+.settings-dropdown[hidden] {
+  display: none;
 }
 
 .last-updated {
@@ -75,18 +130,59 @@ h1 {
 }
 
 .toggle-row,
-.frequency-row {
+.frequency-row,
+.settings-toggle {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
 }
 
-.settings {
-  border: 1px solid #d7dfdc;
-  border-radius: 8px;
+.settings-toggle {
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.settings-toggle input[type="checkbox"] {
+  position: relative;
+  width: 42px;
+  height: 22px;
+  margin: 0;
+  appearance: none;
+  border: 1px solid #c4cfcb;
+  border-radius: 999px;
+  background: #dfe6e3;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.settings-toggle input[type="checkbox"]::before {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
   background: #ffffff;
-  padding: 14px 16px;
+  box-shadow: 0 1px 2px rgba(23, 32, 38, 0.18);
+  transition: transform 0.15s ease;
+}
+
+.settings-toggle input[type="checkbox"]:checked {
+  border-color: #2f7664;
+  background: #2f7664;
+}
+
+.settings-toggle input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
+}
+
+.settings-toggle input[type="checkbox"]:focus-visible {
+  outline: 2px solid #2f7664;
+  outline-offset: 2px;
 }
 
 .providers {
@@ -256,11 +352,6 @@ select {
   color: #172026;
   font: inherit;
   padding: 6px 8px;
-}
-
-input[type="checkbox"] {
-  width: 42px;
-  height: 22px;
 }
 
 .status-line {

@@ -1,9 +1,36 @@
-use ai_limits::get_limits::{default_source_plan, get_source_plan_limits};
+use std::collections::HashSet;
+use std::sync::{Arc, Mutex};
+
+use ai_limits::get_limits::{get_source_plan_limits, ui_source_plan, UiSourcePlanOptions};
+use ai_limits::notifications;
 use ai_limits::presentation::{
     format_user_timestamp, normalize_percent, remaining_percent_for_display,
     source_label_for_display, window_label_for_display, TimeContext,
 };
-use ai_limits::types::StructuredSourceInfo;
+use ai_limits::types::{SourceReport, StructuredSourceInfo};
+
+#[derive(Clone, serde::Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ProviderLimitsQuery {
+    pub enabled_codex: bool,
+    pub enabled_claude: bool,
+    pub enabled_cursor: bool,
+    pub use_cli_fallback: bool,
+    pub notifications_enabled: bool,
+}
+
+impl Default for ProviderLimitsQuery {
+    fn default() -> Self {
+        let defaults = UiSourcePlanOptions::default();
+        Self {
+            enabled_codex: defaults.enabled_codex,
+            enabled_claude: defaults.enabled_claude,
+            enabled_cursor: defaults.enabled_cursor,
+            use_cli_fallback: defaults.use_cli_fallback,
+            notifications_enabled: true,
+        }
+    }
+}
 
 #[derive(serde::Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -26,23 +53,54 @@ pub struct ProviderLimitRow {
 }
 
 #[tauri::command]
-pub async fn get_provider_limits() -> Vec<ProviderLimits> {
-    tauri::async_runtime::spawn_blocking(collect_provider_limits)
+pub async fn get_provider_limits(
+    query: ProviderLimitsQuery,
+    sent_notifications: tauri::State<'_, Arc<Mutex<HashSet<String>>>>,
+) -> Result<Vec<ProviderLimits>, String> {
+    let sent_notifications = Arc::clone(sent_notifications.inner());
+
+    tauri::async_runtime::spawn_blocking(move || collect_provider_limits(&query, sent_notifications))
         .await
-        .expect("failed to collect provider limits")
+        .map_err(|error| error.to_string())
 }
 
-fn collect_provider_limits() -> Vec<ProviderLimits> {
-    default_source_plan()
-        .into_iter()
-        .map(|plan| {
-            let id = plan.label().to_string();
-            match get_source_plan_limits(plan) {
-                Ok(report) => provider_limits_from_structured(&id, &report.data.structured),
+fn collect_provider_limits(
+    query: &ProviderLimitsQuery,
+    sent_notifications: Arc<Mutex<HashSet<String>>>,
+) -> Vec<ProviderLimits> {
+    let plan = ui_source_plan(UiSourcePlanOptions {
+        enabled_codex: query.enabled_codex,
+        enabled_claude: query.enabled_claude,
+        enabled_cursor: query.enabled_cursor,
+        use_cli_fallback: query.use_cli_fallback,
+    });
+
+    plan.into_iter()
+        .map(|source_plan| {
+            let id = source_plan.label().to_string();
+            match get_source_plan_limits(source_plan) {
+                Ok(report) => {
+                    if query.notifications_enabled {
+                        notify_for_report(&report, sent_notifications.clone());
+                    }
+                    provider_limits_from_structured(&id, &report.data.structured)
+                }
                 Err(error) => provider_error(&id, error.to_string()),
             }
         })
         .collect()
+}
+
+fn notify_for_report(report: &SourceReport, sent_notifications: Arc<Mutex<HashSet<String>>>) {
+    let Ok(mut sent) = sent_notifications.lock() else {
+        return;
+    };
+
+    for notification in notifications::notifications_for_report(report) {
+        if sent.insert(notification.dedupe_key.clone()) {
+            let _ = notifications::notify(&notification);
+        }
+    }
 }
 
 fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> ProviderLimits {
