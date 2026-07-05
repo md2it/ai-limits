@@ -282,12 +282,114 @@
         };
       }
 
+      const MONTH_NAMES = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+      ];
+
+      // Strips any UTC offset / timezone suffix from a timestamp string, e.g.
+      // "Jul 3, 21:41 UTC-2", "2026-06-29T23:09:29Z", "2026-06-29T23:09:29+03:00",
+      // "20:48 UTC+3", "20:48 (Asia/Nicosia)" all lose their trailing offset marker.
+      function stripTimezoneSuffix(value) {
+        return String(value)
+          .replace(/\s*\([^()]*\)\s*$/, "") // trailing "(Region/City)"
+          .replace(/\s*UTC[+-]\d{1,2}(:\d{2})?\s*$/i, "") // trailing "UTC+3" / "UTC-5:30"
+          .replace(/\s*GMT[+-]\d{1,2}(:\d{2})?\s*$/i, "") // trailing "GMT+3"
+          .replace(/([+-]\d{2}:\d{2}|Z)$/, "") // ISO offset "+03:00" or "Z"
+          .trim();
+      }
+
+      // Parses a variety of timestamp shapes the core/backend may send (ISO 8601
+      // with or without an offset, epoch millis/seconds, or a Date instance) into
+      // a Date object. Returns null if the value cannot be parsed as an instant.
+      function parseTimestampToDate(value) {
+        if (value instanceof Date) {
+          return Number.isNaN(value.getTime()) ? null : value;
+        }
+        if (typeof value === "number") {
+          const date = new Date(value < 1e12 ? value * 1000 : value);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+        if (typeof value !== "string") {
+          return null;
+        }
+
+        const trimmed = value.trim();
+        if (!trimmed) {
+          return null;
+        }
+
+        if (/^\d+$/.test(trimmed)) {
+          const numeric = Number(trimmed);
+          const date = new Date(trimmed.length > 10 ? numeric : numeric * 1000);
+          return Number.isNaN(date.getTime()) ? null : date;
+        }
+
+        const parsed = new Date(trimmed);
+        return Number.isNaN(parsed.getTime()) ? null : parsed;
+      }
+
+      function isSameLocalDay(a, b) {
+        return (
+          a.getFullYear() === b.getFullYear() &&
+          a.getMonth() === b.getMonth() &&
+          a.getDate() === b.getDate()
+        );
+      }
+
+      function pad2(value) {
+        return String(value).padStart(2, "0");
+      }
+
+      // Formats a Date in device-local time per the Time Display spec:
+      // "HH:MM" when the date is today (local), otherwise "MMM D, HH:MM".
+      function formatLocalDateTime(date, { now = new Date() } = {}) {
+        const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
+        if (isSameLocalDay(date, now)) {
+          return time;
+        }
+
+        const month = MONTH_NAMES[date.getMonth()];
+        return `${month} ${date.getDate()}, ${time}`;
+      }
+
+      // Formats an arbitrary timestamp value (ISO string, epoch, or an
+      // already-formatted "MMM D, HH:MM UTC±N" style string from the core) for
+      // display: converts to device-local time, drops any UTC/offset suffix, and
+      // applies the today/not-today display rule. Falls back to a
+      // suffix-stripped version of the original text if it cannot be parsed as
+      // an instant (so unexpected formats degrade gracefully instead of
+      // crashing).
+      function formatTimestampForDisplay(value) {
+        if (value == null || value === "") {
+          return null;
+        }
+
+        const parsed = parseTimestampToDate(value);
+        if (parsed) {
+          return formatLocalDateTime(parsed);
+        }
+
+        return stripTimezoneSuffix(value);
+      }
+
       function formatSourceLine(provider) {
         if (provider.pending) {
           return "—";
         }
 
-        return `Source ${provider.sourceId || "unknown"}: ${provider.dataTimestamp || "unknown"}`;
+        const timestamp = formatTimestampForDisplay(provider.dataTimestamp) || "unknown";
+        return `Source ${provider.sourceId || "unknown"}: ${timestamp}`;
       }
 
       function frequencyToMs(frequency) {
@@ -357,6 +459,30 @@
         restartProviderRefreshTimer(providerId);
       }
 
+      function colorForRemaining(remainingPercent) {
+        const clamped = Math.max(0, Math.min(100, remainingPercent));
+        const stops = [
+          { pct: 0, rgb: [214, 61, 52] },
+          { pct: 50, rgb: [232, 179, 43] },
+          { pct: 100, rgb: [47, 118, 100] },
+        ];
+
+        let lower = stops[0];
+        let upper = stops[stops.length - 1];
+        for (let i = 0; i < stops.length - 1; i += 1) {
+          if (clamped >= stops[i].pct && clamped <= stops[i + 1].pct) {
+            lower = stops[i];
+            upper = stops[i + 1];
+            break;
+          }
+        }
+
+        const span = upper.pct - lower.pct || 1;
+        const ratio = (clamped - lower.pct) / span;
+        const rgb = lower.rgb.map((channel, i) => Math.round(channel + (upper.rgb[i] - channel) * ratio));
+        return `rgb(${rgb.join(", ")})`;
+      }
+
       function escapeHtml(value) {
         return String(value)
           .replaceAll("&", "&amp;")
@@ -381,18 +507,20 @@
 
         return provider.limits
           .map((limit) => {
-            const percent = Number(limit.remainingPercentage).toFixed(1);
-            const reset = limit.resetTime ? `<span>| reset ${escapeHtml(limit.resetTime)}</span>` : "";
-            const width = Math.max(0, Math.min(100, Number(limit.remainingPercentage) || 0));
+            const remaining = Number(limit.remainingPercentage) || 0;
+            const percent = remaining.toFixed(1);
+            const width = Math.max(0, Math.min(100, remaining));
+            const fillColor = colorForRemaining(remaining);
+            const formattedResetTime = formatTimestampForDisplay(limit.resetTime);
+            const resetText = formattedResetTime ? `reset ${escapeHtml(formattedResetTime)}` : "";
 
             return `
               <div class="limit-row">
-                <span class="limit-name">${escapeHtml(limit.label)}</span>
+                <div class="limit-top">${escapeHtml(limit.label)} | ${percent}% left</div>
                 <div class="meter" aria-label="${escapeHtml(provider.label)} ${escapeHtml(limit.label)} ${percent}% left">
-                  <span style="width: ${width}%"></span>
+                  <span style="width: ${width}%; background: ${fillColor}"></span>
                 </div>
-                <span class="limit-value">${percent}% left</span>
-                ${reset}
+                ${resetText ? `<div class="limit-reset">${resetText}</div>` : ""}
               </div>
             `;
           })
@@ -571,12 +699,7 @@
       }
 
       function formatLastUpdated(date) {
-        return date.toLocaleString(undefined, {
-          month: "short",
-          day: "numeric",
-          hour: "2-digit",
-          minute: "2-digit",
-        });
+        return formatLocalDateTime(date);
       }
 
       function setErrorState(message) {
