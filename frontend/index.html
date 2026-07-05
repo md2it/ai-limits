@@ -62,7 +62,7 @@
                 <input type="checkbox" id="setting-codex" checked />
               </label>
               <label class="settings-toggle">
-                <span>Use CLI fallback</span>
+                <span>Use CLI too</span>
                 <input type="checkbox" id="setting-cli-fallback" />
               </label>
             </div>
@@ -75,6 +75,44 @@
 
       <section class="status-line" aria-live="polite" id="status-line" hidden></section>
     </main>
+
+    <div class="modal-backdrop" id="cli-details-modal" hidden>
+      <section
+        class="modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="cli-details-title"
+      >
+        <div class="modal-header">
+          <h2 id="cli-details-title">CLI data source</h2>
+          <button type="button" class="modal-close" data-close-cli-details aria-label="Close">
+            &times;
+          </button>
+        </div>
+        <div class="modal-body">
+          <p>CLI fallback is off by default because it can take more time.</p>
+          <p>
+            If you mostly use Claude or Codex through CLI, this source is usually the most
+            relevant one.
+          </p>
+          <p>
+            If you do not use CLI but still have trouble getting current limit data, enabling CLI
+            fallback can still help. It is used only as a fallback for providers that do not return
+            data through faster sources.
+          </p>
+          <p>Provider refreshes run asynchronously, so one slower provider should not block the others.</p>
+          <div class="modal-links" aria-label="Setup guides">
+            <button type="button" class="modal-link" data-open-external="claude">
+              Claude&nbsp;guide&nbsp;on&nbsp;GitHub
+            </button>
+            <button type="button" class="modal-link" data-open-external="codex">
+              Codex&nbsp;guide&nbsp;on&nbsp;GitHub
+            </button>
+          </div>
+          <p class="provider-hint">You can give this guide to your agent to set it up.</p>
+        </div>
+      </section>
+    </div>
 
     <script>
       const updateFrequencyOptions = [
@@ -89,6 +127,10 @@
       const PROVIDER_STATUS_HIDE_MS = 4000;
       const SETTINGS_STORAGE_KEY = "ai-limits-settings";
       const PROVIDER_IDS = ["codex", "claude", "cursor"];
+      const CLI_SETUP_LINKS = {
+        claude: "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md",
+        codex: "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md",
+      };
 
       const DEFAULT_APP_SETTINGS = {
         notifications: true,
@@ -105,6 +147,7 @@
       const settingsMenu = document.querySelector("#settings-menu");
       const settingsButton = document.querySelector("#settings-button");
       const settingsDropdown = document.querySelector("#settings-dropdown");
+      const cliDetailsModal = document.querySelector("#cli-details-modal");
       const settingInputs = {
         notifications: document.querySelector("#setting-notifications"),
         cursor: document.querySelector("#setting-cursor"),
@@ -157,6 +200,13 @@
         settingInputs.cloud.checked = appSettings.cloud;
         settingInputs.codex.checked = appSettings.codex;
         settingInputs.useCliFallback.checked = appSettings.useCliFallback;
+        syncInlineCliFallbackToggles();
+      }
+
+      function syncInlineCliFallbackToggles() {
+        for (const input of providerList.querySelectorAll("[data-cli-fallback-toggle]")) {
+          input.checked = appSettings.useCliFallback;
+        }
       }
 
       function settingsToQuery() {
@@ -199,6 +249,10 @@
         settingsButton.setAttribute("aria-expanded", String(isOpen));
       }
 
+      function setCliDetailsModalOpen(isOpen) {
+        cliDetailsModal.hidden = !isOpen;
+      }
+
       function handleSettingsChange() {
         appSettings = {
           notifications: settingInputs.notifications.checked,
@@ -209,6 +263,7 @@
         };
         saveAppSettings();
         removeDisabledProviderBlocks();
+        syncInlineCliFallbackToggles();
       }
 
       function providerLabel(providerId) {
@@ -224,6 +279,7 @@
           dataTimestamp: null,
           selectedUpdateFrequency: getProviderInterval(providerId),
           errorMessage: null,
+          noFreshData: false,
           pending: true,
         };
       }
@@ -318,6 +374,10 @@
             return "";
           }
 
+          if (provider.noFreshData) {
+            return buildNoFreshDataHtml(provider);
+          }
+
           return `<p class="provider-message">${escapeHtml(provider.errorMessage || "No usable limit records from this source")}</p>`;
         }
 
@@ -339,6 +399,21 @@
             `;
           })
           .join("");
+      }
+
+      function buildNoFreshDataHtml(provider) {
+        return `
+          <div class="no-fresh-data">
+            <p>No fresh usage data. Try this:</p>
+            <label class="inline-cli-toggle">
+              <span>Use CLI too</span>
+              <input type="checkbox" data-cli-fallback-toggle ${appSettings.useCliFallback ? "checked" : ""} />
+            </label>
+            <button type="button" class="provider-link" data-open-cli-details>
+              More details
+            </button>
+          </div>
+        `;
       }
 
       function renderProvider(provider) {
@@ -431,6 +506,8 @@
       function updateProviderBlockData(block, provider) {
         block.querySelector(".limits").innerHTML = buildLimitRowsHtml(provider);
         block.querySelector(".source-line").textContent = formatSourceLine(provider);
+        attachInlineCliFallbackHandler(block);
+        attachCliDetailsHandler(block);
       }
 
       function isProviderRefreshSuccess(provider) {
@@ -443,6 +520,48 @@
         select.addEventListener("change", (event) => {
           setProviderInterval(providerId, event.target.value);
         });
+        attachInlineCliFallbackHandler(block);
+        attachCliDetailsHandler(block);
+      }
+
+      function attachInlineCliFallbackHandler(block) {
+        const input = block.querySelector("[data-cli-fallback-toggle]");
+        if (!input) {
+          return;
+        }
+
+        input.checked = appSettings.useCliFallback;
+        input.addEventListener("change", (event) => {
+          appSettings.useCliFallback = event.target.checked;
+          saveAppSettings();
+          syncSettingsInputs();
+        });
+      }
+
+      function attachCliDetailsHandler(block) {
+        const button = block.querySelector("[data-open-cli-details]");
+        if (!button) {
+          return;
+        }
+
+        button.addEventListener("click", () => {
+          setCliDetailsModalOpen(true);
+        });
+      }
+
+      async function openExternalSetup(providerId) {
+        const url = CLI_SETUP_LINKS[providerId];
+        if (!url) {
+          return;
+        }
+
+        const invoke = window.__TAURI__?.core?.invoke;
+        if (invoke) {
+          await invoke("open_external_url", { url });
+          return;
+        }
+
+        window.open(url, "_blank", "noopener,noreferrer");
       }
 
       function mountProviderBlock(provider) {
@@ -571,6 +690,22 @@
         event.stopPropagation();
       });
 
+      cliDetailsModal.addEventListener("click", (event) => {
+        if (event.target === cliDetailsModal) {
+          setCliDetailsModalOpen(false);
+        }
+      });
+
+      cliDetailsModal.querySelector("[data-close-cli-details]").addEventListener("click", () => {
+        setCliDetailsModalOpen(false);
+      });
+
+      for (const button of cliDetailsModal.querySelectorAll("[data-open-external]")) {
+        button.addEventListener("click", () => {
+          openExternalSetup(button.dataset.openExternal);
+        });
+      }
+
       for (const input of Object.values(settingInputs)) {
         input.addEventListener("change", handleSettingsChange);
       }
@@ -582,6 +717,7 @@
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           setSettingsMenuOpen(false);
+          setCliDetailsModalOpen(false);
         }
       });
 

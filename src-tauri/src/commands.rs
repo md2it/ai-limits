@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use ai_limits::get_limits::{get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions};
@@ -42,6 +43,7 @@ pub struct ProviderLimits {
     selected_update_frequency: String,
     limits: Vec<ProviderLimitRow>,
     error_message: Option<String>,
+    no_fresh_data: bool,
 }
 
 #[derive(serde::Serialize)]
@@ -77,6 +79,15 @@ pub async fn get_single_provider_limits(
     })
     .await
     .map_err(|error| error.to_string())?
+}
+
+#[tauri::command]
+pub async fn open_external_url(url: String) -> Result<(), String> {
+    if !is_allowed_external_url(&url) {
+        return Err("External URL is not allowed".to_string());
+    }
+
+    open_url_with_system(&url).map_err(|error| error.to_string())
 }
 
 fn collect_provider_limits(
@@ -148,7 +159,7 @@ fn notify_for_report(report: &SourceReport, sent_notifications: Arc<Mutex<HashSe
 
 fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> ProviderLimits {
     let time_context = TimeContext::from_structured(info);
-    let limits = info
+    let limits: Vec<ProviderLimitRow> = info
         .limits
         .iter()
         .filter_map(|limit| {
@@ -163,6 +174,8 @@ fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> Pro
             })
         })
         .collect();
+
+    let no_fresh_data = info.status.access_available && limits.is_empty();
 
     let error_message = if info.status.access_available && info.status.data_available {
         None
@@ -186,6 +199,7 @@ fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> Pro
         selected_update_frequency: "5 min".to_string(),
         limits,
         error_message,
+        no_fresh_data,
     }
 }
 
@@ -198,6 +212,7 @@ fn provider_error(id: &str, message: String) -> ProviderLimits {
         selected_update_frequency: "5 min".to_string(),
         limits: Vec::new(),
         error_message: Some(message),
+        no_fresh_data: false,
     }
 }
 
@@ -207,4 +222,33 @@ fn provider_label(id: &str) -> String {
         Some(first) => first.to_uppercase().chain(characters).collect(),
         None => id.to_string(),
     }
+}
+
+fn is_allowed_external_url(url: &str) -> bool {
+    matches!(
+        url,
+        "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md"
+            | "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md"
+    )
+}
+
+#[cfg(target_os = "macos")]
+fn open_url_with_system(url: &str) -> std::io::Result<()> {
+    Command::new("open").arg(url).spawn()?.wait()?;
+    Ok(())
+}
+
+#[cfg(target_os = "windows")]
+fn open_url_with_system(url: &str) -> std::io::Result<()> {
+    Command::new("cmd")
+        .args(["/C", "start", "", url])
+        .spawn()?
+        .wait()?;
+    Ok(())
+}
+
+#[cfg(all(unix, not(target_os = "macos")))]
+fn open_url_with_system(url: &str) -> std::io::Result<()> {
+    Command::new("xdg-open").arg(url).spawn()?.wait()?;
+    Ok(())
 }

@@ -1,23 +1,37 @@
 # Tauri UI
 
-## Goal
+## Table Of Contents
 
-The first Tauri UI is a mock interface map.
+- [Purpose](#purpose)
+- [Window Layout](#window-layout)
+  - [Main Content](#main-content)
+  - [Bottom Actions](#bottom-actions)
+- [Provider Blocks](#provider-blocks)
+  - [Block Structure](#block-structure)
+  - [Limit Rows](#limit-rows)
+  - [Source Line](#source-line)
+  - [No Fresh Data State](#no-fresh-data-state)
+- [Controls](#controls)
+  - [Update Frequency](#update-frequency)
+  - [Settings](#settings)
+- [Time Display](#time-display)
+- [Refresh Behavior](#refresh-behavior)
+- [Boundaries](#boundaries)
+- [Implementation Prompts](#implementation-prompts)
+  - [Prompt 1: Window Layout And Global Controls](#prompt-1-window-layout-and-global-controls)
+  - [Prompt 2: Provider Limit Rows](#prompt-2-provider-limit-rows)
+  - [Prompt 3: Local Time Formatting](#prompt-3-local-time-formatting)
+  - [Prompt 4: Provider Source And Per-Block Update](#prompt-4-provider-source-and-per-block-update)
 
-It should show where future provider data, refresh settings, and notification settings will be connected. It does not need polished visual design.
+## Purpose
 
-## Scope
+The Tauri UI shows current provider limits, refresh controls, settings, source metadata, and states where provider data is unavailable.
 
-This stage uses mock data only.
+The UI should remain compact and operational rather than marketing-oriented.
 
-Do not connect:
+## Window Layout
 
-- real providers
-- `get_limits.rs`
-- notifications logic
-- GitHub Actions or release logic
-
-## Layout
+### Main Content
 
 The UI contains:
 
@@ -33,7 +47,7 @@ Each provider square represents one provider and contains that provider's limit 
 
 The window must not show a visible `AI Limits` title in the content area.
 
-## Bottom Actions
+### Bottom Actions
 
 Global update controls live at the bottom of the window, below provider blocks.
 
@@ -50,7 +64,9 @@ The last update text is shown under the bottom action row, centered. It uses the
 
 The settings dropdown opens upward from the bottom settings button. It must remain visible and usable across supported window sizes, including narrow and short windows.
 
-## Provider Square
+## Provider Blocks
+
+### Block Structure
 
 Each provider square contains:
 
@@ -99,7 +115,7 @@ Jul 5, 19:29
 
 The UI does not need to use terminal-style ASCII rendering. The example defines the information that must be visible.
 
-## Limit Rows
+### Limit Rows
 
 Each limit row is rendered as a vertical group:
 
@@ -124,7 +140,7 @@ The filled segment color is calculated from remaining percentage:
 
 The bar must not use a left-to-right rainbow gradient inside the filled segment. For example, if `10%` remains, the filled 10% segment is a near-red color and the spent 90% segment stays light.
 
-## Source Line
+### Source Line
 
 Provider source information is split into two visual lines:
 
@@ -138,7 +154,62 @@ Both values are variable data from the application core:
 - source id, for example `codex-local`
 - data timestamp
 
-## Update Frequency
+### No Fresh Data State
+
+If checked sources return no fresh usable limit records, the provider block must show an empty state instead of a technical error like `No usable limit records from this source`.
+
+Short copy:
+
+```text
+No fresh usage data. Try this:
+```
+
+Show the existing CLI fallback toggle directly in this state, labeled:
+
+```text
+Use CLI too
+```
+
+Below the toggle, show a text button:
+
+```text
+More details
+```
+
+The button opens a modal instead of navigating away.
+
+Modal copy:
+
+```text
+CLI data source
+
+CLI fallback is off by default because it can take more time.
+
+If you mostly use Claude or Codex through CLI, this source is usually the most relevant one.
+
+If you do not use CLI but still have trouble getting current limit data, enabling CLI fallback can still help. It is used only as a fallback for providers that do not return data through faster sources.
+
+Provider refreshes run asynchronously, so one slower provider should not block the others.
+
+Setup guides:
+Claude guide on GitHub
+Codex guide on GitHub
+```
+
+The setup links must open externally from the Tauri app:
+
+- Claude guide on GitHub: <https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md>
+- Codex guide on GitHub: <https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md>
+
+Optional modal helper copy:
+
+```text
+You can give this guide to your agent to set it up.
+```
+
+## Controls
+
+### Update Frequency
 
 Each provider square has a dropdown at the bottom.
 
@@ -164,6 +235,31 @@ UPD MANUALLY
 ```
 
 This button refreshes only that provider block.
+
+### Settings
+
+The settings button opens a dropdown with toggles:
+
+- Notifications
+- Cursor
+- Cloud
+- Codex
+- Use CLI too
+
+Defaults:
+
+- Notifications, Cursor, Cloud, and Codex are on
+- Use CLI too is off
+
+User experience:
+
+- Notifications controls whether the app sends system limit alerts
+- Cursor, Cloud, and Codex control which provider blocks are shown and which providers are included in the next limits request
+- Cloud corresponds to Claude
+- Use CLI too controls whether wider source fallback is used when fetching limits, like terminal `ai-limits --best`
+- Use CLI too toggles shown in settings and provider empty states must stay visually synchronized
+- Changing a toggle saves the choice and hides disabled provider blocks, but does not start a refresh
+- Saved choices apply on the next manual refresh or scheduled provider update
 
 ## Time Display
 
@@ -201,44 +297,11 @@ Each provider block refreshes independently:
 
 The preferred integration model is one Tauri request per provider. The frontend should not call a combined all-provider request and then wait for the slowest provider before updating the screen.
 
-## Settings
+## Boundaries
 
-The settings button opens a dropdown with toggles:
-
-- Notifications
-- Cursor
-- Cloud
-- Codex
-- Use CLI fallback
-
-Defaults:
-
-- Notifications, Cursor, Cloud, and Codex are on
-- Use CLI fallback is off
-
-User experience:
-
-- Notifications controls whether the app sends system limit alerts
-- Cursor, Cloud, and Codex control which provider blocks are shown and which providers are included in the next limits request
-- Cloud corresponds to Claude
-- Use CLI fallback controls whether wider source fallback is used when fetching limits, like terminal `ai-limits --best`
-- Changing a toggle saves the choice and hides disabled provider blocks, but does not start a refresh
-- Saved choices apply on the next manual refresh or scheduled provider update
-
-## Mock Requirements
-
-Mock data should be structured near the UI code and named clearly, so future developers can replace it with a Tauri command response.
-
-The mock should include:
-
-- provider id
-- provider label
-- limit rows
-- remaining percentage
-- optional reset time
-- source id
-- data timestamp
-- selected update frequency
+- UI must not duplicate provider-fetching logic.
+- UI must not decide real limit semantics.
+- Future integration should use structured data from the Rust core through Tauri commands.
 
 ## Implementation Prompts
 
@@ -288,7 +351,7 @@ Scope:
 - If the date is not today, show MMM D, HH:MM.
 - Remove UTC offset suffixes from source timestamps, reset timestamps, and Last updated.
 
-Keep parsing tolerant of current mock/core timestamp shapes.
+Keep parsing tolerant of current frontend and core timestamp shapes.
 ```
 
 ### Prompt 4: Provider Source And Per-Block Update
@@ -304,11 +367,3 @@ Scope:
 
 Keep existing independent provider loading, updated, and failed states.
 ```
-
-## Boundaries
-
-- UI mock must not duplicate provider-fetching logic.
-- UI mock must not decide real limit semantics.
-- UI mock must not call provider commands.
-- UI mock must not implement real notification behavior.
-- Future integration should replace mock data with structured data from the Rust core through Tauri commands.

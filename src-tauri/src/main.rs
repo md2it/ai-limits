@@ -9,6 +9,7 @@ fn main() {
         .invoke_handler(tauri::generate_handler![
             commands::get_provider_limits,
             commands::get_single_provider_limits,
+            commands::open_external_url,
         ])
         .run(tauri::generate_context!())
         .expect("failed to run Tauri application");
