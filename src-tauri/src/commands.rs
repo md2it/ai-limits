@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-use ai_limits::get_limits::{get_source_plan_limits, ui_source_plan, UiSourcePlanOptions};
+use ai_limits::get_limits::{get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions};
 use ai_limits::notifications;
 use ai_limits::presentation::{
     format_user_timestamp, normalize_percent, remaining_percent_for_display,
@@ -64,31 +64,74 @@ pub async fn get_provider_limits(
         .map_err(|error| error.to_string())
 }
 
+#[tauri::command]
+pub async fn get_single_provider_limits(
+    provider_id: String,
+    query: ProviderLimitsQuery,
+    sent_notifications: tauri::State<'_, Arc<Mutex<HashSet<String>>>>,
+) -> Result<ProviderLimits, String> {
+    let sent_notifications = Arc::clone(sent_notifications.inner());
+
+    tauri::async_runtime::spawn_blocking(move || {
+        collect_single_provider_limits(&provider_id, &query, sent_notifications)
+    })
+    .await
+    .map_err(|error| error.to_string())?
+}
+
 fn collect_provider_limits(
     query: &ProviderLimitsQuery,
     sent_notifications: Arc<Mutex<HashSet<String>>>,
 ) -> Vec<ProviderLimits> {
-    let plan = ui_source_plan(UiSourcePlanOptions {
+    ui_source_plan(source_plan_options(query))
+        .into_iter()
+        .map(|source_plan| {
+            collect_provider_limits_for_plan(source_plan, query, Arc::clone(&sent_notifications))
+        })
+        .collect()
+}
+
+fn collect_single_provider_limits(
+    provider_id: &str,
+    query: &ProviderLimitsQuery,
+    sent_notifications: Arc<Mutex<HashSet<String>>>,
+) -> Result<ProviderLimits, String> {
+    let source_plan = ui_source_plan(source_plan_options(query))
+        .into_iter()
+        .find(|plan| plan.label() == provider_id)
+        .ok_or_else(|| format!("Provider '{provider_id}' is disabled or unknown"))?;
+
+    Ok(collect_provider_limits_for_plan(
+        source_plan,
+        query,
+        sent_notifications,
+    ))
+}
+
+fn collect_provider_limits_for_plan(
+    source_plan: SourcePlan,
+    query: &ProviderLimitsQuery,
+    sent_notifications: Arc<Mutex<HashSet<String>>>,
+) -> ProviderLimits {
+    let id = source_plan.label().to_string();
+    match get_source_plan_limits(source_plan) {
+        Ok(report) => {
+            if query.notifications_enabled {
+                notify_for_report(&report, sent_notifications);
+            }
+            provider_limits_from_structured(&id, &report.data.structured)
+        }
+        Err(error) => provider_error(&id, error.to_string()),
+    }
+}
+
+fn source_plan_options(query: &ProviderLimitsQuery) -> UiSourcePlanOptions {
+    UiSourcePlanOptions {
         enabled_codex: query.enabled_codex,
         enabled_claude: query.enabled_claude,
         enabled_cursor: query.enabled_cursor,
         use_cli_fallback: query.use_cli_fallback,
-    });
-
-    plan.into_iter()
-        .map(|source_plan| {
-            let id = source_plan.label().to_string();
-            match get_source_plan_limits(source_plan) {
-                Ok(report) => {
-                    if query.notifications_enabled {
-                        notify_for_report(&report, sent_notifications.clone());
-                    }
-                    provider_limits_from_structured(&id, &report.data.structured)
-                }
-                Err(error) => provider_error(&id, error.to_string()),
-            }
-        })
-        .collect()
+    }
 }
 
 fn notify_for_report(report: &SourceReport, sent_notifications: Arc<Mutex<HashSet<String>>>) {

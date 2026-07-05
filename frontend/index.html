@@ -73,7 +73,7 @@
 
       <section class="providers" aria-label="Provider limits" id="provider-list"></section>
 
-      <section class="status-line" aria-live="polite" id="status-line">Loading provider limits...</section>
+      <section class="status-line" aria-live="polite" id="status-line" hidden></section>
     </main>
 
     <script>
@@ -118,7 +118,6 @@
       const providerRefreshInFlight = new Set();
       const providerStatusHideTimers = new Map();
 
-      let isRefreshing = false;
       let appSettings = loadAppSettings();
 
       function loadAppSettings() {
@@ -212,6 +211,31 @@
         removeDisabledProviderBlocks();
       }
 
+      function providerLabel(providerId) {
+        return providerId.charAt(0).toUpperCase() + providerId.slice(1);
+      }
+
+      function createEmptyProvider(providerId) {
+        return {
+          id: providerId,
+          label: providerLabel(providerId),
+          limits: [],
+          sourceId: null,
+          dataTimestamp: null,
+          selectedUpdateFrequency: getProviderInterval(providerId),
+          errorMessage: null,
+          pending: true,
+        };
+      }
+
+      function formatSourceLine(provider) {
+        if (provider.pending) {
+          return "—";
+        }
+
+        return `Source ${provider.sourceId || "unknown"}: ${provider.dataTimestamp || "unknown"}`;
+      }
+
       function frequencyToMs(frequency) {
         switch (frequency) {
           case "1 min":
@@ -290,6 +314,10 @@
 
       function buildLimitRowsHtml(provider) {
         if (!provider.limits.length) {
+          if (provider.pending) {
+            return "";
+          }
+
           return `<p class="provider-message">${escapeHtml(provider.errorMessage || "No usable limit records from this source")}</p>`;
         }
 
@@ -334,7 +362,7 @@
             <h2>${escapeHtml(provider.label)}</h2>
           </div>
           <div class="limits">${buildLimitRowsHtml(provider)}</div>
-          <p class="source-line">Source ${escapeHtml(provider.sourceId || "unknown")}: ${escapeHtml(provider.dataTimestamp || "unknown")}</p>
+          <p class="source-line">${escapeHtml(formatSourceLine(provider))}</p>
           <label class="frequency-row">
             <span>Update frequency</span>
             <select aria-label="${escapeHtml(provider.label)} update frequency">${frequencyOptions}</select>
@@ -402,8 +430,7 @@
 
       function updateProviderBlockData(block, provider) {
         block.querySelector(".limits").innerHTML = buildLimitRowsHtml(provider);
-        block.querySelector(".source-line").textContent =
-          `Source ${provider.sourceId || "unknown"}: ${provider.dataTimestamp || "unknown"}`;
+        block.querySelector(".source-line").textContent = formatSourceLine(provider);
       }
 
       function isProviderRefreshSuccess(provider) {
@@ -426,17 +453,6 @@
         return block;
       }
 
-      function replaceProviderBlock(provider) {
-        const existingBlock = getProviderBlock(provider.id);
-        const block = mountProviderBlock(provider);
-        if (existingBlock) {
-          existingBlock.replaceWith(block);
-          return;
-        }
-
-        providerList.appendChild(block);
-      }
-
       function formatLastUpdated(date) {
         return date.toLocaleString(undefined, {
           month: "short",
@@ -444,24 +460,6 @@
           hour: "2-digit",
           minute: "2-digit",
         });
-      }
-
-      function waitForNextPaint() {
-        return new Promise((resolve) => {
-          requestAnimationFrame(() => requestAnimationFrame(resolve));
-        });
-      }
-
-      function setRefreshButtonState(refreshing) {
-        refreshButton.disabled = refreshing;
-        refreshButton.textContent = refreshing ? "Refreshing..." : "Refresh";
-      }
-
-      function setInitialLoadingState(loading) {
-        statusLine.hidden = !loading;
-        statusLine.classList.remove("error");
-        statusLine.classList.toggle("loading", loading);
-        statusLine.textContent = loading ? "Loading provider limits..." : "";
       }
 
       function setErrorState(message) {
@@ -481,41 +479,37 @@
         lastUpdatedLine.textContent = `Last updated: ${formatLastUpdated(date)}`;
       }
 
-      async function fetchProviderLimits() {
+      async function fetchSingleProviderLimits(providerId) {
         const invoke = window.__TAURI__?.core?.invoke;
         if (!invoke) {
           throw new Error("Tauri API is unavailable");
         }
 
-        return invoke("get_provider_limits", { query: settingsToQuery() });
+        return invoke("get_single_provider_limits", {
+          providerId,
+          query: settingsToQuery(),
+        });
       }
 
-      async function refreshSingleProvider(providerId) {
+      async function refreshSingleProvider(providerId, { showLoading = true } = {}) {
         if (!isProviderEnabled(providerId) || providerRefreshInFlight.has(providerId)) {
           return;
         }
 
         providerRefreshInFlight.add(providerId);
 
+        if (showLoading) {
+          setProviderStatus(providerId, "loading");
+        }
+
         try {
-          const providers = await fetchProviderLimits();
-          const provider = providers.find((entry) => entry.id === providerId);
-          if (!provider) {
+          const provider = await fetchSingleProviderLimits(providerId);
+
+          if (!isProviderEnabled(providerId)) {
             return;
           }
 
-          replaceProviderBlock(provider);
-          setLastUpdated(new Date());
-        } catch (error) {
-          setErrorState(`Error loading provider limits: ${error.message || error}`);
-        } finally {
-          providerRefreshInFlight.delete(providerId);
-        }
-      }
-
-      function applyProviderRefreshResults(providers) {
-        for (const provider of providers) {
-          let block = getProviderBlock(provider.id);
+          let block = getProviderBlock(providerId);
           if (!block) {
             block = mountProviderBlock(provider);
             providerList.appendChild(block);
@@ -524,18 +518,21 @@
           }
 
           if (isProviderRefreshSuccess(provider)) {
-            setProviderStatus(provider.id, "updated", "Updated");
+            setProviderStatus(providerId, "updated", "Updated");
+            setLastUpdated(new Date());
           } else {
-            setProviderStatus(provider.id, "failed", "Failed");
+            setProviderStatus(providerId, "failed", "Failed");
           }
+        } catch {
+          if (isProviderEnabled(providerId)) {
+            setProviderStatus(providerId, "failed", "Failed");
+          }
+        } finally {
+          providerRefreshInFlight.delete(providerId);
         }
       }
 
-      async function refreshProviderLimits({ initial = false } = {}) {
-        if (isRefreshing) {
-          return;
-        }
-
+      function refreshEnabledProviders({ initial = false } = {}) {
         removeDisabledProviderBlocks();
 
         const enabledProviders = PROVIDER_IDS.filter(isProviderEnabled);
@@ -546,45 +543,22 @@
           return;
         }
 
-        isRefreshing = true;
-        setRefreshButtonState(true);
+        clearStatusState();
 
         if (initial) {
-          setInitialLoadingState(true);
-        } else {
-          for (const providerId of enabledProviders) {
-            setProviderStatus(providerId, "loading");
-          }
+          providerList.replaceChildren(
+            ...enabledProviders.map((providerId) =>
+              mountProviderBlock(createEmptyProvider(providerId)),
+            ),
+          );
         }
 
-        await waitForNextPaint();
+        for (const providerId of enabledProviders) {
+          setProviderStatus(providerId, "loading");
+        }
 
-        try {
-          const providers = await fetchProviderLimits();
-
-          removeDisabledProviderBlocks();
-
-          if (initial) {
-            providerList.replaceChildren(...providers.map((provider) => mountProviderBlock(provider)));
-            clearStatusState();
-          } else {
-            applyProviderRefreshResults(providers);
-          }
-
-          if (providers.some(isProviderRefreshSuccess)) {
-            setLastUpdated(new Date());
-          }
-        } catch (error) {
-          if (initial) {
-            setErrorState(`Error loading provider limits: ${error.message || error}`);
-          } else {
-            for (const providerId of enabledProviders) {
-              setProviderStatus(providerId, "failed", "Failed");
-            }
-          }
-        } finally {
-          isRefreshing = false;
-          setRefreshButtonState(false);
+        for (const providerId of enabledProviders) {
+          refreshSingleProvider(providerId, { showLoading: false });
         }
       }
 
@@ -613,9 +587,9 @@
 
       syncSettingsInputs();
       refreshButton.addEventListener("click", () => {
-        refreshProviderLimits();
+        refreshEnabledProviders();
       });
-      refreshProviderLimits({ initial: true });
+      refreshEnabledProviders({ initial: true });
     </script>
   </body>
 </html>
