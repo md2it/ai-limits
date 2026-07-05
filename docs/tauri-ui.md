@@ -22,12 +22,11 @@ Do not connect:
 The UI contains:
 
 - header with the centered application name
-- content area below the header
+- toolbar with last updated time, settings gear, and Refresh
 - three inline rounded squares for providers:
   - Codex
   - Cursor
   - Claude
-- settings area with a mock `Notifications` toggle
 
 Each provider square represents one provider and contains that provider's limit details.
 
@@ -81,7 +80,44 @@ Default value:
 
 - 5 min
 
-The dropdown is a mock at this stage.
+## Refresh Behavior
+
+Provider blocks should render immediately when the UI opens. Empty data is acceptable while a provider has not returned data yet.
+
+Each provider block refreshes independently:
+
+- initial load starts refreshes for enabled providers in parallel
+- manual Refresh starts refreshes for enabled providers in parallel
+- scheduled refresh runs only for the provider whose interval fired
+- a slow or failed provider must not block other provider blocks from updating
+- each block owns its own loading, updated, and failed status
+- global loading should not hide or block provider blocks
+
+The preferred integration model is one Tauri request per provider. The frontend should not call a combined all-provider request and then wait for the slowest provider before updating the screen.
+
+## Settings
+
+The gear icon in the toolbar opens a dropdown with toggles:
+
+- Notifications
+- Cursor
+- Cloud
+- Codex
+- Use CLI fallback
+
+Defaults:
+
+- Notifications, Cursor, Cloud, and Codex are on
+- Use CLI fallback is off
+
+User experience:
+
+- Notifications controls whether the app sends system limit alerts
+- Cursor, Cloud, and Codex control which provider blocks are shown and which providers are included in the next limits request
+- Cloud corresponds to Claude
+- Use CLI fallback controls whether wider source fallback is used when fetching limits, like terminal `ai-limits --best`
+- Changing a toggle saves the choice and hides disabled provider blocks, but does not start a refresh
+- Saved choices apply on the next manual refresh or scheduled provider update
 
 ## Mock Requirements
 
