@@ -3,6 +3,10 @@ name = "ai-limits"
 version = "0.1.0"
 edition = "2021"
 
+[workspace]
+members = [".", "src-tauri"]
+resolver = "2"
+
 [[bin]]
 name = "ai-limits"
 path = "src/main.rs"

@@ -24,6 +24,9 @@ build/
 target/
 coverage/
 
+# Tauri
+src-tauri/gen/
+
 # Local data
 *.sqlite
 *.sqlite3
