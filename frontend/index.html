@@ -8,11 +8,117 @@
   </head>
   <body>
     <main class="app">
-      <section class="hello" aria-labelledby="title">
-        <p class="eyebrow">AI Limits Desktop</p>
-        <h1 id="title">Hello World</h1>
-        <p class="summary">Minimal Tauri shell is running locally.</p>
+      <header class="app-header">
+        <h1>AI Limits</h1>
+      </header>
+
+      <section class="settings" aria-label="Settings">
+        <label class="toggle-row">
+          <span>Notifications</span>
+          <input type="checkbox" />
+        </label>
+      </section>
+
+      <section class="providers" aria-label="Provider limits" id="provider-list"></section>
+
+      <section class="integration-note" aria-label="Future integration points">
+        Mock data only. Future Tauri command response should replace the data object in this UI layer.
       </section>
     </main>
+
+    <script>
+      const updateFrequencyOptions = [
+        "Manual only",
+        "1 min",
+        "5 min",
+        "10 min",
+        "30 min",
+        "1 hour",
+      ];
+
+      const mockProviders = [
+        {
+          id: "codex",
+          label: "Codex",
+          sourceId: "codex-local",
+          dataTimestamp: "Jul 5, 19:28 UTC+3",
+          selectedUpdateFrequency: "5 min",
+          limits: [
+            { label: "5h", remainingPercentage: 92, resetTime: "Jul 5, 20:48 UTC+3" },
+            { label: "7d", remainingPercentage: 35, resetTime: "Jul 10, 03:55 UTC+3" },
+          ],
+        },
+        {
+          id: "cursor",
+          label: "Cursor",
+          sourceId: "cursor-api2",
+          dataTimestamp: "Jul 5, 19:28 UTC+3",
+          selectedUpdateFrequency: "5 min",
+          limits: [
+            { label: "plan", remainingPercentage: 54.6, resetTime: "Jul 28, 03:00 UTC+3" },
+            { label: "auto", remainingPercentage: 63.7 },
+            { label: "api", remainingPercentage: 24.5 },
+          ],
+        },
+        {
+          id: "claude",
+          label: "Claude",
+          sourceId: "claude-cli",
+          dataTimestamp: "Jul 5, 19:29 UTC+3",
+          selectedUpdateFrequency: "5 min",
+          limits: [
+            { label: "5h", remainingPercentage: 100, resetTime: "Jul 6, 00:20 UTC+3" },
+            { label: "7d", remainingPercentage: 84, resetTime: "Jul 7, 13:00 UTC+3" },
+          ],
+        },
+      ];
+
+      const providerList = document.querySelector("#provider-list");
+
+      function renderProvider(provider) {
+        const block = document.createElement("article");
+        block.className = "provider-block";
+        block.dataset.providerId = provider.id;
+
+        const limitRows = provider.limits
+          .map((limit) => {
+            const percent = Number(limit.remainingPercentage).toFixed(1);
+            const reset = limit.resetTime ? `<span>| reset ${limit.resetTime}</span>` : "";
+
+            return `
+              <div class="limit-row">
+                <span class="limit-name">${limit.label}</span>
+                <div class="meter" aria-label="${provider.label} ${limit.label} ${percent}% left">
+                  <span style="width: ${limit.remainingPercentage}%"></span>
+                </div>
+                <span class="limit-value">${percent}% left</span>
+                ${reset}
+              </div>
+            `;
+          })
+          .join("");
+
+        const frequencyOptions = updateFrequencyOptions
+          .map((option) => {
+            const selected = option === provider.selectedUpdateFrequency ? "selected" : "";
+            return `<option ${selected}>${option}</option>`;
+          })
+          .join("");
+
+        block.innerHTML = `
+          <h2>${provider.label}</h2>
+          <div class="limits">${limitRows}</div>
+          <p class="source-line">Source ${provider.sourceId}: ${provider.dataTimestamp}</p>
+          <label class="frequency-row">
+            <span>Update frequency</span>
+            <select aria-label="${provider.label} update frequency">${frequencyOptions}</select>
+          </label>
+        `;
+
+        return block;
+      }
+
+      providerList.append(...mockProviders.map(renderProvider));
+    </script>
   </body>
 </html>
