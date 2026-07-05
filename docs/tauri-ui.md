@@ -89,7 +89,7 @@ auto | 63.7% left
 ■■■■■■■■■■■■■■□□□□
 api | 24.5% left
 ■■■■■□□□□□□□□□□□□□□□
-Source cursor-api2 Jul 5, 19:28
+Source: cursor-api2 (as of Jul 5, 19:28)
 
      --------- CODEX ---------
 5h | 92.0% left
@@ -98,7 +98,7 @@ reset 20:48
 7d | 35.0% left
 ■■■■■■■■■□□□□□□□□□□□□□□□□
 reset Jul 10, 03:55
-Source codex-local Jul 5, 19:28
+Source: codex-local (as of Jul 5, 19:28)
 
      --------- CLAUDE --------
 5h | 100.0% left
@@ -107,7 +107,7 @@ reset Jul 6, 00:20
 7d | 84.0% left
 ■■■■■■■■■■■■■■■■■■■■□□□□
 reset Jul 7, 13:00
-Source claude-cli Jul 5, 19:29
+Source: claude-cli (as of Jul 5, 19:29)
 ```
 
 The UI does not need to use terminal-style ASCII rendering. The example defines the information that must be visible.
@@ -142,7 +142,7 @@ The bar must not use a left-to-right rainbow gradient inside the filled segment.
 Provider source information is shown on one line by default:
 
 ```text
-Source codex-local Jul 5, 22:12
+Source: codex-local (as of Jul 5, 22:12)
 ```
 
 Both values are variable data from the application core:
@@ -150,7 +150,7 @@ Both values are variable data from the application core:
 - source id, for example `codex-local`
 - data timestamp
 
-Each value is a non-breaking unit: `Source {sourceId}` and the formatted timestamp must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.
+Each value is a non-breaking unit: `Source: {sourceId}` and `(as of {timestamp})` must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.
 
 ### No Fresh Data State
 
