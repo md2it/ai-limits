@@ -215,7 +215,7 @@ Boundaries:
 - `src-tauri/` may provide desktop-specific notification transport when needed
 - `src-tauri/` may provide desktop-specific window, tray, menu, and permission integration
 
-Current desktop command and response contract is factual and documented in [tauri.md](tauri.md).
+Current desktop command and response contract is factual and documented in [tauri/commands.md](tauri/commands.md) and [tauri/provider-contract.md](tauri/provider-contract.md).
 
 Contract boundaries:
 
