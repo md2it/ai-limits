@@ -128,7 +128,7 @@ fn collect_provider_limits_for_plan(
     match get_source_plan_limits(source_plan) {
         Ok(report) => {
             if query.notifications_enabled {
-                notify_for_report(&report, sent_notifications);
+                notify_for_report(&report, &sent_notifications);
             }
             provider_limits_from_structured(&id, &report.data.structured)
         }
@@ -145,16 +145,12 @@ fn source_plan_options(query: &ProviderLimitsQuery) -> UiSourcePlanOptions {
     }
 }
 
-fn notify_for_report(report: &SourceReport, sent_notifications: Arc<Mutex<HashSet<String>>>) {
+fn notify_for_report(report: &SourceReport, sent_notifications: &Arc<Mutex<HashSet<String>>>) {
     let Ok(mut sent) = sent_notifications.lock() else {
         return;
     };
 
-    for notification in notifications::notifications_for_report(report) {
-        if sent.insert(notification.dedupe_key.clone()) {
-            let _ = notifications::notify(&notification);
-        }
-    }
+    notifications::send_for_report(report, &mut sent);
 }
 
 fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> ProviderLimits {

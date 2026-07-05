@@ -224,7 +224,7 @@ fn run_sources_with_terminal_ui(
                         successes += 1;
                         stderr.push_str(&report.data.stderr);
                         print_source_report(ui, &report, output_mode, &color)?;
-                        notify_for_report(&report, sent_notifications);
+                        crate::notifications::send_for_report(&report, sent_notifications);
                     }
                     Err(error) => {
                         failures += 1;
@@ -249,14 +249,6 @@ fn run_sources_with_terminal_ui(
         (0, _) => TerminalStatus::Fail,
         _ => TerminalStatus::Part,
     })
-}
-
-fn notify_for_report(report: &SourceReport, sent_notifications: &mut HashSet<String>) {
-    for notification in crate::notifications::notifications_for_report(report) {
-        if sent_notifications.insert(notification.dedupe_key.clone()) {
-            let _ = crate::notifications::notify(&notification);
-        }
-    }
 }
 
 fn print_source_report(

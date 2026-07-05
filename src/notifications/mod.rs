@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io;
 
 use chrono::{DateTime, Local, TimeZone, Utc};
@@ -133,6 +134,14 @@ pub fn notify(notification: &Notification) -> io::Result<()> {
 
 pub fn notify_test(kind: LimitNotificationKind) -> io::Result<()> {
     notify(&Notification::test(kind))
+}
+
+pub fn send_for_report(report: &SourceReport, sent: &mut HashSet<String>) {
+    for notification in notifications_for_report(report) {
+        if sent.insert(notification.dedupe_key.clone()) {
+            let _ = notify(&notification);
+        }
+    }
 }
 
 pub fn notifications_for_report(report: &SourceReport) -> Vec<Notification> {
@@ -376,6 +385,25 @@ mod tests {
         info.status.data_available = false;
 
         assert!(notifications_for_structured(&info).is_empty());
+    }
+
+    #[test]
+    fn send_for_report_dedupes_within_session() {
+        let report = SourceReport {
+            source: Source::CodexLocal,
+            data: SourceData {
+                raw: None,
+                structured: structured_with_limit(Some(75.0)),
+                stderr: String::new(),
+            },
+        };
+        let mut sent = HashSet::new();
+
+        send_for_report(&report, &mut sent);
+        assert_eq!(sent.len(), 1);
+
+        send_for_report(&report, &mut sent);
+        assert_eq!(sent.len(), 1);
     }
 
     #[test]
