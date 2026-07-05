@@ -179,15 +179,41 @@ Model:
 
 ---
 
-## Future Desktop
+## Desktop
 
-The desktop will almost certainly be built with Tauri, but a separate desktop directory is not created yet.
+The desktop application uses Tauri as a desktop adapter to the existing Rust core.
 
-Current rule:
+Rules:
 
 - the shared core must live in `lib.rs` and the `src/` modules
 - the CLI must be only one interface to the core
-- Tauri integration should appear later as a separate interface to the same core
+- Tauri is a separate interface to the same core
+- `src-tauri/` is a desktop adapter, not a separate business core
+- Tauri must use structured data returned by the existing Rust core
+- provider logic, limit semantics, configuration, and notification rules stay in `src/`
+- Tauri commands delegate to core functions instead of duplicating application logic
+
+Structure:
+
+```text
+src-tauri/
+  src/
+    main.rs
+    commands.rs
+```
+
+Purpose:
+
+- `main.rs` — Tauri application bootstrap, window setup, plugins, and command registration
+- `commands.rs` — desktop commands exposed to the frontend and delegated to the shared core
+
+Boundaries:
+
+- `src-tauri/` does not fetch provider data directly
+- `src-tauri/` does not decide limit semantics
+- `src-tauri/` does not own notification rules
+- `src-tauri/` may provide desktop-specific notification transport when needed
+- `src-tauri/` may provide desktop-specific window, tray, menu, and permission integration
 
 ---
 
