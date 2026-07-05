@@ -17,9 +17,10 @@ platforms:
 - Windows
 - Linux
 
-The first release pipeline should prove that every platform can produce a
-downloadable artifact in GitHub Actions. Signing, notarization, and polished
-installer distribution are future stages.
+The current unsigned CI workflow proves that every platform can produce a
+downloadable artifact in GitHub Actions. The next release-readiness step is
+manual smoke testing of the downloaded artifacts. Signing, notarization, and
+polished installer distribution are future stages.
 
 ---
 
@@ -35,6 +36,9 @@ Confirmed:
   notification rules.
 - Local macOS production `.app` build is confirmed.
 - The produced macOS `.app` was manually launched and checked by the user.
+- GitHub Actions unsigned desktop build workflow is implemented and verified.
+- CI produces unsigned artifacts for macOS, Windows, and Linux.
+- CI artifacts were downloaded and inspected by file name/path.
 
 Known local macOS build result:
 
@@ -55,6 +59,15 @@ Known issue:
   the DMG bundling step.
 - DMG is not a blocker for the first unsigned `.app` artifact stage.
 - DMG packaging should be handled as a later, separate task.
+
+Verified CI run:
+
+```text
+URL: https://github.com/md2it/ai-limits/actions/runs/28758826398
+Run ID: 28758826398
+Trigger: workflow_dispatch
+Status: success
+```
 
 ---
 
@@ -94,11 +107,11 @@ Outcome:
 - Default DMG packaging is not confirmed.
 - First CI stage should use `.app`, not DMG, as the required macOS artifact.
 
-### 2. Design Unsigned CI Builds
+### 2. Build Unsigned CI Artifacts
 
-Status: implemented, pending CI run.
+Status: done.
 
-Implemented workflow:
+Workflow:
 
 ```text
 .github/workflows/desktop-build.yml
@@ -118,12 +131,12 @@ workflow_dispatch
 
 No automatic `push`, `pull_request`, or tag trigger is included.
 
-Implemented jobs:
+Verified jobs:
 
 ```text
-build-macos
-build-windows
-build-linux
+build-macos:   passed, artifact uploaded
+build-windows: passed, artifact uploaded
+build-linux:   passed, artifact uploaded
 ```
 
 Common setup:
@@ -182,33 +195,46 @@ librsvg2-dev
 patchelf
 ```
 
-Implementation checks completed:
+Verification result:
 
-- YAML syntax was checked by the implementing agent.
+- Workflow starts manually from GitHub Actions.
+- macOS, Windows, and Linux jobs passed.
+- Artifacts were created and uploaded for all three platforms.
+- Artifacts were downloaded locally and file paths were confirmed.
 - Release publishing was not added.
-- Signing, notarization, and secret requirements were not added.
-- Application code was not changed by the workflow implementation.
+- Signing, notarization, secrets, and GitHub Releases were not used.
 
-Known implementation limitation:
+Confirmed artifacts:
 
-- `actionlint` was not available locally, so GitHub Actions-specific linting was
-  not run.
+```text
+macOS:
+  artifact name: ai-limits-macos-app
+  artifact size: 4,988,236 bytes
+  file: AI Limits.app.zip
 
-Remaining CI risks:
+Windows:
+  artifact name: ai-limits-windows-unsigned
+  artifact size: 5,365,018 bytes
+  files:
+    nsis/AI Limits_0.1.0_x64-setup.exe
+    msi/AI Limits_0.1.0_x64_en-US.msi
 
-- Windows artifact paths must still be confirmed by the first CI run.
-- Linux artifact paths must still be confirmed by the first CI run.
-- The Linux runner may require an additional system dependency.
+Linux:
+  artifact name: ai-limits-linux-unsigned
+  artifact size: 80,837,949 bytes
+  files:
+    deb/AI Limits_0.1.0_amd64.deb
+    appimage/AI Limits_0.1.0_amd64.AppImage
+```
 
-First workflow success criteria:
+Local download location used during verification:
 
-- the workflow can be started manually;
-- macOS produces and uploads an unsigned `.app` archive;
-- Windows either uploads an unsigned artifact or reports the missing path clearly;
-- Linux either uploads an unsigned artifact or reports the missing dependency or
-  path clearly;
-- no signing or notarization settings are introduced;
-- no GitHub Release is created.
+```text
+/private/tmp/ai-limits-run-28758826398
+```
+
+This temporary directory is not a release storage location and may be cleaned by
+the operating system.
 
 Implementation guardrails:
 
@@ -219,68 +245,60 @@ Implementation guardrails:
 - Do not add release publishing yet.
 - Do not add signing, notarization, or secret requirements.
 
-### 3. Upload CI Artifacts
+### 3. Smoke-Test Downloaded Artifacts
 
-Status: planned.
+Status: next.
 
 Plan:
 
-- Upload artifacts from every successful platform build.
-- Use clear artifact names that include app name, platform, and architecture when
-  known.
-- Keep artifact retention modest during discovery.
-- Do not attach artifacts to GitHub Releases until the CI artifact stage is
-  stable.
+- Verify that downloaded artifacts can be opened or installed on target
+  platforms.
+- Keep this as a manual verification step before GitHub Releases.
+- Do not add signing or notarization during smoke testing.
+- Do not create GitHub Releases during smoke testing.
 
-Expected first artifacts:
+Minimum checks:
 
 ```text
 macOS:
-  target/release/bundle/macos/AI Limits.app.zip
+  unzip AI Limits.app.zip
+  launch the .app
+  record unsigned app / Gatekeeper UX
 
 Windows:
-  target/release/bundle/nsis/*.exe
-  target/release/bundle/msi/*.msi
+  install or run NSIS setup
+  optionally install MSI
+  launch app after installation
 
 Linux:
-  target/release/bundle/deb/*.deb
-  target/release/bundle/appimage/*.AppImage
+  run AppImage
+  optionally install DEB
+  launch app after installation
 ```
 
-Windows and Linux artifact paths must still be confirmed by the first CI run.
+Smoke-test result should document:
 
-### 4. Stabilize Platform Builds
+- platform;
+- artifact file used;
+- installation/opening result;
+- launch result;
+- blocking UX or security warning;
+- whether the artifact is acceptable for an unsigned preview release.
 
-Status: planned.
-
-Plan:
-
-- Run manual workflow.
-- Inspect each platform's produced bundle paths.
-- Document required Linux system dependencies if the Linux runner needs them.
-- Document Windows artifact type and path.
-- Adjust workflow only for build and artifact correctness.
-
-Success criteria:
-
-- macOS artifact uploads successfully.
-- Windows artifact uploads successfully.
-- Linux artifact uploads successfully.
-- Workflow failures are actionable and documented.
-
-### 5. Add GitHub Releases
+### 4. Add GitHub Releases
 
 Status: future.
 
 Plan:
 
-- Add a release workflow only after unsigned CI artifacts are stable.
+- Add a release workflow only after unsigned artifacts pass smoke verification,
+  or after an explicit decision to publish untested unsigned artifacts.
 - Prefer tag-based release creation.
 - Attach confirmed artifacts from all platforms.
 - Keep release notes simple and factual.
 - Do not introduce signing or notarization as part of the first release workflow.
 
-### 6. Add Installers and Signed Distribution
+### 5. Add Installers and Signed Distribution
 
 Status: future.
 
@@ -297,50 +315,48 @@ Plan:
 
 - Start with manual workflows.
 - Use native runners per platform.
-- Keep the first workflow focused on build artifacts, not release publishing.
+- Keep the current workflow focused on build artifacts, not release publishing.
 - Do not require DMG for the first macOS CI success.
 - Do not add signing or notarization secrets yet.
 - Keep platform-specific commands explicit if a matrix makes the workflow hard to
   read.
-- Cache dependencies only if it does not obscure the first working workflow.
 
 ---
 
 ## Artifact Principles
 
-- First priority: prove that CI can produce downloadable unsigned artifacts.
+- CI already proves that downloadable unsigned artifacts can be produced.
 - Artifact names should be stable and human-readable.
-- Artifact paths must be based on actual CI output, not assumptions.
-- macOS `.app` may need to be archived before upload so the bundle structure is
-  preserved.
-- DMG, MSI, NSIS, AppImage, deb, and rpm should not be assumed until confirmed.
+- Artifact paths must remain based on actual CI output, not assumptions.
+- macOS `.app` is archived before upload so the bundle structure is preserved.
+- GitHub Actions artifact retention is currently 14 days.
+- Long-term release artifacts should be handled through GitHub Releases or a
+  documented release staging directory, not `/private/tmp`.
 
 ---
 
-## Open Questions
+## Known Warnings and Risks
 
-- Which Windows bundle target should be the first required artifact?
-- Which Linux bundle target should be the first required artifact?
-- Which Linux system dependencies are required on the GitHub runner?
-- Should the first workflow use a matrix or separate jobs for clarity?
-- Should tag-based runs be added immediately or only after manual builds pass?
+- GitHub Actions reported that `actions/checkout@v4`, `actions/setup-node@v4`,
+  and `actions/upload-artifact@v4` target a Node.js 20 runtime that is deprecated
+  and currently forced to run on Node.js 24. This is not blocking now, but action
+  versions should be revisited when newer versions are available.
+- GitHub Actions reported that `macos-latest` will migrate to macOS 26. If
+  release stability becomes sensitive to macOS runner changes, pin the runner to
+  a specific macOS version.
+- Linux artifact size is materially larger than macOS and Windows artifacts:
+  `ai-limits-linux-unsigned` was 80,837,949 bytes in the verified run.
+- Downloaded artifacts used for verification were stored in `/private/tmp`, which
+  is not durable storage.
+- Artifact install/open smoke testing has not been completed yet.
 
 ---
 
 ## Recommended Next Task
 
-Design the first unsigned GitHub Actions workflow in this document before
-implementation.
+Smoke-test downloaded artifacts on target platforms before planning GitHub
+Releases.
 
-The design should define:
-
-- workflow triggers;
-- runner list;
-- build commands;
-- artifact upload paths;
-- artifact names;
-- expected known risks;
-- checks for the implementing agent.
-
-After the design is approved, a separate implementation task can create the
-workflow file under `.github/workflows/`.
+GitHub Releases should be planned only after smoke-test results are documented,
+unless the project explicitly chooses to publish unsigned artifacts with known
+untested runtime risk.
