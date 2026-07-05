@@ -328,6 +328,8 @@ body {
 
 .source-info {
   margin: 0;
+  margin-top: auto;
+  padding-top: 20px;
   color: #4c5b57;
   font-size: 13px;
   line-height: 1.4;
@@ -337,9 +339,8 @@ body {
   display: grid;
   flex-shrink: 0;
   gap: 12px;
-  margin-top: auto;
   border-top: 1px solid #e4ebe8;
-  padding-top: 10px;
+  padding-top: 14px;
 }
 
 .source-id,
