@@ -98,6 +98,7 @@ h1 {
 }
 
 .provider-block {
+  position: relative;
   display: flex;
   min-height: 320px;
   flex-direction: column;
@@ -107,11 +108,86 @@ h1 {
   padding: 16px;
 }
 
+.provider-header {
+  margin-bottom: 16px;
+  text-align: center;
+}
+
 .provider-block h2 {
-  margin: 0 0 16px;
+  margin: 0;
   font-size: 20px;
   line-height: 1.2;
+}
+
+.provider-status {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.78);
+  color: #5c6b67;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.2;
+  pointer-events: none;
+}
+
+.provider-status[hidden] {
+  display: none;
+}
+
+.provider-status-indicator {
+  display: inline-flex;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+}
+
+.provider-status.loading .provider-status-indicator {
+  border: 3px solid #c4cfcb;
+  border-top-color: #2f7664;
+  border-radius: 50%;
+  animation: provider-spin 0.8s linear infinite;
+}
+
+.provider-status.updated {
+  color: #2f7664;
+}
+
+.provider-status.updated .provider-status-indicator::before {
+  content: "✓";
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.provider-status.failed {
+  color: #8a3b2f;
+}
+
+.provider-status.failed .provider-status-indicator::before {
+  content: "!";
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #8a3b2f;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 22px;
   text-align: center;
+}
+
+@keyframes provider-spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .limits {

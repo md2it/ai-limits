@@ -26,7 +26,13 @@ pub struct ProviderLimitRow {
 }
 
 #[tauri::command]
-pub fn get_provider_limits() -> Vec<ProviderLimits> {
+pub async fn get_provider_limits() -> Vec<ProviderLimits> {
+    tauri::async_runtime::spawn_blocking(collect_provider_limits)
+        .await
+        .expect("failed to collect provider limits")
+}
+
+fn collect_provider_limits() -> Vec<ProviderLimits> {
     default_source_plan()
         .into_iter()
         .map(|plan| {
