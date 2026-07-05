@@ -159,6 +159,7 @@
       const providerRefreshTimers = new Map();
       const providerRefreshInFlight = new Set();
       const providerStatusHideTimers = new Map();
+      const providerDataCache = new Map();
 
       let appSettings = loadAppSettings();
 
@@ -302,7 +303,57 @@
         cliDetailsModal.hidden = !isOpen;
       }
 
+      function cacheProviderData(provider) {
+        providerDataCache.set(provider.id, { ...provider, pending: false });
+      }
+
+      function hasCachedProviderData(providerId) {
+        const cached = providerDataCache.get(providerId);
+        return cached != null && !cached.pending;
+      }
+
+      function insertProviderBlockInOrder(block, providerId) {
+        const enabledProviders = PROVIDER_IDS.filter(isProviderEnabled);
+        const targetIndex = enabledProviders.indexOf(providerId);
+
+        for (let i = targetIndex + 1; i < enabledProviders.length; i += 1) {
+          const nextBlock = getProviderBlock(enabledProviders[i]);
+          if (nextBlock) {
+            providerList.insertBefore(block, nextBlock);
+            return;
+          }
+        }
+
+        providerList.appendChild(block);
+      }
+
+      function restoreNewlyEnabledProviders(providerIds) {
+        if (!providerIds.length) {
+          return;
+        }
+
+        clearStatusState();
+
+        for (const providerId of providerIds) {
+          if (getProviderBlock(providerId)) {
+            continue;
+          }
+
+          if (hasCachedProviderData(providerId)) {
+            const block = mountProviderBlock(providerDataCache.get(providerId));
+            insertProviderBlockInOrder(block, providerId);
+            continue;
+          }
+
+          const block = mountProviderBlock(createEmptyProvider(providerId));
+          insertProviderBlockInOrder(block, providerId);
+          refreshSingleProvider(providerId);
+        }
+      }
+
       function handleSettingsChange() {
+        const previouslyEnabled = PROVIDER_IDS.filter(isProviderEnabled);
+
         appSettings = {
           notifications: settingInputs.notifications.checked,
           cursor: settingInputs.cursor.checked,
@@ -311,8 +362,15 @@
           useCliFallback: settingInputs.useCliFallback.checked,
         };
         saveAppSettings();
+
+        const newlyEnabled = PROVIDER_IDS.filter(
+          (providerId) =>
+            isProviderEnabled(providerId) && !previouslyEnabled.includes(providerId),
+        );
+
         removeDisabledProviderBlocks();
         syncInlineCliFallbackToggles();
+        restoreNewlyEnabledProviders(newlyEnabled);
       }
 
       function providerLabel(providerId) {
@@ -815,6 +873,8 @@
 
         try {
           const provider = await fetchSingleProviderLimits(providerId);
+          provider.pending = false;
+          cacheProviderData(provider);
 
           if (!isProviderEnabled(providerId)) {
             return;
@@ -823,7 +883,7 @@
           let block = getProviderBlock(providerId);
           if (!block) {
             block = mountProviderBlock(provider);
-            providerList.appendChild(block);
+            insertProviderBlockInOrder(block, providerId);
           } else {
             updateProviderBlockData(block, provider);
           }
