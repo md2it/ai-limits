@@ -21,17 +21,6 @@ body {
   padding: 28px;
 }
 
-.app-header {
-  margin: 0 auto 24px;
-  text-align: center;
-}
-
-h1 {
-  margin: 0;
-  font-size: 30px;
-  line-height: 1.2;
-}
-
 .app-toolbar,
 .status-line {
   width: min(100%, 1120px);
@@ -40,25 +29,26 @@ h1 {
 
 .app-toolbar {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  flex-direction: column;
+  gap: 10px;
 }
 
 .toolbar-actions {
   display: flex;
-  align-items: center;
+  align-items: stretch;
   gap: 10px;
 }
 
 .settings-menu {
   position: relative;
+  flex: 0 0 auto;
 }
 
 .settings-button {
   display: inline-flex;
   width: 36px;
   height: 36px;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   border: 1px solid #c4cfcb;
@@ -89,7 +79,10 @@ h1 {
   display: grid;
   gap: 10px;
   width: max-content;
-  min-width: 100%;
+  min-width: 220px;
+  max-width: calc(100vw - 56px);
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
   border: 1px solid #d7dfdc;
   border-radius: 8px;
   background: #ffffff;
@@ -106,9 +99,11 @@ h1 {
   color: #5c6b67;
   font-size: 13px;
   line-height: 1.4;
+  text-align: center;
 }
 
 .refresh-button {
+  flex: 1 1 auto;
   border: 1px solid #c4cfcb;
   border-radius: 6px;
   background: #ffffff;
@@ -117,6 +112,7 @@ h1 {
   font-size: 13px;
   font-weight: 600;
   padding: 8px 14px;
+  text-align: center;
   cursor: pointer;
 }
 

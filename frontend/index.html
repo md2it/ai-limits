@@ -8,13 +8,11 @@
   </head>
   <body>
     <main class="app">
-      <header class="app-header">
-        <h1>AI Limits</h1>
-      </header>
-
       <section class="app-toolbar" aria-label="Refresh controls">
-        <p class="last-updated" id="last-updated">Last updated: —</p>
         <div class="toolbar-actions">
+          <button type="button" class="refresh-button" id="refresh-button">
+            UPDATE ALL MANUALLY
+          </button>
           <div class="settings-menu" id="settings-menu">
             <button
               type="button"
@@ -67,8 +65,8 @@
               </label>
             </div>
           </div>
-          <button type="button" class="refresh-button" id="refresh-button">Refresh</button>
         </div>
+        <p class="last-updated" id="last-updated">Last updated: —</p>
       </section>
 
       <section class="providers" aria-label="Provider limits" id="provider-list"></section>
