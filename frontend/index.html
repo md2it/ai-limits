@@ -566,21 +566,25 @@
             <span class="provider-status-indicator" aria-hidden="true"></span>
             <span class="provider-status-text"></span>
           </div>
-          <div class="provider-header">
-            <h2>${escapeHtml(provider.label)}</h2>
+          <div class="provider-content">
+            <div class="provider-header">
+              <h2>${escapeHtml(provider.label)}</h2>
+            </div>
+            <div class="limits">${buildLimitRowsHtml(provider)}</div>
+            <p class="source-info">
+              <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
+              <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
+            </p>
           </div>
-          <div class="limits">${buildLimitRowsHtml(provider)}</div>
-          <p class="source-info">
-            <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
-            <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
-          </p>
-          <label class="frequency-row">
-            <span>Upd&nbsp;every</span>
-            <select aria-label="${escapeHtml(provider.label)} update interval">${frequencyOptions}</select>
-          </label>
-          <button type="button" class="provider-manual-refresh" data-manual-refresh>
-            UPD MANUALLY
-          </button>
+          <div class="provider-actions">
+            <label class="frequency-row">
+              <span>Upd&nbsp;every</span>
+              <select aria-label="${escapeHtml(provider.label)} update interval">${frequencyOptions}</select>
+            </label>
+            <button type="button" class="provider-manual-refresh" data-manual-refresh>
+              UPD MANUALLY
+            </button>
+          </div>
         `;
 
         return block;
