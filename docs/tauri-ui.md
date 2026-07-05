@@ -53,10 +53,10 @@ Global update controls live above provider blocks.
 
 The top action row contains:
 
-- `UPDATE ALL MANUALLY` button
+- `UPDATE ALL NOW` button
 - settings button
 
-The `UPDATE ALL MANUALLY` button takes all available row width except the settings button area. Its label is centered.
+The `UPDATE ALL NOW` button takes all available row width except the settings button area. Its label is centered.
 
 The settings button is a small square button on the right side of the same row.
 
@@ -288,7 +288,7 @@ Provider blocks should render immediately when the UI opens. Empty data is accep
 Each provider block refreshes independently:
 
 - initial load starts refreshes for enabled providers in parallel
-- `UPDATE ALL MANUALLY` starts refreshes for enabled providers in parallel
+- `UPDATE ALL NOW` starts refreshes for enabled providers in parallel
 - `UPD MANUALLY` in one provider block refreshes only that provider
 - scheduled refresh runs only for the provider whose interval fired
 - a slow or failed provider must not block other provider blocks from updating
@@ -315,7 +315,7 @@ Update the Tauri frontend according to docs/tauri-ui.md.
 Scope:
 - Remove the visible AI Limits title from the content area.
 - Move the global refresh controls above provider blocks.
-- Rename Refresh to UPDATE ALL MANUALLY and make it fill the row except the settings square.
+- Rename Refresh to UPDATE ALL NOW and make it fill the row except the settings square.
 - Move settings to the right side of the same top row.
 - Show the centered Last updated line below this row and above provider blocks.
 - Make the settings dropdown open from this top settings button and stay visible at supported window sizes.
