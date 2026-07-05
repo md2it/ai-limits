@@ -383,13 +383,20 @@
         return stripTimezoneSuffix(value);
       }
 
-      function formatSourceLine(provider) {
+      function formatSourceIdLine(provider) {
         if (provider.pending) {
           return "—";
         }
 
-        const timestamp = formatTimestampForDisplay(provider.dataTimestamp) || "unknown";
-        return `Source ${provider.sourceId || "unknown"}: ${timestamp}`;
+        return `Source ${provider.sourceId || "unknown"}`;
+      }
+
+      function formatSourceTimestampLine(provider) {
+        if (provider.pending) {
+          return "—";
+        }
+
+        return formatTimestampForDisplay(provider.dataTimestamp) || "unknown";
       }
 
       function frequencyToMs(frequency) {
@@ -563,11 +570,17 @@
             <h2>${escapeHtml(provider.label)}</h2>
           </div>
           <div class="limits">${buildLimitRowsHtml(provider)}</div>
-          <p class="source-line">${escapeHtml(formatSourceLine(provider))}</p>
+          <div class="source-info">
+            <p class="source-id">${escapeHtml(formatSourceIdLine(provider))}</p>
+            <p class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</p>
+          </div>
           <label class="frequency-row">
-            <span>Update frequency</span>
-            <select aria-label="${escapeHtml(provider.label)} update frequency">${frequencyOptions}</select>
+            <span>Upd&nbsp;every</span>
+            <select aria-label="${escapeHtml(provider.label)} update interval">${frequencyOptions}</select>
           </label>
+          <button type="button" class="provider-manual-refresh" data-manual-refresh>
+            UPD MANUALLY
+          </button>
         `;
 
         return block;
@@ -631,7 +644,8 @@
 
       function updateProviderBlockData(block, provider) {
         block.querySelector(".limits").innerHTML = buildLimitRowsHtml(provider);
-        block.querySelector(".source-line").textContent = formatSourceLine(provider);
+        block.querySelector(".source-id").textContent = formatSourceIdLine(provider);
+        block.querySelector(".source-timestamp").textContent = formatSourceTimestampLine(provider);
         attachInlineCliFallbackHandler(block);
         attachCliDetailsHandler(block);
       }
@@ -645,6 +659,9 @@
         select.value = getProviderInterval(providerId);
         select.addEventListener("change", (event) => {
           setProviderInterval(providerId, event.target.value);
+        });
+        block.querySelector("[data-manual-refresh]")?.addEventListener("click", () => {
+          refreshSingleProvider(providerId);
         });
         attachInlineCliFallbackHandler(block);
         attachCliDetailsHandler(block);
