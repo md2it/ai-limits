@@ -12,6 +12,11 @@
         <h1>AI Limits</h1>
       </header>
 
+      <section class="app-toolbar" aria-label="Refresh controls">
+        <p class="last-updated" id="last-updated">Last updated: —</p>
+        <button type="button" class="refresh-button" id="refresh-button">Refresh</button>
+      </section>
+
       <section class="settings" aria-label="Settings">
         <label class="toggle-row">
           <span>Notifications</span>
@@ -36,6 +41,10 @@
 
       const providerList = document.querySelector("#provider-list");
       const statusLine = document.querySelector("#status-line");
+      const refreshButton = document.querySelector("#refresh-button");
+      const lastUpdatedLine = document.querySelector("#last-updated");
+
+      let isLoading = false;
 
       function escapeHtml(value) {
         return String(value)
@@ -92,7 +101,48 @@
         return block;
       }
 
-      async function loadProviderLimits() {
+      function formatLastUpdated(date) {
+        return date.toLocaleString(undefined, {
+          month: "short",
+          day: "numeric",
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      }
+
+      function setLoadingState(loading) {
+        isLoading = loading;
+        refreshButton.disabled = loading;
+        statusLine.hidden = !loading;
+        statusLine.classList.remove("error");
+        statusLine.classList.toggle("loading", loading);
+        statusLine.textContent = loading ? "Loading provider limits..." : "";
+      }
+
+      function setErrorState(message) {
+        statusLine.hidden = false;
+        statusLine.classList.remove("loading");
+        statusLine.classList.add("error");
+        statusLine.textContent = message;
+      }
+
+      function clearStatusState() {
+        statusLine.textContent = "";
+        statusLine.hidden = true;
+        statusLine.classList.remove("loading", "error");
+      }
+
+      function setLastUpdated(date) {
+        lastUpdatedLine.textContent = `Last updated: ${formatLastUpdated(date)}`;
+      }
+
+      async function refreshProviderLimits() {
+        if (isLoading) {
+          return;
+        }
+
+        setLoadingState(true);
+
         try {
           const invoke = window.__TAURI__?.core?.invoke;
           if (!invoke) {
@@ -101,15 +151,18 @@
 
           const providers = await invoke("get_provider_limits");
           providerList.replaceChildren(...providers.map(renderProvider));
-          statusLine.textContent = "";
-          statusLine.hidden = true;
+          setLastUpdated(new Date());
+          clearStatusState();
         } catch (error) {
-          statusLine.textContent = `Error loading provider limits: ${error.message || error}`;
-          statusLine.classList.add("error");
+          setErrorState(`Error loading provider limits: ${error.message || error}`);
+        } finally {
+          refreshButton.disabled = false;
+          isLoading = false;
         }
       }
 
-      loadProviderLimits();
+      refreshButton.addEventListener("click", refreshProviderLimits);
+      refreshProviderLimits();
     </script>
   </body>
 </html>

@@ -32,10 +32,46 @@ h1 {
   line-height: 1.2;
 }
 
+.app-toolbar,
 .settings,
 .status-line {
   width: min(100%, 1120px);
   margin: 0 auto 16px;
+}
+
+.app-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.last-updated {
+  margin: 0;
+  color: #5c6b67;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.refresh-button {
+  border: 1px solid #c4cfcb;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172026;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.refresh-button:hover:not(:disabled) {
+  background: #eef3f1;
+}
+
+.refresh-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .toggle-row,
@@ -156,6 +192,10 @@ input[type="checkbox"] {
   font-size: 13px;
   line-height: 1.4;
   text-align: center;
+}
+
+.status-line.loading {
+  color: #5c6b67;
 }
 
 .status-line.error,
