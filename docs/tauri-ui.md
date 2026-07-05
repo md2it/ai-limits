@@ -15,6 +15,7 @@
   - [Update Frequency](#update-frequency)
   - [Settings](#settings)
 - [Time Display](#time-display)
+- [Frontend Contract Usage](#frontend-contract-usage)
 - [Refresh Behavior](#refresh-behavior)
 - [Boundaries](#boundaries)
 - [Implementation Prompts](#implementation-prompts)
@@ -147,8 +148,8 @@ Source: codex-local (as of Jul 5, 22:12)
 
 Both values are variable data from the application core:
 
-- source id, for example `codex-local`
-- data timestamp
+- `sourceId`, for example `codex-local`
+- `dataTimestamp`
 
 Each value is a non-breaking unit: `Source: {sourceId}` and `(as of {timestamp})` must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.
 
@@ -205,6 +206,17 @@ Optional modal helper copy:
 You can give this guide to your agent to set it up.
 ```
 
+Backend state:
+
+- selected by `noFreshData: true`.
+- shown when `limits` is empty.
+- does not use `errorMessage` text in this state.
+
+Frontend-only state:
+
+- inline `Use CLI too` toggle state comes from `appSettings.useCliFallback`.
+- modal open/closed state is frontend state.
+
 ## Controls
 
 ### Update Frequency
@@ -259,6 +271,22 @@ User experience:
 - Changing a toggle saves the choice and hides disabled provider blocks, but does not start a refresh
 - Saved choices apply on the next manual refresh or scheduled provider update
 
+Settings storage:
+
+- settings are saved in `localStorage` under `ai-limits-settings`.
+- per-provider update intervals are saved in `localStorage` under `ai-limits-provider-intervals`.
+- these saved settings are frontend state; they are not returned by the backend.
+
+Settings request mapping:
+
+| UI setting | Command query field |
+| --- | --- |
+| Notifications | `notificationsEnabled` |
+| Cursor | `enabledCursor` |
+| Cloud | `enabledClaude` |
+| Codex | `enabledCodex` |
+| Use CLI too | `useCliFallback` |
+
 ## Time Display
 
 All user-facing times in the Tauri UI are displayed in the local time zone of the user's device.
@@ -278,6 +306,64 @@ Jul 6, 01:49
 ```
 
 Do not show `UTC+3` or another timezone suffix in the UI.
+
+Backend timestamp fields:
+
+- provider source timestamp: `dataTimestamp`.
+- limit reset timestamp: `limits[].resetTime`.
+
+Frontend timestamp handling:
+
+- parse timestamp-like strings, numbers, and `Date` values where possible.
+- render today's timestamps as `HH:MM`.
+- render other days as `MMM D, HH:MM`.
+- strip timezone suffixes if a value cannot be parsed as an instant.
+- display `unknown` for missing provider `dataTimestamp`.
+
+## Frontend Contract Usage
+
+The current frontend calls:
+
+- `get_single_provider_limits` for provider refreshes.
+- `open_external_url` for allowlisted setup guide links.
+
+The current frontend does not call `get_provider_limits` in normal refresh behavior.
+
+### Provider Fields Used
+
+| Backend field | Frontend usage |
+| --- | --- |
+| `id` | provider block identity, DOM `data-provider-id`, timer maps |
+| `label` | provider heading, accessibility labels |
+| `limits` | rendered limit rows; empty array selects empty/error state |
+| `limits[].label` | row label before `% left` |
+| `limits[].remainingPercentage` | displayed percent, bar width, bar color |
+| `limits[].resetTime` | optional reset line |
+| `sourceId` | source text; missing value displays `unknown` |
+| `dataTimestamp` | source timestamp; missing value displays `unknown` |
+| `selectedUpdateFrequency` | fallback default for provider interval if no local value exists |
+| `errorMessage` | marks refresh as failed and supplies fallback message outside no-fresh-data state |
+| `noFreshData` | renders no-fresh-data empty state with CLI fallback controls |
+
+### Frontend-Only Fields And State
+
+These values are not returned by the backend:
+
+- `pending`, added by `createEmptyProvider` before the first response.
+- `appSettings.notifications`.
+- `appSettings.cursor`.
+- `appSettings.cloud`.
+- `appSettings.codex`.
+- `appSettings.useCliFallback`.
+- provider update interval selected in the dropdown after local initialization.
+- provider refresh timers.
+- provider refresh in-flight markers.
+- transient provider status: `Updating`, `Updated`, `Failed`.
+- global `Last updated` timestamp.
+- settings dropdown open/closed state.
+- CLI details modal open/closed state.
+
+`selectedUpdateFrequency` exists in the backend response and is currently always `"5 min"`, but persisted frontend intervals override it after the user changes a provider dropdown.
 
 ## Refresh Behavior
 
