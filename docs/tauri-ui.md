@@ -21,8 +21,9 @@ Do not connect:
 
 The UI contains:
 
-- header with the centered application name
-- toolbar with last updated time, settings gear, and Refresh
+- provider blocks as the main content
+- bottom action row with global manual update and settings
+- centered last update line below the bottom action row
 - three inline rounded squares for providers:
   - Codex
   - Cursor
@@ -30,14 +31,34 @@ The UI contains:
 
 Each provider square represents one provider and contains that provider's limit details.
 
+The window must not show a visible `AI Limits` title in the content area.
+
+## Bottom Actions
+
+Global update controls live at the bottom of the window, below provider blocks.
+
+The bottom action row contains:
+
+- `UPDATE ALL MANUALLY` button
+- settings button
+
+The `UPDATE ALL MANUALLY` button takes all available row width except the settings button area. Its label is centered.
+
+The settings button is a small square button on the right side of the same row.
+
+The last update text is shown under the bottom action row, centered. It uses the same information that was previously shown in the top toolbar.
+
+The settings dropdown opens upward from the bottom settings button. It must remain visible and usable across supported window sizes, including narrow and short windows.
+
 ## Provider Square
 
 Each provider square contains:
 
 - provider name
 - limit rows
-- source line
-- update frequency dropdown at the bottom
+- source information split across two lines
+- update frequency dropdown near the bottom
+- provider-specific manual update button at the bottom
 
 The provider content should roughly match the current terminal output model.
 
@@ -45,27 +66,83 @@ Example data shape:
 
 ```text
      --------- CURSOR --------
-plan ■■■■■■■■■■■■■■□□□□□□□□□□□  54.6% left | reset Jul 28, 03:00 UTC+3
-auto ■■■■■■■■■■■■■■■■□□□□□□□□□  63.7% left
-api  ■■■■■■□□□□□□□□□□□□□□□□□□□  24.5% left
-Source cursor-api2: Jul  5, 19:28 UTC+3
+plan | 54.6% left
+■■■■■■■■■■■■□□□
+reset Jul 28, 03:00
+auto | 63.7% left
+■■■■■■■■■■■■■■□□□□
+api | 24.5% left
+■■■■■□□□□□□□□□□□□□□□
+Source cursor-api2
+Jul 5, 19:28
 
      --------- CODEX ---------
-5h   ■■■■■■■■■■■■■■■■■■■■■■■□□  92.0% left | reset Jul  5, 20:48 UTC+3
-7d   ■■■■■■■■■□□□□□□□□□□□□□□□□  35.0% left | reset Jul 10, 03:55 UTC+3
-Source codex-local: Jul  5, 19:28 UTC+3
+5h | 92.0% left
+■■■■■■■■■■■■■■■■■■■■■■■□□
+reset 20:48
+7d | 35.0% left
+■■■■■■■■■□□□□□□□□□□□□□□□□
+reset Jul 10, 03:55
+Source codex-local
+Jul 5, 19:28
 
      --------- CLAUDE --------
-5h   ■■■■■■■■■■■■■■■■■■■■■■■■■ 100.0% left | reset Jul  6, 00:20 UTC+3
-7d   ■■■■■■■■■■■■■■■■■■■■■□□□□  84.0% left | reset Jul  7, 13:00 UTC+3
-Source claude-cli: Jul  5, 19:29 UTC+3
+5h | 100.0% left
+■■■■■■■■■■■■■■■■■■■■■■■■■
+reset Jul 6, 00:20
+7d | 84.0% left
+■■■■■■■■■■■■■■■■■■■■□□□□
+reset Jul 7, 13:00
+Source claude-cli
+Jul 5, 19:29
 ```
 
 The UI does not need to use terminal-style ASCII rendering. The example defines the information that must be visible.
 
+## Limit Rows
+
+Each limit row is rendered as a vertical group:
+
+1. Top text line above the bar: `{window} | {remaining}% left`, for example `5h | 59.0% left`.
+2. Full-width remaining bar.
+3. Reset text line below the bar: `reset {time}`, for example `reset Jul 6, 01:49`.
+
+The limit type, such as `5h`, `7d`, `plan`, `auto`, or `api`, must not consume a separate left column. This lets every bar use 100% of the provider block content width.
+
+The remaining bar shows:
+
+- filled segment width equal to remaining percentage
+- unfilled spent segment in white or another very light neutral color
+- one solid color for the whole filled segment
+
+The filled segment color is calculated from remaining percentage:
+
+- `100%` is green
+- `50%` is yellow
+- `1%` is red
+- intermediate values are interpolated between these anchors
+
+The bar must not use a left-to-right rainbow gradient inside the filled segment. For example, if `10%` remains, the filled 10% segment is a near-red color and the spent 90% segment stays light.
+
+## Source Line
+
+Provider source information is split into two visual lines:
+
+```text
+Source codex-local
+Jul 5, 22:12
+```
+
+Both values are variable data from the application core:
+
+- source id, for example `codex-local`
+- data timestamp
+
 ## Update Frequency
 
 Each provider square has a dropdown at the bottom.
+
+The label is `Upd&nbsp;every`, using a non-breaking space between the words.
 
 Options:
 
@@ -80,6 +157,34 @@ Default value:
 
 - 5 min
 
+Under the update frequency label and field, each provider block has a button:
+
+```text
+UPD MANUALLY
+```
+
+This button refreshes only that provider block.
+
+## Time Display
+
+All user-facing times in the Tauri UI are displayed in the local time zone of the user's device.
+
+The application must convert timestamps from the core data into device-local time before rendering them.
+
+For today, show only time:
+
+```text
+20:48
+```
+
+For another date, show date and time:
+
+```text
+Jul 6, 01:49
+```
+
+Do not show `UTC+3` or another timezone suffix in the UI.
+
 ## Refresh Behavior
 
 Provider blocks should render immediately when the UI opens. Empty data is acceptable while a provider has not returned data yet.
@@ -87,7 +192,8 @@ Provider blocks should render immediately when the UI opens. Empty data is accep
 Each provider block refreshes independently:
 
 - initial load starts refreshes for enabled providers in parallel
-- manual Refresh starts refreshes for enabled providers in parallel
+- `UPDATE ALL MANUALLY` starts refreshes for enabled providers in parallel
+- `UPD MANUALLY` in one provider block refreshes only that provider
 - scheduled refresh runs only for the provider whose interval fired
 - a slow or failed provider must not block other provider blocks from updating
 - each block owns its own loading, updated, and failed status
@@ -97,7 +203,7 @@ The preferred integration model is one Tauri request per provider. The frontend 
 
 ## Settings
 
-The gear icon in the toolbar opens a dropdown with toggles:
+The settings button opens a dropdown with toggles:
 
 - Notifications
 - Cursor
@@ -133,6 +239,71 @@ The mock should include:
 - source id
 - data timestamp
 - selected update frequency
+
+## Implementation Prompts
+
+Use these prompts sequentially. Each prompt is intentionally small and points to this document as the source of truth.
+
+### Prompt 1: Window Layout And Global Controls
+
+```text
+Update the Tauri frontend according to docs/tauri-ui.md.
+
+Scope:
+- Remove the visible AI Limits title from the content area.
+- Move the global refresh controls to the bottom.
+- Rename Refresh to UPDATE ALL MANUALLY and make it fill the row except the settings square.
+- Move settings to the right side of the same bottom row.
+- Show the centered Last updated line below this row.
+- Make the settings dropdown open upward and stay visible at supported window sizes.
+
+Do not change provider data fetching semantics beyond wiring the existing global refresh button in its new location.
+```
+
+### Prompt 2: Provider Limit Rows
+
+```text
+Update provider limit rendering according to docs/tauri-ui.md.
+
+Scope:
+- Render each limit as: top text, full-width bar, reset text.
+- Top text format: 5h | 59.0% left.
+- Reset text format: reset Jul 6, 01:49, or only reset 01:49 when the reset is today.
+- Remove the separate left column for limit type so bars use 100% provider content width.
+- Color the filled bar segment by remaining percent: red near 1%, yellow at 50%, green at 100%.
+- Keep the spent part white or very light.
+
+Use one solid color for the filled segment, not a rainbow gradient across the bar.
+```
+
+### Prompt 3: Local Time Formatting
+
+```text
+Update frontend time formatting according to docs/tauri-ui.md.
+
+Scope:
+- Display all user-facing timestamps in the device local timezone.
+- Convert timestamps from core data before rendering.
+- If the date is today, show only HH:MM.
+- If the date is not today, show MMM D, HH:MM.
+- Remove UTC offset suffixes from source timestamps, reset timestamps, and Last updated.
+
+Keep parsing tolerant of current mock/core timestamp shapes.
+```
+
+### Prompt 4: Provider Source And Per-Block Update
+
+```text
+Update provider block controls according to docs/tauri-ui.md.
+
+Scope:
+- Split source display into two lines: Source {sourceId} and formatted data timestamp.
+- Rename Update frequency to Upd&nbsp;every using a non-breaking space.
+- Add UPD MANUALLY under the update frequency row.
+- Wire UPD MANUALLY to refresh only that provider.
+
+Keep existing independent provider loading, updated, and failed states.
+```
 
 ## Boundaries
 
