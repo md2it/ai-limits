@@ -72,7 +72,7 @@ Each provider square contains:
 
 - provider name
 - limit rows
-- source information split across two lines
+- source line with source id and data timestamp on one line by default
 - update frequency dropdown near the bottom
 - provider-specific manual update button at the bottom
 
@@ -89,8 +89,7 @@ auto | 63.7% left
 ■■■■■■■■■■■■■■□□□□
 api | 24.5% left
 ■■■■■□□□□□□□□□□□□□□□
-Source cursor-api2
-Jul 5, 19:28
+Source cursor-api2 Jul 5, 19:28
 
      --------- CODEX ---------
 5h | 92.0% left
@@ -99,8 +98,7 @@ reset 20:48
 7d | 35.0% left
 ■■■■■■■■■□□□□□□□□□□□□□□□□
 reset Jul 10, 03:55
-Source codex-local
-Jul 5, 19:28
+Source codex-local Jul 5, 19:28
 
      --------- CLAUDE --------
 5h | 100.0% left
@@ -109,8 +107,7 @@ reset Jul 6, 00:20
 7d | 84.0% left
 ■■■■■■■■■■■■■■■■■■■■□□□□
 reset Jul 7, 13:00
-Source claude-cli
-Jul 5, 19:29
+Source claude-cli Jul 5, 19:29
 ```
 
 The UI does not need to use terminal-style ASCII rendering. The example defines the information that must be visible.
@@ -142,17 +139,18 @@ The bar must not use a left-to-right rainbow gradient inside the filled segment.
 
 ### Source Line
 
-Provider source information is split into two visual lines:
+Provider source information is shown on one line by default:
 
 ```text
-Source codex-local
-Jul 5, 22:12
+Source codex-local Jul 5, 22:12
 ```
 
 Both values are variable data from the application core:
 
 - source id, for example `codex-local`
 - data timestamp
+
+Each value is a non-breaking unit: `Source {sourceId}` and the formatted timestamp must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.
 
 ### No Fresh Data State
 
@@ -302,68 +300,3 @@ The preferred integration model is one Tauri request per provider. The frontend 
 - UI must not duplicate provider-fetching logic.
 - UI must not decide real limit semantics.
 - Future integration should use structured data from the Rust core through Tauri commands.
-
-## Implementation Prompts
-
-Use these prompts sequentially. Each prompt is intentionally small and points to this document as the source of truth.
-
-### Prompt 1: Window Layout And Global Controls
-
-```text
-Update the Tauri frontend according to docs/tauri-ui.md.
-
-Scope:
-- Remove the visible AI Limits title from the content area.
-- Move the global refresh controls above provider blocks.
-- Rename Refresh to UPDATE ALL NOW and make it fill the row except the settings square.
-- Move settings to the right side of the same top row.
-- Show the centered Last updated line below this row and above provider blocks.
-- Make the settings dropdown open from this top settings button and stay visible at supported window sizes.
-
-Do not change provider data fetching semantics beyond wiring the existing global refresh button in its new location.
-```
-
-### Prompt 2: Provider Limit Rows
-
-```text
-Update provider limit rendering according to docs/tauri-ui.md.
-
-Scope:
-- Render each limit as: top text, full-width bar, reset text.
-- Top text format: 5h | 59.0% left.
-- Reset text format: reset Jul 6, 01:49, or only reset 01:49 when the reset is today.
-- Remove the separate left column for limit type so bars use 100% provider content width.
-- Color the filled bar segment by remaining percent: red near 1%, yellow at 50%, green at 100%.
-- Keep the spent part white or very light.
-
-Use one solid color for the filled segment, not a rainbow gradient across the bar.
-```
-
-### Prompt 3: Local Time Formatting
-
-```text
-Update frontend time formatting according to docs/tauri-ui.md.
-
-Scope:
-- Display all user-facing timestamps in the device local timezone.
-- Convert timestamps from core data before rendering.
-- If the date is today, show only HH:MM.
-- If the date is not today, show MMM D, HH:MM.
-- Remove UTC offset suffixes from source timestamps, reset timestamps, and Last updated.
-
-Keep parsing tolerant of current frontend and core timestamp shapes.
-```
-
-### Prompt 4: Provider Source And Per-Block Update
-
-```text
-Update provider block controls according to docs/tauri-ui.md.
-
-Scope:
-- Split source display into two lines: Source {sourceId} and formatted data timestamp.
-- Rename Update frequency to Upd&nbsp;every using a non-breaking space.
-- Add UPD MANUALLY under the update frequency row.
-- Wire UPD MANUALLY to refresh only that provider.
-
-Keep existing independent provider loading, updated, and failed states.
-```

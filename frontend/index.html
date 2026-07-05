@@ -570,10 +570,10 @@
             <h2>${escapeHtml(provider.label)}</h2>
           </div>
           <div class="limits">${buildLimitRowsHtml(provider)}</div>
-          <div class="source-info">
-            <p class="source-id">${escapeHtml(formatSourceIdLine(provider))}</p>
-            <p class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</p>
-          </div>
+          <p class="source-info">
+            <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
+            <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
+          </p>
           <label class="frequency-row">
             <span>Upd&nbsp;every</span>
             <select aria-label="${escapeHtml(provider.label)} update interval">${frequencyOptions}</select>

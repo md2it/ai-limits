@@ -320,7 +320,7 @@ body {
 }
 
 .source-info {
-  margin: auto 0 14px;
+  margin: 0 0 14px;
   padding-top: 20px;
   color: #4c5b57;
   font-size: 13px;
@@ -329,7 +329,7 @@ body {
 
 .source-id,
 .source-timestamp {
-  margin: 0;
+  white-space: nowrap;
 }
 
 .frequency-row {
