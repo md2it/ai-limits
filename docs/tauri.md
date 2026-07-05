@@ -8,6 +8,14 @@ The choice was made because Tauri produces lightweight desktop applications. The
 
 Rust also fits this direction well, because Tauri uses Rust for the native application layer.
 
+## Provider Data Contract
+
+The desktop UI should not depend on one combined provider response for normal refresh behavior.
+
+Tauri commands should support fetching one provider at a time, for example Codex, Claude, or Cursor. The frontend can then start provider refreshes in parallel and update each provider block as soon as that provider result is available.
+
+This keeps slow sources from blocking unrelated provider blocks and matches the planned per-provider update frequency controls.
+
 ## Release Scheme
 
 Desktop builds should be produced in GitHub Actions, not only on a local machine.
