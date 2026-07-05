@@ -43,8 +43,16 @@ pub fn format_unavailable_block(info: &StructuredSourceInfo) -> String {
     format!("Unavailable: {message}\n{}", format_data_as_of(info))
 }
 
-fn source_label_for_display(source: &str) -> String {
+pub fn source_label_for_display(source: &str) -> String {
     source.replace('_', "-")
+}
+
+pub fn remaining_percent_for_display(limit: &LimitInfo) -> Option<f64> {
+    limit.remaining_percent.or_else(|| {
+        limit
+            .used_percent
+            .map(|used| (100.0 - used).clamp(0.0, 100.0))
+    })
 }
 
 pub fn format_decimal(value: f64) -> String {

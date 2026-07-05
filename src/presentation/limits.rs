@@ -2,9 +2,9 @@ use crate::types::{LimitInfo, StructuredSourceInfo};
 
 use super::common::{
     format_data_as_of, format_decimal, format_percent, format_unavailable_block, normalize_percent,
-    pad_visible_left, pad_visible_right, provider_label, render_limit_bar,
-    window_label_for_display, ColorConfig, ProviderBlock, LIMIT_BAR_WIDTH, LIMIT_LEFT_WIDTH,
-    LIMIT_WINDOW_WIDTH,
+    pad_visible_left, pad_visible_right, provider_label, remaining_percent_for_display,
+    render_limit_bar, window_label_for_display, ColorConfig, ProviderBlock, LIMIT_BAR_WIDTH,
+    LIMIT_LEFT_WIDTH, LIMIT_WINDOW_WIDTH,
 };
 use super::time::{format_user_timestamp, TimeContext};
 
@@ -52,11 +52,7 @@ fn format_limit_row(
     color: &ColorConfig,
     time_context: &TimeContext,
 ) -> Option<String> {
-    let remaining_percent = limit.remaining_percent.or_else(|| {
-        limit
-            .used_percent
-            .map(|used| (100.0 - used).clamp(0.0, 100.0))
-    })?;
+    let remaining_percent = remaining_percent_for_display(limit)?;
     let remaining_display = normalize_percent(remaining_percent);
 
     let window = pad_visible_right(

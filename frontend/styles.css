@@ -33,7 +33,7 @@ h1 {
 }
 
 .settings,
-.integration-note {
+.status-line {
   width: min(100%, 1120px);
   margin: 0 auto 16px;
 }
@@ -151,11 +151,22 @@ input[type="checkbox"] {
   height: 22px;
 }
 
-.integration-note {
+.status-line {
   color: #5c6b67;
   font-size: 13px;
   line-height: 1.4;
   text-align: center;
+}
+
+.status-line.error,
+.provider-message {
+  color: #8a3b2f;
+}
+
+.provider-message {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 @media (max-width: 860px) {

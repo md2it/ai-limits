@@ -21,9 +21,7 @@
 
       <section class="providers" aria-label="Provider limits" id="provider-list"></section>
 
-      <section class="integration-note" aria-label="Future integration points">
-        Mock data only. Future Tauri command response should replace the data object in this UI layer.
-      </section>
+      <section class="status-line" aria-live="polite" id="status-line">Loading provider limits...</section>
     </main>
 
     <script>
@@ -36,67 +34,43 @@
         "1 hour",
       ];
 
-      const mockProviders = [
-        {
-          id: "codex",
-          label: "Codex",
-          sourceId: "codex-local",
-          dataTimestamp: "Jul 5, 19:28 UTC+3",
-          selectedUpdateFrequency: "5 min",
-          limits: [
-            { label: "5h", remainingPercentage: 92, resetTime: "Jul 5, 20:48 UTC+3" },
-            { label: "7d", remainingPercentage: 35, resetTime: "Jul 10, 03:55 UTC+3" },
-          ],
-        },
-        {
-          id: "cursor",
-          label: "Cursor",
-          sourceId: "cursor-api2",
-          dataTimestamp: "Jul 5, 19:28 UTC+3",
-          selectedUpdateFrequency: "5 min",
-          limits: [
-            { label: "plan", remainingPercentage: 54.6, resetTime: "Jul 28, 03:00 UTC+3" },
-            { label: "auto", remainingPercentage: 63.7 },
-            { label: "api", remainingPercentage: 24.5 },
-          ],
-        },
-        {
-          id: "claude",
-          label: "Claude",
-          sourceId: "claude-cli",
-          dataTimestamp: "Jul 5, 19:29 UTC+3",
-          selectedUpdateFrequency: "5 min",
-          limits: [
-            { label: "5h", remainingPercentage: 100, resetTime: "Jul 6, 00:20 UTC+3" },
-            { label: "7d", remainingPercentage: 84, resetTime: "Jul 7, 13:00 UTC+3" },
-          ],
-        },
-      ];
-
       const providerList = document.querySelector("#provider-list");
+      const statusLine = document.querySelector("#status-line");
+
+      function escapeHtml(value) {
+        return String(value)
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#039;");
+      }
 
       function renderProvider(provider) {
         const block = document.createElement("article");
         block.className = "provider-block";
         block.dataset.providerId = provider.id;
 
-        const limitRows = provider.limits
+        const limitRows = provider.limits.length
+          ? provider.limits
           .map((limit) => {
             const percent = Number(limit.remainingPercentage).toFixed(1);
-            const reset = limit.resetTime ? `<span>| reset ${limit.resetTime}</span>` : "";
+            const reset = limit.resetTime ? `<span>| reset ${escapeHtml(limit.resetTime)}</span>` : "";
+            const width = Math.max(0, Math.min(100, Number(limit.remainingPercentage) || 0));
 
             return `
               <div class="limit-row">
-                <span class="limit-name">${limit.label}</span>
-                <div class="meter" aria-label="${provider.label} ${limit.label} ${percent}% left">
-                  <span style="width: ${limit.remainingPercentage}%"></span>
+                <span class="limit-name">${escapeHtml(limit.label)}</span>
+                <div class="meter" aria-label="${escapeHtml(provider.label)} ${escapeHtml(limit.label)} ${percent}% left">
+                  <span style="width: ${width}%"></span>
                 </div>
                 <span class="limit-value">${percent}% left</span>
                 ${reset}
               </div>
             `;
           })
-          .join("");
+          .join("")
+          : `<p class="provider-message">${escapeHtml(provider.errorMessage || "No usable limit records from this source")}</p>`;
 
         const frequencyOptions = updateFrequencyOptions
           .map((option) => {
@@ -106,19 +80,36 @@
           .join("");
 
         block.innerHTML = `
-          <h2>${provider.label}</h2>
+          <h2>${escapeHtml(provider.label)}</h2>
           <div class="limits">${limitRows}</div>
-          <p class="source-line">Source ${provider.sourceId}: ${provider.dataTimestamp}</p>
+          <p class="source-line">Source ${escapeHtml(provider.sourceId || "unknown")}: ${escapeHtml(provider.dataTimestamp || "unknown")}</p>
           <label class="frequency-row">
             <span>Update frequency</span>
-            <select aria-label="${provider.label} update frequency">${frequencyOptions}</select>
+            <select aria-label="${escapeHtml(provider.label)} update frequency">${frequencyOptions}</select>
           </label>
         `;
 
         return block;
       }
 
-      providerList.append(...mockProviders.map(renderProvider));
+      async function loadProviderLimits() {
+        try {
+          const invoke = window.__TAURI__?.core?.invoke;
+          if (!invoke) {
+            throw new Error("Tauri API is unavailable");
+          }
+
+          const providers = await invoke("get_provider_limits");
+          providerList.replaceChildren(...providers.map(renderProvider));
+          statusLine.textContent = "";
+          statusLine.hidden = true;
+        } catch (error) {
+          statusLine.textContent = `Error loading provider limits: ${error.message || error}`;
+          statusLine.classList.add("error");
+        }
+      }
+
+      loadProviderLimits();
     </script>
   </body>
 </html>

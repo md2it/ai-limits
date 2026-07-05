@@ -3,9 +3,12 @@ mod limits;
 mod time;
 mod usage;
 
-pub use common::{ColorConfig, ProviderBlock};
+pub use common::{
+    normalize_percent, remaining_percent_for_display, source_label_for_display,
+    window_label_for_display, ColorConfig, ProviderBlock,
+};
 pub use limits::limits_block;
-pub use time::TimeContext;
+pub use time::{format_user_timestamp, TimeContext};
 pub use usage::usage_block;
 
 pub fn format_raw_output(data: &crate::types::SourceData) -> String {
