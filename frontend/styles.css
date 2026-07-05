@@ -190,14 +190,62 @@ body {
 }
 
 .provider-block {
+  --provider-brand: #000000;
+  --provider-brand-rgb: 0, 0, 0;
+  --provider-brand-opacity: 0.15;
+  --provider-text: color-mix(in srgb, var(--provider-brand) 20%, #172026);
+  --provider-text-muted: color-mix(in srgb, var(--provider-brand) 20%, #4c5b57);
+  --provider-text-link: color-mix(in srgb, var(--provider-brand) 50%, #172026);
   position: relative;
   display: flex;
   min-height: 320px;
   flex-direction: column;
-  border: 1px solid #d7dfdc;
+  border: 1px solid var(--provider-brand);
   border-radius: 8px;
-  background: #ffffff;
+  background-color: rgba(var(--provider-brand-rgb), var(--provider-brand-opacity));
+  color: var(--provider-text-muted);
   padding: 16px;
+}
+
+.provider-block[data-provider-id="claude"] {
+  --provider-brand: #d97757;
+  --provider-brand-rgb: 217, 119, 87;
+}
+
+.provider-block[data-provider-id="codex"] {
+  --provider-brand: #7a9dff;
+  --provider-brand-rgb: 122, 157, 255;
+}
+
+.provider-block[data-provider-id="cursor"] {
+  --provider-brand: #26261e;
+  --provider-brand-rgb: 38, 38, 30;
+}
+
+.provider-block h2,
+.provider-block .limit-top,
+.provider-block .frequency-row,
+.provider-block .inline-cli-toggle,
+.provider-block .provider-manual-refresh,
+.provider-block select {
+  color: var(--provider-text);
+}
+
+.provider-block .limit-row,
+.provider-block .limit-reset,
+.provider-block .source-info,
+.provider-block .no-fresh-data,
+.provider-block .provider-status {
+  color: var(--provider-text-muted);
+}
+
+.provider-block .provider-link,
+.provider-block .provider-status.updated {
+  color: var(--provider-text-link);
+}
+
+.provider-block .provider-status.loading .provider-status-indicator {
+  border-top-color: var(--provider-brand);
 }
 
 .provider-content {
@@ -314,7 +362,7 @@ body {
   height: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: #f2f5f4;
+  background: #ffffff;
 }
 
 .meter span {
@@ -339,7 +387,7 @@ body {
   display: grid;
   flex-shrink: 0;
   gap: 12px;
-  border-top: 1px solid #e4ebe8;
+  border-top: 1px solid var(--provider-brand);
   padding-top: 14px;
 }
 
