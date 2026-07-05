@@ -27,6 +27,7 @@ src/
   cli/
   config/
   infra/
+  notifications/
   presentation/
   providers/
   get_limits.rs
@@ -39,6 +40,7 @@ Purpose:
 - `cli/` — terminal interface, arguments, retrieval scenario flags, output, exit codes
 - `config/` — user settings, defaults, and paths to config files
 - `infra/` — technical primitives for processes, HTTP, and timeouts
+- `notifications/` — shared notification service with platform adapters
 - `presentation/` — user-facing display models built from structured data
 - `providers/` — ways to fetch usage/limits from providers
 - `get_limits.rs` — limits-fetching scenario and provider method integration
@@ -191,13 +193,26 @@ Current rule:
 
 ## Notifications
 
-The `notifications/` directory is not created yet, until system notifications are implemented.
+The `notifications/` directory contains the shared notification service.
 
-Future rule:
+Target structure:
+
+```text
+notifications/
+  mod.rs
+  macos.rs
+  windows.rs
+  linux.rs
+  noop.rs
+```
+
+Rules:
 
 - notifications should be a shared service, not part of desktop only
 - the CLI can use notifications if the platform supports it and it is enabled in config
 - platform differences must be isolated inside the notifications module
+- the application should call one common notification interface, not platform-specific adapters directly
+- notification requirements are documented in [notifications.md](notifications.md)
 
 ---
 
