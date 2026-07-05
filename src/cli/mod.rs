@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::io::{self, BufRead, IsTerminal, Write};
 use std::path::Path;
 use std::process::ExitCode;
@@ -9,6 +10,7 @@ use crate::get_limits::SourcePlan;
 use crate::infra::loader::{
     loader_show_delay, loader_tick, LoaderView, TerminalStatus, TerminalUi,
 };
+use crate::notifications::LimitNotificationKind;
 use crate::presentation::{
     format_raw_output, format_structured_output, limits_block, usage_block, ColorConfig,
     ProviderBlock,
@@ -43,10 +45,15 @@ fn run_cli() -> io::Result<TerminalStatus> {
     }
 
     if args.init_config {
-        if args.all || args.best || !args.sources.is_empty() || args.watch.is_some() {
+        if args.all
+            || args.best
+            || !args.sources.is_empty()
+            || args.watch.is_some()
+            || args.test_notification.is_some()
+        {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidInput,
-                "--init-config cannot be combined with source flags, --all, --best, or --watch",
+                "--init-config cannot be combined with source flags, --all, --best, --watch, or --test-notification",
             ));
         }
 
@@ -54,27 +61,44 @@ fn run_cli() -> io::Result<TerminalStatus> {
         return Ok(status);
     }
 
+    if let Some(kind) = args.test_notification {
+        if args.all || args.best || !args.sources.is_empty() || args.watch.is_some() {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "--test-notification cannot be combined with source flags, --all, --best, or --watch",
+            ));
+        }
+
+        crate::notifications::notify_test(kind)?;
+        return Ok(TerminalStatus::Done);
+    }
+
     let config = crate::config::load()?;
     let watch_interval = resolve_watch_interval(&args, config.as_ref());
     let output_mode = args.output_mode;
     let plan = resolve_source_plan(args, config)?;
+    let mut sent_notifications = HashSet::new();
 
     if let Some(interval) = watch_interval {
         loop {
-            run_once(&plan, output_mode)?;
+            run_once(&plan, output_mode, &mut sent_notifications)?;
             thread::sleep(interval);
         }
     }
 
-    let status = run_once(&plan, output_mode)?;
+    let status = run_once(&plan, output_mode, &mut sent_notifications)?;
 
     Ok(status)
 }
 
-fn run_once(plan: &[SourcePlan], output_mode: OutputMode) -> io::Result<TerminalStatus> {
+fn run_once(
+    plan: &[SourcePlan],
+    output_mode: OutputMode,
+    sent_notifications: &mut HashSet<String>,
+) -> io::Result<TerminalStatus> {
     let mut ui = TerminalUi::new();
     ui.print_top()?;
-    let status = run_sources_with_terminal_ui(&mut ui, plan, output_mode)?;
+    let status = run_sources_with_terminal_ui(&mut ui, plan, output_mode, sent_notifications)?;
     ui.print_bottom(status)?;
     Ok(status)
 }
@@ -152,6 +176,7 @@ fn run_sources_with_terminal_ui(
     ui: &mut TerminalUi,
     plan: &[SourcePlan],
     output_mode: OutputMode,
+    sent_notifications: &mut HashSet<String>,
 ) -> io::Result<TerminalStatus> {
     if plan.is_empty() {
         return Ok(TerminalStatus::Fail);
@@ -199,6 +224,7 @@ fn run_sources_with_terminal_ui(
                         successes += 1;
                         stderr.push_str(&report.data.stderr);
                         print_source_report(ui, &report, output_mode, &color)?;
+                        notify_for_report(&report, sent_notifications);
                     }
                     Err(error) => {
                         failures += 1;
@@ -223,6 +249,14 @@ fn run_sources_with_terminal_ui(
         (0, _) => TerminalStatus::Fail,
         _ => TerminalStatus::Part,
     })
+}
+
+fn notify_for_report(report: &SourceReport, sent_notifications: &mut HashSet<String>) {
+    for notification in crate::notifications::notifications_for_report(report) {
+        if sent_notifications.insert(notification.dedupe_key.clone()) {
+            let _ = crate::notifications::notify(&notification);
+        }
+    }
 }
 
 fn print_source_report(
@@ -295,6 +329,7 @@ struct CliArgs {
     watch: Option<Option<Duration>>,
     output_mode: OutputMode,
     sources: Vec<Source>,
+    test_notification: Option<LimitNotificationKind>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -314,6 +349,7 @@ fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
         watch: None,
         output_mode: OutputMode::Limits,
         sources: Vec::new(),
+        test_notification: None,
     };
     let mut args = args.peekable();
     let mut output_mode = None;
@@ -389,6 +425,16 @@ fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliArgs> {
                     parsed.watch = Some(Some(parse_watch_interval_arg(value)?));
                     continue;
                 }
+                if let Some(value) = arg.strip_prefix("--test-notification=") {
+                    parsed.test_notification =
+                        Some(LimitNotificationKind::parse(value).map_err(|error| {
+                            io::Error::new(
+                                io::ErrorKind::InvalidInput,
+                                format!("invalid --test-notification value: {error}"),
+                            )
+                        })?);
+                    continue;
+                }
 
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
@@ -429,6 +475,8 @@ Options:
   --usage          Show user-facing usage summary
   --raw, -r        Return raw source data
   --structured, -s Return structured source data
+  --test-notification=<75|50|25|10>
+                  Send a test system notification and exit
 
 Technical source options:
   --codex-local       Query Codex from local session JSONL files
@@ -446,6 +494,7 @@ Examples:
   ai-limits --all --usage
   ai-limits --all --raw
   ai-limits --all --structured
+  ai-limits --test-notification=75
 
 Config:
   ~/.config/ai-limits/config.toml
@@ -612,6 +661,15 @@ mod tests {
             parse(&["-w=30s"]).watch,
             Some(Some(Duration::from_secs(30)))
         );
+    }
+
+    #[test]
+    fn supports_test_notification_flag() {
+        assert_eq!(
+            parse(&["--test-notification=75"]).test_notification,
+            Some(LimitNotificationKind::Remaining75)
+        );
+        assert!(parse_args(["--test-notification=30"].into_iter().map(String::from)).is_err());
     }
 
     #[test]

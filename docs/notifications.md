@@ -47,25 +47,62 @@ Notifications are system notifications. They should use the native notification 
 Initial notification types are hardcoded:
 
 - 75% remaining:
-  - trigger when 25% of the limit is spent
+  - trigger when 25% or more of the limit is spent
   - color, if supported by the operating system: green
-  - text: `75% of your limit remains`
 - 50% remaining:
-  - trigger when 50% of the limit is spent
+  - trigger when 50% or more of the limit is spent
   - color, if supported by the operating system: yellow
-  - text: `50% of your limit remains`
 - 25% remaining:
-  - trigger when 75% of the limit is spent
+  - trigger when 75% or more of the limit is spent
   - color, if supported by the operating system: orange
-  - text: `25% of your limit remains`
 - 10% remaining:
-  - trigger when 90% of the limit is spent
+  - trigger when 90% or more of the limit is spent
   - color, if supported by the operating system: red
-  - text: `10% of your limit remains`
+
+Notification text template:
+
+```text
+$EMOJI AI Limits
+$PROVIDER_NAME $TYPE - NN% limit remains
+reset yyyy-mm-dd hh:mm UTC(+/-N)
+```
+
+On platforms that support notification title/subtitle/body, `$EMOJI AI Limits` is the title, the limit line is the subtitle, and the reset line is the body.
+
+Fields:
+
+- `EMOJI`:
+  - `🟢` for 75-50% remaining
+  - `🟡` for 50-25% remaining
+  - `🟠` for 25-10% remaining
+  - `🔴` for less than 10% remaining
+- `PROVIDER_NAME`: `Codex`, `Claude`, or `Cursor`
+- `TYPE`: `5h`, `weekly`, `auto`, `plan`, or `api`
+
+Examples:
+
+```text
+🟡 AI Limits
+Codex weekly - 44% left
+reset 2026-07-07 22:22 UTC+3
+```
+
+```text
+🟢 AI Limits
+Cursor auto - 65% left
+reset 2026-07-07 22:22 UTC
+```
+
+```text
+🔴 AI Limits
+Claude 5h - 7% left
+reset 2026-07-07 22:22 UTC-6
+```
 
 Rules:
 
 - notifications do not replace each other; every notification is kept as a separate system notification
+- the same running process should not repeatedly send the same notification
 - notifications are independent for each provider, for example Codex, Claude, and Cursor
 - notifications are also independent for each called data source
 - if different data sources return different limit data for the same provider, this is acceptable
@@ -78,6 +115,23 @@ Rules:
 Notification triggers are calculated from structured data.
 
 Structured data is used because it is standardized and easier to process consistently across providers and sources.
+
+---
+
+## Testing
+
+Manual testing can use a fake notification trigger without provider data:
+
+```text
+ai-limits --test-notification=75
+ai-limits --test-notification=50
+ai-limits --test-notification=25
+ai-limits --test-notification=10
+```
+
+This sends a real system notification through the current platform adapter.
+
+Trigger calculation is covered with unit tests using fake structured data.
 
 ---
 
