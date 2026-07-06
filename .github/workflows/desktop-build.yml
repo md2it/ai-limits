@@ -1,4 +1,4 @@
-name: Desktop unsigned build
+name: Desktop build
 
 on:
   workflow_dispatch:
@@ -8,8 +8,15 @@ permissions:
 
 jobs:
   build-macos:
-    name: Build macOS unsigned app
+    name: Build macOS signed app
     runs-on: macos-latest
+    env:
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
 
     steps:
       - name: Checkout
@@ -23,20 +30,62 @@ jobs:
 
       - name: Setup Rust
         uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Import code signing certificate
+        run: |
+          set -euo pipefail
+
+          if [[ -z "$APPLE_CERTIFICATE" ]]; then
+            echo "Missing secret: APPLE_CERTIFICATE" >&2
+            exit 1
+          fi
+
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import "$RUNNER_TEMP/certificate.p12" -k build.keychain \
+            -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security list-keychain -d user -s build.keychain login.keychain
+
+      - name: Install App Store Connect API key
+        env:
+          APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+        run: |
+          set -euo pipefail
+
+          if [[ -z "${APPLE_API_KEY_ID:-}" || -z "${APPLE_API_KEY_CONTENT:-}" ]]; then
+            echo "Missing secrets: APPLE_API_KEY_ID and/or APPLE_API_KEY_CONTENT" >&2
+            exit 1
+          fi
+
+          mkdir -p "$HOME/.private_keys"
+          printf '%s\n' "$APPLE_API_KEY_CONTENT" > "$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+          echo "APPLE_API_KEY_PATH=$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8" >> "$GITHUB_ENV"
 
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Build unsigned macOS app
-        run: npm exec tauri -- build --bundles app
-
-      - name: Ad-hoc sign macOS app bundle
-        run: |
-          codesign --force --deep --sign - "target/release/bundle/macos/AI Limits.app"
-          codesign --verify --deep --strict --verbose=4 "target/release/bundle/macos/AI Limits.app"
+      - name: Build signed and notarized macOS app
+        run: npm exec tauri -- build --bundles app --target universal-apple-darwin
 
       - name: Archive macOS app bundle
-        run: ditto -c -k --sequesterRsrc --keepParent "target/release/bundle/macos/AI Limits.app" "target/release/bundle/macos/AI Limits.app.zip"
+        run: |
+          set -euo pipefail
+
+          APP_PATH="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+          ZIP_PATH="target/release/bundle/macos/AI Limits.app.zip"
+
+          codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+          stapler validate "$APP_PATH"
+
+          mkdir -p "$(dirname "$ZIP_PATH")"
+          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
 
       - name: Upload macOS app artifact
         uses: actions/upload-artifact@v4
@@ -173,5 +222,5 @@ jobs:
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$title" \
-            --notes "Unstable desktop build. Working preview for testing and early use. Unsigned; macOS and Windows may show security warnings." \
+            --notes "Unstable desktop build. macOS: signed and notarized (Developer ID). Windows and Linux are unsigned." \
             --prerelease
