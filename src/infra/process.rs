@@ -1,6 +1,7 @@
 use std::env;
 use std::ffi::OsString;
 use std::io::{self, Read};
+use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -68,15 +69,22 @@ pub fn cli_process_path() -> OsString {
     let current_path = env::var_os("PATH").unwrap_or_default();
     let mut paths: Vec<_> = env::split_paths(&current_path).collect();
 
-    for path in [
-        "/usr/local/bin",
-        "/usr/bin",
-        "/bin",
-        "/usr/sbin",
-        "/sbin",
-        "/opt/homebrew/bin",
-    ] {
-        let path = path.into();
+    let mut extra_paths: Vec<PathBuf> = vec![
+        "/usr/local/bin".into(),
+        "/usr/bin".into(),
+        "/bin".into(),
+        "/usr/sbin".into(),
+        "/sbin".into(),
+        "/opt/homebrew/bin".into(),
+    ];
+
+    if let Some(home) = env::var_os("HOME") {
+        let home = PathBuf::from(home);
+        extra_paths.push(home.join(".local").join("bin"));
+        extra_paths.push(home.join(".cargo").join("bin"));
+    }
+
+    for path in extra_paths {
         if !paths.contains(&path) {
             paths.push(path);
         }
