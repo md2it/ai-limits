@@ -6,7 +6,7 @@ Each provider block refreshes independently:
 
 - initial load starts refreshes for enabled providers in parallel
 - `UPDATE ALL NOW` starts refreshes for enabled providers in parallel
-- `UPD MANUALLY` in one provider block refreshes only that provider
+- `UPDATE NOW` in one provider block refreshes only that provider
 - scheduled refresh runs only for the provider whose interval fired
 - a slow or failed provider must not block other provider blocks from updating
 - each block owns its own loading, updated, and failed status

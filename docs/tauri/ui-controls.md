@@ -22,7 +22,7 @@ Default value:
 Under the update frequency label and field, each provider block has a button:
 
 ```text
-UPD MANUALLY
+UPDATE NOW
 ```
 
 This button refreshes only that provider block.
