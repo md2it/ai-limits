@@ -17,8 +17,8 @@ The current frontend does not call `get_provider_limits` in normal refresh behav
 | `limits[].label` | row label before `% left` |
 | `limits[].remainingPercentage` | displayed percent, bar width, bar color |
 | `limits[].resetTime` | optional reset line |
-| `sourceId` | source text; missing value displays `unknown` |
-| `dataTimestamp` | source timestamp; missing value displays `unknown` |
+| `sourceId` | origin label in `{label},`; possible values: `Local files`, `CLI`, `Statusline`, `API2`, `Unknown` |
+| `dataTimestamp` | `as of {timestamp}`; missing value displays `unknown` |
 | `selectedUpdateFrequency` | fallback default for provider interval if no local value exists |
 | `errorMessage` | marks refresh as failed and supplies fallback message outside no-fresh-data state |
 | `noFreshData` | renders no-fresh-data empty state with CLI fallback controls |

@@ -569,12 +569,29 @@
         return stripTimezoneSuffix(value);
       }
 
+      const SOURCE_DISPLAY_LABELS = {
+        "codex-local": "Local files",
+        "codex-cli": "CLI",
+        "claude-statusline": "Statusline",
+        "claude-cli": "CLI",
+        "claude-local": "Local files",
+        "cursor-api2": "API2",
+      };
+
+      function sourceLabelForDisplay(sourceId) {
+        if (sourceId == null || sourceId === "") {
+          return "Unknown";
+        }
+
+        return SOURCE_DISPLAY_LABELS[sourceId] ?? sourceId;
+      }
+
       function formatSourceIdLine(provider) {
         if (provider.pending) {
           return "—";
         }
 
-        return `Source: ${provider.sourceId || "unknown"}`;
+        return `${sourceLabelForDisplay(provider.sourceId)},`;
       }
 
       function formatSourceTimestampLine(provider) {
@@ -583,7 +600,7 @@
         }
 
         const timestamp = formatTimestampForDisplay(provider.dataTimestamp) || "unknown";
-        return `(as of ${timestamp})`;
+        return `as of ${timestamp}`;
       }
 
       function frequencyToMs(frequency) {

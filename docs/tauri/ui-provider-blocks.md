@@ -7,7 +7,7 @@ Each provider square contains:
 - provider name
 - limit rows
 - credits line, when available
-- source line with source id and data timestamp on one line by default
+- source line with data origin label and timestamp on one line by default
 - update frequency dropdown near the bottom
 - provider-specific manual update button at the bottom
 
@@ -34,7 +34,7 @@ auto | 63.7% left
 ■■■■■■■■■■■■■■□□□□
 api | 24.5% left
 ■■■■■□□□□□□□□□□□□□□□
-Source: cursor-api2 (as of Jul 5, 19:28)
+API2, as of Jul 5, 19:28
 
      --------- CODEX ---------
 5h | 92.0% left
@@ -44,7 +44,7 @@ reset 20:48
 ■■■■■■■■■□□□□□□□□□□□□□□□□
 reset Jul 10, 03:55
 344.2 credits available
-Source: codex-local (as of Jul 5, 19:28)
+Local files, as of Jul 5, 19:28
 
      --------- CLAUDE --------
 5h | 100.0% left
@@ -53,7 +53,7 @@ reset Jul 6, 00:20
 7d | 84.0% left
 ■■■■■■■■■■■■■■■■■■■■□□□□
 reset Jul 7, 13:00
-Source: claude-cli (as of Jul 5, 19:29)
+CLI, as of Jul 5, 19:29
 ```
 
 The UI does not need to use terminal-style ASCII rendering. The example defines the information that must be visible.
@@ -100,12 +100,14 @@ The line is hidden when credits are unavailable.
 Provider source information is shown on one line by default:
 
 ```text
-Source: codex-local (as of Jul 5, 22:12)
+Local files, as of Jul 5, 22:12
 ```
 
-Both values are variable data from the application core:
+The line has two parts:
 
-- `sourceId`, for example `codex-local`
-- `dataTimestamp`
+- origin label, for example `Local files`, `CLI`, `Statusline`, or `API2`
+- timestamp from `dataTimestamp`, rendered as `as of {timestamp}`
 
-Each value is a non-breaking unit: `Source: {sourceId}` and `(as of {timestamp})` must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.
+Possible origin labels: `Local files`, `CLI`, `Statusline`, `API2`, `Unknown`.
+
+Each part is a non-breaking unit: `{origin label},` and `as of {timestamp}` must not wrap in the middle. If the provider block is too narrow for the full line, the line may break only between these two units.

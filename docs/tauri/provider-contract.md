@@ -22,8 +22,8 @@ The Rust type has defaults, but the current frontend passes all fields explicitl
 | --- | --- | --- | --- |
 | `id` | string | source plan label, for example `codex` | DOM key, timer key, provider block identity |
 | `label` | string | capitalized `id` | provider heading and accessibility labels |
-| `sourceId` | string or null | display label from structured source, or null on provider error | `Source: {sourceId}`; null displays `unknown` |
-| `dataTimestamp` | string or null | formatted `data_as_of`, `"unknown"` when source timestamp is absent, or null on provider error | `(as of {timestamp})`; null displays `unknown` |
+| `sourceId` | string or null | source identifier from structured data, or null on provider error | `{origin label},`; null displays `Unknown` |
+| `dataTimestamp` | string or null | formatted `data_as_of`, `"unknown"` when source timestamp is absent, or null on provider error | `as of {timestamp}`; null displays `unknown` |
 | `selectedUpdateFrequency` | string | currently always `"5 min"` | used only as fallback when frontend has no saved interval |
 | `limits` | array | displayable limit rows | rendered as rows and meters |
 | `errorMessage` | string or null | unavailable/no-data message or provider error | controls failed status and message rendering |
@@ -45,7 +45,7 @@ Provider availability is represented through the combination of `limits`, `error
 - no fresh usable data: `limits` is empty, `errorMessage` may contain a backend message, `noFreshData` is true.
 - provider/core error: `limits` is empty, `errorMessage` contains the error, `noFreshData` is false.
 
-Source is represented by `sourceId`. The backend already converts structured source information to a display label with `source_label_for_display`.
+The source line shows where provider data came from and when it was collected. `sourceId` supplies the origin label; `dataTimestamp` supplies the timestamp text.
 
 Timestamps are represented as strings:
 
