@@ -50,24 +50,7 @@ jobs:
             -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
           security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
           security list-keychain -d user -s build.keychain login.keychain
-
-          if [[ -n "${{ secrets.APPLE_SIGNING_IDENTITY }}" ]]; then
-            SIGNING_IDENTITY="${{ secrets.APPLE_SIGNING_IDENTITY }}"
-          else
-            SIGNING_IDENTITY="$(security find-identity -v -p codesigning build.keychain \
-              | grep 'Developer ID Application' \
-              | head -n 1 \
-              | awk -F'"' '{print $2}')"
-          fi
-
-          if [[ -z "$SIGNING_IDENTITY" ]]; then
-            echo "No Developer ID Application identity found in build.keychain" >&2
-            security find-identity -v -p codesigning build.keychain >&2 || true
-            exit 1
-          fi
-
-          echo "Using signing identity: $SIGNING_IDENTITY"
-          echo "APPLE_SIGNING_IDENTITY=$SIGNING_IDENTITY" >> "$GITHUB_ENV"
+          security find-identity -v -p codesigning build.keychain
 
       - name: Install App Store Connect API key
         env:
@@ -89,7 +72,9 @@ jobs:
         run: npm ci
 
       - name: Build signed and notarized macOS app
-        run: npm exec tauri -- build --bundles app --target universal-apple-darwin
+        run: |
+          unset APPLE_SIGNING_IDENTITY
+          npm exec tauri -- build --bundles app --target universal-apple-darwin
 
       - name: Archive macOS app bundle
         run: |
