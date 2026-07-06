@@ -6,7 +6,7 @@ on:
       macos_notarization:
         description: macOS notarization mode (sign-only is fastest)
         required: true
-        default: submit-only
+        default: sign-only
         type: choice
         options:
           - sign-only
