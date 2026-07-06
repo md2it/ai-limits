@@ -16,6 +16,8 @@ The desktop app is currently in beta.
 - Windows and Linux builds exist and are being tested with real users.
 - The interface is functional, but still early.
 
+Download: https://github.com/md2it/ai-limits/releases
+
 ### Terminal UI
 
 The terminal interface remains available.
