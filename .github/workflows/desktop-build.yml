@@ -27,6 +27,11 @@ jobs:
       - name: Build unsigned macOS app
         run: npm exec tauri -- build --bundles app
 
+      - name: Ad-hoc sign macOS app bundle
+        run: |
+          codesign --force --deep --sign - "target/release/bundle/macos/AI Limits.app"
+          codesign --verify --deep --strict --verbose=4 "target/release/bundle/macos/AI Limits.app"
+
       - name: Archive macOS app bundle
         run: ditto -c -k --sequesterRsrc --keepParent "target/release/bundle/macos/AI Limits.app" "target/release/bundle/macos/AI Limits.app.zip"
 

@@ -158,7 +158,18 @@ artifact name: ai-limits-macos-app
 artifact path: target/release/bundle/macos/AI Limits.app.zip
 ```
 
-The `.app` bundle is archived with `ditto` before upload to preserve the bundle
+The `.app` bundle is explicitly ad-hoc signed after `tauri build` and before
+archive upload:
+
+```text
+codesign --force --deep --sign - "target/release/bundle/macos/AI Limits.app"
+codesign --verify --deep --strict --verbose=4 "target/release/bundle/macos/AI Limits.app"
+```
+
+This does not add Developer ID signing or notarization. It fixes the local
+bundle seal so macOS does not reject the unsigned preview app as damaged.
+
+The `.app` bundle is archived with `ditto` after signing to preserve the bundle
 structure.
 
 Windows job:
