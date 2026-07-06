@@ -2,6 +2,16 @@ name: Desktop build
 
 on:
   workflow_dispatch:
+    inputs:
+      macos_notarization:
+        description: macOS notarization mode (sign-only is fastest)
+        required: true
+        default: submit-only
+        type: choice
+        options:
+          - sign-only
+          - submit-only
+          - full
 
 permissions:
   contents: write
@@ -14,8 +24,6 @@ jobs:
       KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
       APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
       APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
-      APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
-      APPLE_API_KEY: ${{ secrets.APPLE_API_KEY_ID }}
 
     steps:
       - name: Checkout
@@ -53,28 +61,41 @@ jobs:
           security find-identity -v -p codesigning build.keychain
 
       - name: Install App Store Connect API key
+        if: inputs.macos_notarization != 'sign-only'
         env:
           APPLE_API_KEY_CONTENT: ${{ secrets.APPLE_API_KEY_CONTENT }}
           APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
         run: |
           set -euo pipefail
 
-          if [[ -z "${APPLE_API_KEY_ID:-}" || -z "${APPLE_API_KEY_CONTENT:-}" ]]; then
-            echo "Missing secrets: APPLE_API_KEY_ID and/or APPLE_API_KEY_CONTENT" >&2
+          if [[ -z "${APPLE_API_KEY_ID:-}" || -z "${APPLE_API_KEY_CONTENT:-}" || -z "${APPLE_API_ISSUER:-}" ]]; then
+            echo "Missing secrets: APPLE_API_KEY_ID, APPLE_API_KEY_CONTENT, and/or APPLE_API_ISSUER" >&2
             exit 1
           fi
 
           mkdir -p "$HOME/.private_keys"
           printf '%s\n' "$APPLE_API_KEY_CONTENT" > "$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
-          echo "APPLE_API_KEY_PATH=$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8" >> "$GITHUB_ENV"
+          {
+            echo "APPLE_API_KEY_PATH=$HOME/.private_keys/AuthKey_${APPLE_API_KEY_ID}.p8"
+            echo "APPLE_API_KEY=${APPLE_API_KEY_ID}"
+            echo "APPLE_API_ISSUER=${APPLE_API_ISSUER}"
+          } >> "$GITHUB_ENV"
 
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Build signed and notarized macOS app
+      - name: Build macOS app
         run: |
+          set -euo pipefail
           unset APPLE_SIGNING_IDENTITY
-          npm exec tauri -- build --bundles app --target universal-apple-darwin
+
+          BUILD_ARGS=(--bundles app --target universal-apple-darwin)
+          if [[ "${{ inputs.macos_notarization }}" == "submit-only" ]]; then
+            BUILD_ARGS+=(--skip-stapling)
+          fi
+
+          npm exec tauri -- build "${BUILD_ARGS[@]}"
 
       - name: Archive macOS app bundle
         run: |
@@ -82,9 +103,20 @@ jobs:
 
           APP_PATH="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
           ZIP_PATH="target/release/bundle/macos/AI Limits.app.zip"
+          NOTARIZATION_MODE="${{ inputs.macos_notarization }}"
 
           codesign --verify --deep --strict --verbose=4 "$APP_PATH"
-          stapler validate "$APP_PATH"
+
+          if [[ "$NOTARIZATION_MODE" == "full" ]]; then
+            stapler validate "$APP_PATH"
+          elif [[ "$NOTARIZATION_MODE" == "submit-only" ]]; then
+            echo "Notarization submitted without waiting. Check status with:"
+            echo "  xcrun notarytool history --key ... --key-id ... --issuer ..."
+            echo "After Accepted, staple locally or rerun workflow with macos_notarization=full:"
+            echo "  xcrun stapler staple \"$APP_PATH\""
+          else
+            echo "Signed only. Gatekeeper may warn until the app is notarized."
+          fi
 
           mkdir -p "$(dirname "$ZIP_PATH")"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
@@ -211,6 +243,7 @@ jobs:
           {
             echo "tag=${tag}"
             echo "title=AI Limits desktop unstable ${tag}"
+            echo "macos_notarization=${{ inputs.macos_notarization }}"
           } >> "$GITHUB_ENV"
 
       - name: Publish GitHub pre-release
@@ -220,9 +253,21 @@ jobs:
         run: |
           set -euo pipefail
 
+          case "$macos_notarization" in
+            full)
+              macos_note="macOS: signed, notarized, and stapled."
+              ;;
+            submit-only)
+              macos_note="macOS: signed; notarization submitted without waiting (may still be In Progress at Apple)."
+              ;;
+            *)
+              macos_note="macOS: signed only (not notarized)."
+              ;;
+          esac
+
           gh release create "$tag" release-assets/upload/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$title" \
-            --notes "Unstable desktop build. macOS: signed and notarized (Developer ID). Windows and Linux are unsigned." \
+            --notes "Unstable desktop build. ${macos_note} Windows and Linux are unsigned." \
             --prerelease
