@@ -1,8 +1,24 @@
 # ai-limits
 
-Check subscription limits easily. Codex, Claude, Cursor.
+English | [Русский](README.ru.md)
 
-## Quick start
+Check AI subscription limits easily. Codex, Claude, Cursor.
+
+`ai-limits` is a local tool for viewing available AI usage and limit data from supported providers. It can be used as a desktop app or from the terminal.
+
+## Interfaces
+
+### Desktop App
+
+The desktop app is currently in beta.
+
+- macOS works as an app.
+- Windows and Linux builds exist and are being tested with real users.
+- The interface is functional, but still early.
+
+### Terminal UI
+
+The terminal interface remains available.
 
 Run from the repository:
 
@@ -10,120 +26,36 @@ Run from the repository:
 ./bin/ai-limits
 ```
 
-## What it does
-
-- Shows current limits for Codex, Claude, and Cursor.
-- Shows usage information when available.
-- Supports multiple data sources for the same provider.
-- Provides default, structured, and raw output views.
-- Can repeat checks on an interval with watch mode.
-
-## How it works
-
-For the user, the app acts as a local assistant: it collects available usage and limit data, normalizes it, and shows a clear summary.
-
-1. **user** → **app**: requests limits
-2. **app** → **source**: fetches available data
-3. **source** → **app**: returns usage/limits/status
-4. **app**: normalizes the result
-5. **app** → **user**: shows the summary
-
-## Supported features
-
-### Supported flags
-
-- `--help`, `-h`
-- `--init-config`
-- `--all`, `-a`
-- `--best`, `-b`
-- `--watch`, `-w`
-- `--usage`
-- `--raw`, `-r`
-- `--structured`, `-s`
-- `--codex-local`
-- `--codex-cli`
-- `--claude-statusline`
-- `--claude-cli`
-- `--claude-local`
-- `--cursor-api2`
-
-### Output views
-
-You can use three view types for any provider and data source: default, structured, and raw.
-
-The views are derived in this order:
-
-```text
-raw -> structured -> default
-```
-
-- **Default**
-  - User-facing terminal view.
-  - Shows a compact limits summary by provider: limit bars, remaining percentage, reset time, credits when available, and source timestamp.
-  - Used when no output view flag is passed.
-
-- **Structured** (`--structured`, `-s`)
-  - Normalized machine-readable view.
-  - Uses the same field structure for every provider and source.
-  - Leaves fields empty when a source cannot provide them.
-
-- **Raw** (`--raw`, `-r`)
-  - Source-level view.
-  - Returns data as close as possible to the original source response: CLI output, API response, local file extract, or another source-specific payload.
-  - Usually contains the most detail, but is not normalized and is less convenient to read.
-
-### Source details
-
-- **Codex**
-  - **local** (`--codex-local`) — reads token usage and local `rate_limits` snapshots from `${CODEX_HOME:-~/.codex}` JSONL files.
-  - **CLI** (`--codex-cli`) — reads limits via the Codex CLI `/status` command.
-- **Claude**
-  - **statusline** (`--claude-statusline`) — reads live `rate_limits` from Claude Code statusline cache/stdin payload (5h/7d windows, reset).
-  - **CLI** (`--claude-cli`) — reads limits via the Claude CLI `/usage` command.
-  - **local** (`--claude-local`) — aggregates token usage history from local transcript JSONL files.
-- **Cursor** (`--cursor-api2`) — reads usage from `api2.cursor.sh` using a token from `cursor agent login`; if the API is unavailable, falls back to `cursor agent about/status`.
-- **Watch mode** (`--watch`, `-w`) — repeats the query on an interval (`--watch=10m`); without a value, the interval comes from the config.
-- **Config** — optional `~/.config/ai-limits/config.toml`; create with `--init-config`.
-
-## Examples
-
-Show CLI help:
+Show help:
 
 ```sh
 ./bin/ai-limits --help
 ```
 
-Create a user config:
+For terminal UI details, see [docs/terminal-ui.md](docs/terminal-ui.md).
 
-```sh
-./bin/ai-limits --init-config
-```
+## What It Shows
 
-Query only selected sources by passing source flags:
+- Current limits for Codex, Claude, and Cursor when available.
+- Usage information when a supported source can provide it.
+- Results from local files, provider CLIs, and other supported sources.
+- Default, structured, and raw output views in the terminal.
+- Repeated checks with terminal watch mode.
 
-```sh
-./bin/ai-limits --codex-local --cursor-api2
-```
+## Current Limitations
 
-When no source is selected and no config is present, the command uses fast free sources. `--best`/`-b` asks for the best available result per provider and may fall back to CLI-backed sources. `--all`/`-a` forces all current sources separately, even when the config defines a narrower default.
+- No macOS DMG installer yet.
+- Builds are not signed by an authorized developer yet.
+- Desktop notifications currently work on macOS only.
+- Windows and Linux desktop builds are still being tested.
+- Some local Codex and Claude data sources may not work on Windows and Linux yet.
+- CLI-backed data sources are expected to be the most portable option across platforms.
 
-Repeat the query on an interval:
+## Documentation
 
-```sh
-./bin/ai-limits --watch
-```
-
-Repeat the query on a custom interval, overriding the config for that run:
-
-```sh
-./bin/ai-limits --watch=10m
-```
-
-## Notes
-
-Config path: `~/.config/ai-limits/config.toml`.
-
-CLI-backed sources use the standard `codex`, `claude`, and `cursor` CLIs. Local sources read provider files from the user's home directory.
+- [Terminal UI](docs/terminal-ui.md)
+- [Configuration](docs/config.md)
+- [Developer documentation](docs/)
 
 ## License
 
