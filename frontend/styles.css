@@ -229,6 +229,7 @@ body {
   --provider-brand: #000000;
   --provider-brand-rgb: 0, 0, 0;
   --provider-brand-opacity: 0.15;
+  --provider-border-color: var(--provider-brand);
   --provider-text: color-mix(in srgb, var(--provider-brand) 20%, var(--text));
   --provider-text-muted: color-mix(in srgb, var(--provider-brand) 20%, var(--text-muted));
   --provider-text-link: color-mix(in srgb, var(--provider-brand) 50%, var(--text));
@@ -236,7 +237,7 @@ body {
   display: flex;
   min-height: 320px;
   flex-direction: column;
-  border: 1px solid var(--provider-brand);
+  border: 1px solid var(--provider-border-color);
   border-radius: 8px;
   background-color: rgba(var(--provider-brand-rgb), var(--provider-brand-opacity));
   color: var(--provider-text-muted);
@@ -266,8 +267,8 @@ body {
 }
 
 :root[data-theme="dark"] .provider-block[data-provider-id="cursor"] {
+  --provider-border-color: #6f6c52;
   --provider-brand-opacity: 0.38;
-  border-color: #6f6c52;
   box-shadow:
     inset 0 0 0 1px rgba(255, 207, 22, 0.18),
     0 10px 28px rgba(0, 0, 0, 0.28);
@@ -450,7 +451,7 @@ body {
   display: grid;
   flex-shrink: 0;
   gap: 12px;
-  border-top: 1px solid var(--provider-brand);
+  border-top: 1px solid var(--provider-border-color);
   padding-top: 14px;
 }
 

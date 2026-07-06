@@ -13,6 +13,14 @@ Each provider square contains:
 
 The provider content should roughly match the current terminal output model.
 
+## Provider Accent Color
+
+Each provider block owns one provider accent token. The token defines the provider-specific brand color used by prominent provider-scoped UI elements.
+
+The provider block border and any internal divider that separates provider metadata from provider controls must use the same provider border token. This keeps the divider visible in both light and dark themes and prevents provider-specific overrides, such as Cursor dark theme tuning, from drifting between the card border and its internal separators.
+
+The provider background may use the same provider accent color with lower opacity. Theme-specific overrides may tune opacity or border brightness per provider, but they must do so through the shared provider tokens rather than hard-coding separate divider colors.
+
 Example data shape:
 
 ```text
