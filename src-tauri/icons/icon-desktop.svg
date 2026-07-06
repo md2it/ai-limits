@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 24 24" fill="none" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="AI Limits desktop icon source">
+  <defs>
+    <path id="smallSparkle" d="M0 -1.55 C0.28 -0.55 0.55 -0.28 1.55 0 C0.55 0.28 0.28 0.55 0 1.55 C-0.28 0.55 -0.55 0.28 -1.55 0 C-0.55 -0.28 -0.28 -0.55 0 -1.55Z"/>
+  </defs>
+
+  <rect width="24" height="24" fill="#000000"/>
+
+  <g transform="translate(2.4 2.4) scale(0.8)">
+    <path d="M0.825 12 C7.987 11.029 11.029 7.987 12 0.825" stroke="#ff2a22" stroke-width="1.65"/>
+    <path d="M12 0.825 C12.971 7.987 16.013 11.029 23.175 12" stroke="#f7f7f7" stroke-width="1.65"/>
+    <path d="M23.175 12 C16.013 12.971 12.971 16.013 12 23.175" stroke="#7ed941" stroke-width="1.65"/>
+    <path d="M12 23.175 C11.029 16.013 7.987 12.971 0.825 12" stroke="#ffcf16" stroke-width="1.65"/>
+
+    <path d="M0.825 12 C2.832 11.728 4.514 11.294 5.919 10.653" stroke="#ff2a22" stroke-width="1.65"/>
+
+    <use href="#smallSparkle" x="4" y="20" fill="#ffffff" transform="translate(4 20) scale(2) translate(-4 -20)"/>
+    <use href="#smallSparkle" x="20" y="4" fill="#ffcf16"/>
+  </g>
+</svg>

@@ -35,4 +35,5 @@ src-tauri/gen/
 .runtime/
 .hands-on/
 .claude/
+artifacts/
 tmp/
