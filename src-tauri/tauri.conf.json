@@ -4,7 +4,7 @@
   "version": "0.1.0",
   "identifier": "com.ai-limits.desktop",
   "build": {
-    "beforeDevCommand": "python3 -m http.server 1420 --directory frontend",
+    "beforeDevCommand": "sh scripts/tauri-dev-server.sh",
     "devUrl": "http://127.0.0.1:1420",
     "frontendDist": "../frontend"
   },

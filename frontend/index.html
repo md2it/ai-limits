@@ -64,6 +64,10 @@
                 <span>Use CLI too</span>
                 <input type="checkbox" id="setting-cli-fallback" />
               </label>
+              <label class="settings-toggle">
+                <span>Dark theme</span>
+                <input type="checkbox" id="setting-dark-theme" />
+              </label>
             </div>
           </div>
         </div>
@@ -126,6 +130,7 @@
       const PROVIDER_STATUS_HIDE_MS = 4000;
       const SETTINGS_STORAGE_KEY = "ai-limits-settings";
       const PROVIDER_INTERVALS_STORAGE_KEY = "ai-limits-provider-intervals";
+      const THEME_STORAGE_KEY = "ai-limits-theme";
       const PROVIDER_IDS = ["codex", "claude", "cursor"];
       const CLI_SETUP_LINKS = {
         claude: "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md",
@@ -138,6 +143,12 @@
         cloud: true,
         codex: true,
         useCliFallback: false,
+      };
+
+      const THEME_ACCENTS = {
+        danger: [255, 42, 34],
+        warning: [255, 207, 22],
+        success: [126, 217, 65],
       };
 
       const providerList = document.querySelector("#provider-list");
@@ -154,6 +165,7 @@
         cloud: document.querySelector("#setting-cloud"),
         codex: document.querySelector("#setting-codex"),
         useCliFallback: document.querySelector("#setting-cli-fallback"),
+        darkTheme: document.querySelector("#setting-dark-theme"),
       };
 
       const providerRefreshIntervals = new Map();
@@ -163,6 +175,69 @@
       const providerDataCache = new Map();
 
       let appSettings = loadAppSettings();
+      let appTheme = loadAppTheme();
+
+      function getSystemTheme() {
+        if (typeof window.matchMedia !== "function") {
+          return "light";
+        }
+
+        if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+          return "dark";
+        }
+
+        if (window.matchMedia("(prefers-color-scheme: light)").matches) {
+          return "light";
+        }
+
+        return "light";
+      }
+
+      function loadAppTheme() {
+        try {
+          const stored = localStorage.getItem(THEME_STORAGE_KEY);
+          if (!stored) {
+            return { mode: "system", value: getSystemTheme() };
+          }
+
+          const parsed = JSON.parse(stored);
+          if (
+            parsed &&
+            parsed.mode === "manual" &&
+            (parsed.value === "dark" || parsed.value === "light")
+          ) {
+            return { mode: "manual", value: parsed.value };
+          }
+
+          return { mode: "system", value: getSystemTheme() };
+        } catch {
+          return { mode: "system", value: getSystemTheme() };
+        }
+      }
+
+      function saveAppTheme() {
+        localStorage.setItem(THEME_STORAGE_KEY, JSON.stringify(appTheme));
+      }
+
+      function applyAppTheme() {
+        document.documentElement.dataset.theme = appTheme.value;
+        settingInputs.darkTheme.checked = appTheme.value === "dark";
+      }
+
+      function setManualTheme(isDark) {
+        appTheme = { mode: "manual", value: isDark ? "dark" : "light" };
+        saveAppTheme();
+        applyAppTheme();
+      }
+
+      function syncSystemTheme() {
+        if (appTheme.mode === "manual") {
+          return;
+        }
+
+        appTheme = { mode: "system", value: getSystemTheme() };
+        applyAppTheme();
+      }
 
       function loadAppSettings() {
         try {
@@ -251,6 +326,7 @@
         settingInputs.cloud.checked = appSettings.cloud;
         settingInputs.codex.checked = appSettings.codex;
         settingInputs.useCliFallback.checked = appSettings.useCliFallback;
+        settingInputs.darkTheme.checked = appTheme.value === "dark";
         syncInlineCliFallbackToggles();
       }
 
@@ -577,10 +653,14 @@
 
       function colorForRemaining(remainingPercent) {
         const clamped = Math.max(0, Math.min(100, remainingPercent));
+        if (clamped <= 1) {
+          return `rgb(${THEME_ACCENTS.danger.join(", ")})`;
+        }
+
         const stops = [
-          { pct: 0, rgb: [214, 61, 52] },
-          { pct: 50, rgb: [232, 179, 43] },
-          { pct: 100, rgb: [47, 118, 100] },
+          { pct: 1, rgb: THEME_ACCENTS.danger },
+          { pct: 50, rgb: THEME_ACCENTS.warning },
+          { pct: 100, rgb: THEME_ACCENTS.success },
         ];
 
         let lower = stops[0];
@@ -960,7 +1040,19 @@
       }
 
       for (const input of Object.values(settingInputs)) {
+        if (input === settingInputs.darkTheme) {
+          input.addEventListener("change", (event) => {
+            setManualTheme(event.target.checked);
+          });
+          continue;
+        }
+
         input.addEventListener("change", handleSettingsChange);
+      }
+
+      if (typeof window.matchMedia === "function") {
+        window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", syncSystemTheme);
+        window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", syncSystemTheme);
       }
 
       document.addEventListener("click", () => {
@@ -975,6 +1067,7 @@
       });
 
       initProviderIntervals();
+      applyAppTheme();
       syncSettingsInputs();
       refreshButton.addEventListener("click", () => {
         refreshEnabledProviders();
