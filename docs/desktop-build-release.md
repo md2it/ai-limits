@@ -247,7 +247,7 @@ Implementation guardrails:
 
 ### 3. Smoke-Test Downloaded Artifacts
 
-Status: next.
+Status: in progress.
 
 Plan:
 
@@ -284,6 +284,32 @@ Smoke-test result should document:
 - launch result;
 - blocking UX or security warning;
 - whether the artifact is acceptable for an unsigned preview release.
+
+Current smoke-test results:
+
+```text
+macOS:
+  artifact file: AI Limits.app.zip
+  unzip result: passed
+  launch result: passed
+  installer flow: not applicable; artifact is a zipped .app, not a DMG
+  Gatekeeper UX:
+    app opened immediately
+    no "Apple cannot check it for malicious software" warning reported
+    no "unidentified developer" warning reported
+    right click -> Open was not required
+    System Settings -> Privacy & Security -> Open Anyway was not required
+    launch was not blocked
+  note:
+    result was observed on the development device, so external macOS behavior
+    may differ
+
+Windows:
+  status: pending external tester
+
+Linux:
+  status: pending external tester
+```
 
 ### 4. Add GitHub Releases
 
