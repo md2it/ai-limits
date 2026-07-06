@@ -24,8 +24,8 @@ platforms:
 - Linux
 
 The current unsigned CI workflow proves that every platform can produce a
-downloadable artifact in GitHub Actions. The next release-readiness step is
-manual verification of the downloaded artifacts. Signing, notarization, and
+downloadable artifact in GitHub Actions. It also publishes those files as an
+unstable GitHub pre-release for easier downloading. Signing, notarization, and
 polished installer distribution are future stages.
 
 ## Current Status
@@ -43,6 +43,8 @@ Confirmed:
 - GitHub Actions unsigned desktop build workflow is implemented and verified.
 - CI produces unsigned artifacts for macOS, Windows, and Linux.
 - CI artifacts were downloaded and inspected by file name/path.
+- CI publishes unstable GitHub pre-releases with desktop files for macOS,
+  Windows, and Linux.
 
 Known local macOS build result:
 
@@ -80,7 +82,7 @@ The desktop build/release work covers:
 - GitHub Actions workflow design.
 - Native OS builds on GitHub-hosted runners.
 - Uploading build artifacts from CI.
-- A later GitHub Releases workflow after CI artifacts are stable.
+- Publishing unstable GitHub pre-releases from CI.
 - Documentation of build commands, produced paths, and known platform-specific
   issues.
 
@@ -125,9 +127,9 @@ Status: in progress.
 
 See [Temporary artifact verification](artifact-verification-temp.md).
 
-### 5. Add GitHub Releases
+### 5. Publish Unstable GitHub Pre-Releases
 
-Status: future.
+Status: active.
 
 See [Release](release.md).
 
@@ -139,9 +141,5 @@ See [Release](release.md).
 
 ## Recommended Next Task
 
-Verify downloaded artifacts on target platforms before planning GitHub
-Releases.
-
-GitHub Releases should be planned only after artifact verification results are documented,
-unless the project explicitly chooses to publish unsigned artifacts with known
-untested runtime risk.
+Verify downloaded unstable pre-release files on target platforms and document
+the results.

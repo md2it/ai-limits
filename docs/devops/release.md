@@ -1,17 +1,66 @@
 # Release
 
-## Add GitHub Releases
+## Unstable GitHub Pre-Releases
 
-Status: future.
+Status: active.
 
-Plan:
+Purpose:
 
-- Add a release workflow only after unsigned artifacts pass smoke verification,
-  or after an explicit decision to publish untested unsigned artifacts.
-- Prefer tag-based release creation.
-- Attach confirmed artifacts from all platforms.
-- Keep release notes simple and factual.
-- Do not introduce signing or notarization as part of the first release workflow.
+- Give collaborators and early users one GitHub place to download the latest
+  working desktop build.
+- Make the build clearly usable but unstable.
+- Avoid asking people to find a specific GitHub Actions run and download CI
+  artifacts manually.
+
+Workflow:
+
+```text
+.github/workflows/desktop-build.yml
+```
+
+Trigger:
+
+```text
+workflow_dispatch
+```
+
+Current behavior:
+
+- Build macOS, Windows, and Linux files in separate jobs.
+- Upload GitHub Actions artifacts with 14-day retention.
+- After all platform jobs pass, create an unstable GitHub pre-release.
+- Attach separate files for each platform to that pre-release.
+- Use an automatic tag based on the workflow run number and attempt:
+
+```text
+desktop-unstable-<run-number>-<attempt>
+```
+
+Release asset naming:
+
+```text
+AI-Limits-desktop-unstable-<run-number>-<attempt>-macos-app.zip
+AI-Limits-desktop-unstable-<run-number>-<attempt>-windows-setup.exe
+AI-Limits-desktop-unstable-<run-number>-<attempt>-windows.msi
+AI-Limits-desktop-unstable-<run-number>-<attempt>-linux.deb
+AI-Limits-desktop-unstable-<run-number>-<attempt>-linux.AppImage
+```
+
+User-facing meaning:
+
+- These are working desktop builds.
+- They are unstable and may contain bugs.
+- They are unsigned.
+- macOS and Windows may show security warnings.
+- They are not stable releases and are not notarized or store-ready.
+
+Download path:
+
+```text
+GitHub repository -> Releases -> latest unstable pre-release
+```
+
+Do not require users to build the app manually.
 
 ## Add Installers and Signed Distribution
 

@@ -105,8 +105,9 @@ Verification result:
 - macOS, Windows, and Linux jobs passed.
 - Artifacts were created and uploaded for all three platforms.
 - Artifacts were downloaded locally and file paths were confirmed.
-- Release publishing was not added.
-- Signing, notarization, secrets, and GitHub Releases were not used.
+- Release publishing now creates an unstable GitHub pre-release after all
+  platform jobs pass.
+- Signing, notarization, and external secrets are not used.
 
 Confirmed artifacts:
 
@@ -146,5 +147,5 @@ Implementation guardrails:
 - Do not change Tauri command behavior in `src-tauri/src/`.
 - Do not change frontend UI behavior.
 - Do not change provider, limit, config, or notification logic.
-- Do not add release publishing yet.
 - Do not add signing, notarization, or secret requirements.
+- Keep unstable release publishing separate from signing and notarization.

@@ -4,7 +4,8 @@
 
 - Start with manual workflows.
 - Use native runners per platform.
-- Keep the current workflow focused on build artifacts, not release publishing.
+- Keep platform builds explicit and publish only after all required platform
+  jobs pass.
 - Do not require DMG for the first macOS CI success.
 - Do not add signing or notarization secrets yet.
 - Keep platform-specific commands explicit if a matrix makes the workflow hard to
@@ -17,8 +18,19 @@
 - Artifact paths must remain based on actual CI output, not assumptions.
 - macOS `.app` is archived before upload so the bundle structure is preserved.
 - GitHub Actions artifact retention is currently 14 days.
-- Long-term release artifacts should be handled through GitHub Releases or a
-  documented release staging directory, not `/private/tmp`.
+- Unstable desktop builds are published through GitHub pre-releases for easier
+  collaborator access.
+- Long-term stable release artifacts should be handled through stable GitHub
+  Releases, not `/private/tmp`.
+
+## Release Principles
+
+- Use the term `unstable` for current desktop pre-releases.
+- A pre-release may be useful and downloadable while still being incomplete,
+  unsigned, and bug-prone.
+- Publish separate release assets per operating system so users download only
+  what they need.
+- Do not present unstable pre-releases as stable, notarized, or store-ready.
 
 ## Known Warnings and Risks
 
