@@ -42,6 +42,7 @@ pub struct ProviderLimits {
     data_timestamp: Option<String>,
     selected_update_frequency: String,
     limits: Vec<ProviderLimitRow>,
+    credits_remaining: Option<f64>,
     error_message: Option<String>,
     no_fresh_data: bool,
 }
@@ -194,6 +195,7 @@ fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> Pro
         ),
         selected_update_frequency: "5 min".to_string(),
         limits,
+        credits_remaining: info.account.credits_remaining,
         error_message,
         no_fresh_data,
     }
@@ -207,6 +209,7 @@ fn provider_error(id: &str, message: String) -> ProviderLimits {
         data_timestamp: None,
         selected_update_frequency: "5 min".to_string(),
         limits: Vec::new(),
+        credits_remaining: None,
         error_message: Some(message),
         no_fresh_data: false,
     }

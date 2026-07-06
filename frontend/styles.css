@@ -284,6 +284,7 @@ body {
 
 .provider-block .limit-row,
 .provider-block .limit-reset,
+.provider-block .credits-info,
 .provider-block .source-info,
 .provider-block .no-fresh-data,
 .provider-block .provider-status {
@@ -423,6 +424,17 @@ body {
 
 .limit-reset {
   color: var(--text-muted);
+}
+
+.credits-info {
+  margin: 12px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.credits-info[hidden] {
+  display: none;
 }
 
 .source-info {

@@ -688,6 +688,19 @@
           .replaceAll("'", "&#039;");
       }
 
+      function formatDecimal(value) {
+        const rounded = Math.round(Number(value) * 10) / 10;
+        return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1);
+      }
+
+      function formatCreditsLine(provider) {
+        if (provider.creditsRemaining == null) {
+          return "";
+        }
+
+        return `${formatDecimal(provider.creditsRemaining)} credits available`;
+      }
+
       function buildLimitRowsHtml(provider) {
         if (!provider.limits.length) {
           if (provider.pending) {
@@ -760,6 +773,9 @@
               <h2>${escapeHtml(provider.label)}</h2>
             </div>
             <div class="limits">${buildLimitRowsHtml(provider)}</div>
+            <p class="credits-info" ${provider.creditsRemaining == null ? "hidden" : ""}>
+              ${escapeHtml(formatCreditsLine(provider))}
+            </p>
             <p class="source-info">
               <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
               <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
@@ -837,6 +853,17 @@
 
       function updateProviderBlockData(block, provider) {
         block.querySelector(".limits").innerHTML = buildLimitRowsHtml(provider);
+
+        const creditsInfo = block.querySelector(".credits-info");
+        const creditsLine = formatCreditsLine(provider);
+        if (creditsLine) {
+          creditsInfo.hidden = false;
+          creditsInfo.textContent = creditsLine;
+        } else {
+          creditsInfo.hidden = true;
+          creditsInfo.textContent = "";
+        }
+
         block.querySelector(".source-id").textContent = formatSourceIdLine(provider);
         block.querySelector(".source-timestamp").textContent = formatSourceTimestampLine(provider);
         attachInlineCliFallbackHandler(block);

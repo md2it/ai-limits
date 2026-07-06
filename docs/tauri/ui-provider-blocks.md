@@ -6,6 +6,7 @@ Each provider square contains:
 
 - provider name
 - limit rows
+- credits line, when available
 - source line with source id and data timestamp on one line by default
 - update frequency dropdown near the bottom
 - provider-specific manual update button at the bottom
@@ -32,6 +33,7 @@ reset 20:48
 7d | 35.0% left
 ■■■■■■■■■□□□□□□□□□□□□□□□□
 reset Jul 10, 03:55
+344.2 credits available
 Source: codex-local (as of Jul 5, 19:28)
 
      --------- CLAUDE --------
@@ -70,6 +72,18 @@ The filled segment color is calculated from remaining percentage:
 - intermediate values are interpolated between these anchors
 
 The bar must not use a left-to-right rainbow gradient inside the filled segment. For example, if `10%` remains, the filled 10% segment is a near-red color and the spent 90% segment stays light.
+
+## Credits Line
+
+When the provider has remaining credits, show one text line directly below the limit rows:
+
+```text
+344.2 credits available
+```
+
+The line is hidden when credits are unavailable.
+
+---
 
 ## Source Line
 
