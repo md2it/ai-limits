@@ -56,7 +56,10 @@
   --settings-dropdown-max-width-offset: 56px;
   --settings-dropdown-max-height-offset: 80px;
   --provider-block-min-height: 320px;
-  --provider-grid-columns: 3;
+  /* Longest source line: "Local files, as of Sep 30, 00:00" at 13px (~188px text) + padding/border + tolerance */
+  --provider-card-min-width: 230px;
+  /* Equal share when three cards fill --content-width */
+  --provider-card-max-width: calc((var(--content-width) - 2 * var(--space-14)) / 3);
   --provider-status-z-index: 2;
   --dropdown-z-index: 10;
   --modal-z-index: 20;
@@ -325,8 +328,11 @@ body {
   display: grid;
   width: min(100%, var(--content-width));
   margin: var(--space-0) auto var(--space-16);
-  grid-template-columns: repeat(var(--provider-grid-columns), minmax(0, 1fr));
   gap: var(--space-14);
+  grid-template-columns: repeat(
+    auto-fit,
+    minmax(min(100%, var(--provider-card-min-width)), 1fr)
+  );
 }
 
 .provider-block {
@@ -817,11 +823,7 @@ select {
   background: color-mix(in srgb, var(--accent-success) var(--mix-hover-success), var(--surface));
 }
 
-@media (max-width: 860px) {
-  .providers {
-    grid-template-columns: 1fr;
-  }
-
+@media (max-width: 525px) {
   .provider-block {
     min-height: auto;
   }
