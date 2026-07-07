@@ -32,6 +32,15 @@ Current GitHub behavior:
 desktop-unstable-<run-number>-<attempt>
 ```
 
+Release description:
+
+- Should be generated automatically from commit messages between the previous release and the current release.
+- Should include only user-relevant commit types: `feat:` and `fix:`.
+- Should exclude `docs:` and `chore:` by default.
+- Can be edited manually after release creation to remove noise or clarify wording.
+- Depends on the commit message rules in [Contributing](../../CONTRIBUTING.md).
+- Commit message checks are advisory and should warn without blocking commits or builds.
+
 Release asset naming:
 
 ```text

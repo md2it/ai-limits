@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "setup:contributor": "sh scripts/setup-contributor.sh",
     "tauri": "sh scripts/tauri-clean-dev-assets.sh && tauri dev",
     "tauri:dev": "sh scripts/tauri-clean-dev-assets.sh && tauri dev",
     "tauri:build": "tauri build"

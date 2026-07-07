@@ -214,6 +214,11 @@ jobs:
       - build-linux
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Download desktop artifacts
         uses: actions/download-artifact@v4
         with:
@@ -246,12 +251,32 @@ jobs:
             echo "macos_notarization=${{ inputs.macos_notarization }}"
           } >> "$GITHUB_ENV"
 
-      - name: Publish GitHub pre-release
+      - name: Prepare release notes
         env:
           GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
+
+          previous_tag="$(gh release list \
+            --repo "$GITHUB_REPOSITORY" \
+            --limit 100 \
+            --json tagName \
+            --jq '[.[] | select(.tagName | startswith("desktop-unstable-"))][0].tagName // ""')"
+
+          if [[ -n "$previous_tag" ]]; then
+            range="${previous_tag}..${GITHUB_SHA}"
+          else
+            range="${GITHUB_SHA}"
+          fi
+
+          notes="$(git log --format=%s "$range" \
+            | grep -E '^(feat|fix): ' \
+            | sed -E 's/^(feat|fix): /- /' || true)"
+
+          if [[ -z "$notes" ]]; then
+            notes="- No user-facing feat/fix commits in this release."
+          fi
 
           case "$macos_notarization" in
             full)
@@ -265,9 +290,26 @@ jobs:
               ;;
           esac
 
+          {
+            echo "## Changes"
+            echo
+            echo "$notes"
+            echo
+            echo "## Build"
+            echo
+            echo "Unstable desktop build. ${macos_note} Windows and Linux are unsigned."
+          } > release-notes.md
+
+      - name: Publish GitHub pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
           gh release create "$tag" release-assets/upload/* \
             --repo "$GITHUB_REPOSITORY" \
             --target "$GITHUB_SHA" \
             --title "$title" \
-            --notes "Unstable desktop build. ${macos_note} Windows and Linux are unsigned." \
+            --notes-file release-notes.md \
             --prerelease
