@@ -1,4 +1,4 @@
-# Release
+# GitHub Releases
 
 ## Unstable GitHub Pre-Releases
 
@@ -9,10 +9,10 @@ Purpose:
 - Give collaborators and early users one GitHub place to download the latest
   working desktop build.
 - Make the build clearly usable but unstable.
-- Avoid asking people to find a specific GitHub Actions run and download CI
-  artifacts manually.
+- Avoid asking people to find a specific GitHub Actions run and download
+  workflow artifacts manually.
 
-Workflow:
+GitHub Actions workflow:
 
 ```text
 .github/workflows/desktop-build.yml
@@ -24,7 +24,7 @@ Trigger:
 workflow_dispatch
 ```
 
-Current behavior:
+Current GitHub behavior:
 
 - Build macOS, Windows, and Linux files in separate jobs.
 - Upload GitHub Actions artifacts with 14-day retention.
@@ -50,9 +50,12 @@ User-facing meaning:
 
 - These are working desktop builds.
 - They are unstable and may contain bugs.
-- They are unsigned.
-- macOS and Windows may show security warnings.
-- They are not stable releases and are not notarized or store-ready.
+- macOS is signed with Apple Developer ID in GitHub Actions.
+- macOS notarization depends on the selected workflow input:
+  `sign-only`, `submit-only`, or `full`.
+- Windows and Linux are unsigned.
+- Windows may show security warnings.
+- They are not stable releases or store-ready.
 
 Download path:
 
@@ -64,11 +67,12 @@ Do not require users to build the app manually.
 
 ## Add Installers and Signed Distribution
 
-Status: future.
+Status: active for macOS, future for Windows and Linux.
 
 Plan:
 
-- Revisit macOS DMG packaging after `.app` CI builds are stable.
-- Add Apple signing and notarization as a separate project phase.
+- Revisit macOS DMG packaging after `.app` GitHub builds are stable.
+- Keep Apple signing and notarization documented as part of the macOS GitHub
+  Actions path.
 - Add Windows signing later if distribution needs it.
 - Add Linux packaging refinements after confirming the first Linux artifact.

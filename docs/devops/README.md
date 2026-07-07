@@ -8,25 +8,28 @@ Detailed Tauri integration rules remain in `../architecture.md` and
 
 ## Documents
 
-- [CI artifacts](ci-artifacts.md)
+- [GitHub builds](github-builds.md)
+- [GitHub releases](github-releases.md)
+- [Dev run](dev.md)
+- [Local build](local-build.md)
 - [Icons](icons.md)
+- [macOS signing](macos-signing.md)
 - [Temporary artifact verification](artifact-verification-temp.md)
-- [Release](release.md)
 - [Principles and risks](principles-and-risks.md)
 
 ## Goal
 
-Build and publish unsigned desktop artifacts for the Tauri app across supported
+Build and publish desktop artifacts for the Tauri app across supported
 platforms:
 
 - macOS
 - Windows
 - Linux
 
-The current unsigned CI workflow proves that every platform can produce a
-downloadable artifact in GitHub Actions. It also publishes those files as an
-unstable GitHub pre-release for easier downloading. Signing, notarization, and
-polished installer distribution are future stages.
+The current GitHub Actions workflow proves that every platform can produce a
+downloadable artifact. It also publishes those files as an unstable GitHub
+pre-release for easier downloading. macOS signing is now supported in GitHub
+Actions. Windows and Linux artifacts remain unsigned.
 
 ## Current Status
 
@@ -40,13 +43,14 @@ Confirmed:
   notification rules.
 - Local macOS production `.app` build is confirmed.
 - The produced macOS `.app` was manually launched and checked by the user.
-- GitHub Actions unsigned desktop build workflow is implemented and verified.
-- CI produces unsigned artifacts for macOS, Windows, and Linux.
-- CI artifacts were downloaded and inspected by file name/path.
-- CI publishes unstable GitHub pre-releases with desktop files for macOS,
-  Windows, and Linux.
+- GitHub Actions desktop build workflow is implemented and verified.
+- GitHub Actions produces a signed macOS `.app` artifact.
+- GitHub Actions produces unsigned artifacts for Windows and Linux.
+- GitHub Actions artifacts were downloaded and inspected by file name/path.
+- GitHub Actions publishes unstable GitHub pre-releases with desktop files for
+  macOS, Windows, and Linux.
 
-Known local macOS build result:
+Known local macOS production build result:
 
 ```text
 npm exec tauri -- build --bundles app
@@ -63,10 +67,10 @@ Known issue:
 
 - Default `npm exec tauri -- build` currently reaches DMG packaging and fails on
   the DMG bundling step.
-- DMG is not a blocker for the first unsigned `.app` artifact stage.
+- DMG is not a blocker for the current `.app` artifact stage.
 - DMG packaging should be handled as a later, separate task.
 
-Verified CI run:
+Verified GitHub Actions run:
 
 ```text
 URL: https://github.com/md2it/ai-limits/actions/runs/28758826398
@@ -81,15 +85,14 @@ The desktop build/release work covers:
 
 - GitHub Actions workflow design.
 - Native OS builds on GitHub-hosted runners.
-- Uploading build artifacts from CI.
-- Publishing unstable GitHub pre-releases from CI.
+- Uploading build artifacts from GitHub Actions.
+- Publishing unstable GitHub pre-releases from GitHub Actions.
 - Documentation of build commands, produced paths, and known platform-specific
   issues.
 
 Out of scope for the first stages:
 
-- Signing.
-- Apple notarization.
+- Windows signing.
 - macOS DMG as a required artifact.
 - Store distribution.
 - Reworking Rust core logic.
@@ -105,15 +108,16 @@ Status: done.
 
 Outcome:
 
-- Local unsigned macOS `.app` build is confirmed.
+- Local macOS `.app` build is confirmed.
 - Default DMG packaging is not confirmed.
-- First CI stage should use `.app`, not DMG, as the required macOS artifact.
+- First GitHub Actions stage should use `.app`, not DMG, as the required macOS
+  artifact.
 
-### 2. Build Unsigned CI Artifacts
+### 2. Build GitHub Artifacts
 
 Status: done.
 
-See [CI artifacts](ci-artifacts.md).
+See [GitHub builds](github-builds.md).
 
 ### 3. Generate Desktop Icons
 
@@ -131,13 +135,13 @@ See [Temporary artifact verification](artifact-verification-temp.md).
 
 Status: active.
 
-See [Release](release.md).
+See [GitHub releases](github-releases.md).
 
 ### 6. Add Installers and Signed Distribution
 
-Status: future.
+Status: active for macOS, future for Windows and Linux.
 
-See [Release](release.md).
+See [GitHub releases](github-releases.md).
 
 ## Recommended Next Task
 

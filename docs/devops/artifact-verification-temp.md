@@ -9,7 +9,7 @@ Plan:
 - Verify that downloaded artifacts can be opened or installed on target
   platforms.
 - Keep this as a manual verification step before GitHub Releases.
-- Do not add signing or notarization during artifact verification.
+- Do not change signing or notarization during artifact verification.
 - Do not create GitHub Releases during artifact verification.
 
 Minimum checks:
@@ -18,7 +18,7 @@ Minimum checks:
 macOS:
   unzip AI Limits.app.zip
   launch the .app
-  record unsigned app / Gatekeeper UX
+  record signing and notarization mode / Gatekeeper UX
 
 Windows:
   install or run NSIS setup
@@ -38,7 +38,7 @@ Artifact verification result should document:
 - installation/opening result;
 - launch result;
 - blocking UX or security warning;
-- whether the artifact is acceptable for an unsigned preview release.
+- whether the artifact is acceptable for an unstable preview release.
 
 Current verification results:
 

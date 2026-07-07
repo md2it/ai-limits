@@ -6,16 +6,20 @@
 - Use native runners per platform.
 - Keep platform builds explicit and publish only after all required platform
   jobs pass.
-- Do not require DMG for the first macOS CI success.
-- Do not add signing or notarization secrets yet.
+- Do not require DMG for the first macOS GitHub Actions success.
+- Keep signing and notarization secrets limited to the explicit macOS GitHub
+  Actions path.
 - Keep platform-specific commands explicit if a matrix makes the workflow hard to
   read.
 
 ## Artifact Principles
 
-- CI already proves that downloadable unsigned artifacts can be produced.
+- GitHub Actions already proves that downloadable desktop artifacts can be
+  produced.
+- macOS GitHub Actions now supports Apple Developer ID signing.
 - Artifact names should be stable and human-readable.
-- Artifact paths must remain based on actual CI output, not assumptions.
+- Artifact paths must remain based on actual GitHub Actions output, not
+  assumptions.
 - macOS `.app` is archived before upload so the bundle structure is preserved.
 - GitHub Actions artifact retention is currently 14 days.
 - Unstable desktop builds are published through GitHub pre-releases for easier
@@ -30,7 +34,9 @@
   unsigned, and bug-prone.
 - Publish separate release assets per operating system so users download only
   what they need.
-- Do not present unstable pre-releases as stable, notarized, or store-ready.
+- Do not present unstable pre-releases as stable or store-ready.
+- Do not present a macOS pre-release as notarized unless the workflow ran in
+  `full` mode.
 
 ## Known Warnings and Risks
 

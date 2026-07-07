@@ -1,10 +1,10 @@
-# CI Artifacts
+# GitHub Builds
 
-## Build Unsigned CI Artifacts
+## Build GitHub Artifacts
 
 Status: done.
 
-Workflow:
+GitHub Actions workflow:
 
 ```text
 .github/workflows/desktop-build.yml
@@ -13,7 +13,7 @@ Workflow:
 Workflow name:
 
 ```text
-Desktop unsigned build
+Desktop build
 ```
 
 Trigger:
@@ -32,13 +32,13 @@ build-windows: passed, artifact uploaded
 build-linux:   passed, artifact uploaded
 ```
 
-Common setup:
+Common GitHub job setup:
 
 - checkout repository;
 - install Node.js 22;
 - install Rust stable through `dtolnay/rust-toolchain@stable`;
 - install npm dependencies with `npm ci`;
-- run a platform-specific unsigned Tauri production build;
+- run a platform-specific Tauri production build;
 - upload artifacts with `actions/upload-artifact@v4`;
 - keep artifact retention at 14 days.
 
@@ -46,21 +46,56 @@ macOS job:
 
 ```text
 runner: macos-latest
-command: npm exec tauri -- build --bundles app
+command: npm exec tauri -- build --bundles app --target universal-apple-darwin
 artifact name: ai-limits-macos-app
 artifact path: target/release/bundle/macos/AI Limits.app.zip
 ```
 
-The `.app` bundle is explicitly ad-hoc signed after `tauri build` and before
-archive upload:
+The macOS job builds a signed universal Apple app. It imports a Developer ID
+Application certificate from GitHub secrets before running Tauri.
+
+Required signing secrets:
 
 ```text
-codesign --force --deep --sign - "target/release/bundle/macos/AI Limits.app"
-codesign --verify --deep --strict --verbose=4 "target/release/bundle/macos/AI Limits.app"
+APPLE_CERTIFICATE
+APPLE_CERTIFICATE_PASSWORD
+KEYCHAIN_PASSWORD
 ```
 
-This does not add Developer ID signing or notarization. It fixes the local
-bundle seal so macOS does not reject the unsigned preview app as damaged.
+Optional notarization secrets:
+
+```text
+APPLE_API_KEY_CONTENT
+APPLE_API_KEY_ID
+APPLE_API_ISSUER
+```
+
+macOS notarization mode is selected when the workflow is started manually:
+
+```text
+sign-only
+submit-only
+full
+```
+
+Default mode:
+
+```text
+sign-only
+```
+
+Mode meaning:
+
+- `sign-only`: signed by Apple Developer ID, not notarized;
+- `submit-only`: signed and submitted to Apple notarization without waiting for
+  stapling;
+- `full`: signed, notarized, and stapled.
+
+The workflow verifies the final `.app` before archive upload:
+
+```text
+codesign --verify --deep --strict --verbose=4 "target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+```
 
 The `.app` bundle is archived with `ditto` after signing to preserve the bundle
 structure.
@@ -99,7 +134,7 @@ librsvg2-dev
 patchelf
 ```
 
-Verification result:
+GitHub build verification result:
 
 - Workflow starts manually from GitHub Actions.
 - macOS, Windows, and Linux jobs passed.
@@ -107,7 +142,9 @@ Verification result:
 - Artifacts were downloaded locally and file paths were confirmed.
 - Release publishing now creates an unstable GitHub pre-release after all
   platform jobs pass.
-- Signing, notarization, and external secrets are not used.
+- macOS signing is used.
+- macOS notarization is controlled by workflow input.
+- Windows and Linux signing are not used.
 
 Confirmed artifacts:
 
@@ -147,5 +184,7 @@ Implementation guardrails:
 - Do not change Tauri command behavior in `src-tauri/src/`.
 - Do not change frontend UI behavior.
 - Do not change provider, limit, config, or notification logic.
-- Do not add signing, notarization, or secret requirements.
-- Keep unstable release publishing separate from signing and notarization.
+- Keep Windows and Linux signing out of the current workflow unless explicitly
+  requested.
+- Keep unstable release publishing clear about the selected macOS notarization
+  mode.
