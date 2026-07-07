@@ -12,6 +12,10 @@ Workflow:
 
 [Desktop build workflow](../../.github/workflows/desktop-build.yml)
 
+OS permission requirements:
+
+[OS permissions](../os-permissions.md)
+
 Signing mode:
 
 - unsigned macOS is not the current GitHub workflow path;
