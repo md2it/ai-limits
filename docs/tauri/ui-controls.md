@@ -29,32 +29,62 @@ This button refreshes only that provider block.
 
 ## Settings
 
-The settings button opens a dropdown with toggles:
+The settings button opens a dropdown grouped into behavior, provider visibility, and appearance sections.
+
+The behavior section is first.
+
+It has a source priority three-option segmented control:
+
+- Fast
+- Full
+- Best
+
+Default value:
+
+- Fast
+
+Source priority behavior:
+
+- Fast uses the `fast_free` source chain from [../get-info/source-chains.md](../get-info/source-chains.md).
+- Full uses the `cli_fallback` source chain.
+- Best uses the `cli_first` source chain.
+- Full and Best may take longer than Fast because they can run provider CLI checks.
+- Best usually provides more accurate and current Codex and Claude data because it starts provider CLI checks first.
+- Cursor uses its existing Cursor source and is not affected by source priority.
+
+The behavior section includes an information action. It opens the shared source priority modal explaining the Fast, Full, and Best modes, their source chains, the speed/accuracy tradeoff, and the provider scope.
+
+The behavior section has toggles:
 
 - Notifications
+
+The provider visibility section has toggles:
+
 - Cursor
 - Cloud
 - Codex
-- Use CLI too
+
+The appearance section has toggles:
+
+- Dark theme
 
 Defaults:
 
 - Notifications, Cursor, Cloud, and Codex are on
-- Use CLI too is off
+- Dark theme follows the system theme until the user changes it manually
 
 User experience:
 
 - Notifications controls whether the app sends system limit alerts
 - Cursor, Cloud, and Codex control which provider blocks are shown and which providers are included in the next limits request
 - Cloud corresponds to Claude
-- Use CLI too controls whether wider source fallback is used when fetching limits, like terminal `ai-limits --best`
-- Use CLI too toggles shown in settings and provider empty states must stay visually synchronized
 - Changing a toggle saves the choice and hides disabled provider blocks, but does not start a refresh
 - Saved choices apply on the next manual refresh or scheduled provider update
 
 Settings storage:
 
 - settings are saved in `localStorage` under `ai-limits-settings`.
+- theme preference is saved in `localStorage` under `ai-limits-theme`.
 - per-provider update intervals are saved in `localStorage` under `ai-limits-provider-intervals`.
 - these saved settings are frontend state; they are not returned by the backend.
 
@@ -66,4 +96,4 @@ Settings request mapping:
 | Cursor | `enabledCursor` |
 | Cloud | `enabledClaude` |
 | Codex | `enabledCodex` |
-| Use CLI too | `useCliFallback` |
+| Source priority | `sourcePriority` |

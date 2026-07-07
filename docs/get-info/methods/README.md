@@ -46,31 +46,7 @@ The product goal is to show the user current limits locally with minimal setup. 
 
 ## Provider fallback chains
 
-A provider fallback chain is an ordered list of provider methods. The app tries the next method only when the current method does not provide usable limit data.
-
-For limits output, usable data means:
-
-- `access_available = true`
-- `data_available = true`
-- at least one limit record is present
-
-Without a config file, default limits output uses fast free chains:
-
-```text
-Codex: codex_local
-Claude: claude_statusline -> claude_local
-Cursor: cursor_api2
-```
-
-`--best`/`-b` uses broader chains and may fall back to CLI-backed sources:
-
-```text
-Codex: codex_local -> codex_cli
-Claude: claude_statusline -> claude_local -> claude_cli
-Cursor: cursor_api2
-```
-
-`--all` is diagnostic: it queries every current source separately and does not apply provider fallback chains.
+Source chain order, usable-data rules, and interface mappings are defined in [../source-chains.md](../source-chains.md).
 
 ## Related documents
 

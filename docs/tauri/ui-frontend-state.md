@@ -21,7 +21,7 @@ The current frontend does not call `get_provider_limits` in normal refresh behav
 | `dataTimestamp` | `as of {timestamp}`; missing value displays `unknown` |
 | `selectedUpdateFrequency` | fallback default for provider interval if no local value exists |
 | `errorMessage` | marks refresh as failed and supplies fallback message outside no-fresh-data state |
-| `noFreshData` | renders no-fresh-data empty state with CLI fallback controls |
+| `noFreshData` | renders no-fresh-data empty state with source priority controls |
 
 ## Frontend-Only Fields And State
 
@@ -32,13 +32,16 @@ These values are not returned by the backend:
 - `appSettings.cursor`.
 - `appSettings.cloud`.
 - `appSettings.codex`.
-- `appSettings.useCliFallback`.
+- `appSettings.sourcePriority`.
+- `appTheme`, persisted separately from app settings.
 - provider update interval selected in the dropdown after local initialization.
 - provider refresh timers.
 - provider refresh in-flight markers.
 - transient provider status: `Updating`, `Updated`, `Failed`.
 - global `Last updated` timestamp.
 - settings dropdown open/closed state.
-- CLI details modal open/closed state.
+- source priority modal open/closed state.
 
 `selectedUpdateFrequency` exists in the backend response and is currently always `"5 min"`, but persisted frontend intervals override it after the user changes a provider dropdown.
+
+`appSettings.sourcePriority` is `"fast"` by default. Fast maps to `fast_free`, Full maps to `cli_fallback`, and Best maps to `cli_first`. Source chain order is defined in [../get-info/source-chains.md](../get-info/source-chains.md).

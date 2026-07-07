@@ -58,21 +58,9 @@ Config:
 
 Default output is the user-facing limits presentation. `--usage` is the user-facing usage presentation. `--raw` and `--structured` are technical output modes for source-level data. They support development, testing, and provider contract checks. `--watch` repeats the default query on an interval; see [Watch Mode](#watch-mode).
 
-Without a config file and without explicit source flags, default limits output uses fast free provider chains:
+Without a config file and without explicit source flags, default limits output uses the `fast_free` source chain from [get-info/source-chains.md](get-info/source-chains.md).
 
-```text
-Codex: codex-local
-Claude: claude-statusline -> claude-local
-Cursor: cursor-api2
-```
-
-`--best`/`-b` uses provider fallback chains and prints one selected block per provider:
-
-```text
-Codex: codex-local -> codex-cli
-Claude: claude-statusline -> claude-local -> claude-cli
-Cursor: cursor-api2
-```
+`--best`/`-b` uses the `cli_fallback` source chain and prints one selected block per provider.
 
 Fallback chains print only the selected source report for each provider. Failed earlier attempts are not printed unless that source is selected directly or through `--all`.
 

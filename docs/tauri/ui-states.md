@@ -7,33 +7,37 @@ If checked sources return no fresh usable limit records, the provider block must
 Short copy:
 
 ```text
-No fresh limits' data. Try this:
+No fresh limits' data. Try another source mode:
 ```
 
-Show the existing CLI fallback toggle directly in this state, labeled:
+Show the same source priority segmented control used in settings:
 
 ```text
-Use CLI too
+Fast | Full | Best
 ```
 
-Below the toggle, show a text button:
+Below the control, show a text button:
 
 ```text
 More details
 ```
 
-The button opens a modal instead of navigating away.
+The button opens the shared source priority modal instead of navigating away.
 
 Modal copy:
 
 ```text
-CLI data source
+Source priority
 
-CLI fallback is off by default because it can take more time.
+Fast uses quick local/provider-native sources only.
 
-If you mostly use Claude or Codex through CLI, this source is usually the most relevant one.
+Full checks quick sources first, then uses CLI fallback for Codex and Claude.
 
-If you do not use CLI but still have trouble getting current limit data, enabling CLI fallback can still help. It is used only as a fallback for providers that do not return data through faster sources.
+Best checks CLI first for Codex and Claude, then falls back to quick sources.
+
+CLI checks may take longer, but usually provide more accurate and current Codex and Claude data.
+
+This setting affects Codex and Claude. Cursor keeps its existing source behavior.
 
 Provider refreshes run asynchronously, so one slower provider should not block the others.
 
@@ -61,5 +65,5 @@ Backend state:
 
 Frontend-only state:
 
-- inline `Use CLI too` toggle state comes from `appSettings.useCliFallback`.
-- modal open/closed state is frontend state.
+- inline source priority control state comes from `appSettings.sourcePriority`.
+- source priority modal open/closed state is frontend state.

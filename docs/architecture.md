@@ -63,6 +63,7 @@ Module rules:
 - `presentation/` does not fetch data, read files, run commands, or call provider methods
 - `get_limits.rs` coordinates provider method selection and fallback logic
 - `get_limits.rs` owns provider fallback chains for default and best-source runs
+- `get_limits.rs` owns desktop source priority chains for Fast, Full, and Best modes
 - `get_limits.rs` does not run processes or HTTP directly when that can be delegated to provider/infra
 - `get_limits.rs` does not format terminal output
 - `providers/` does not format terminal output
@@ -109,6 +110,7 @@ Purpose:
 - select enabled provider methods
 - call provider methods in the right order
 - apply provider fallback-chain logic for default and best-source runs
+- apply desktop source priority logic for Fast, Full, and Best modes
 - assemble a shared result for the CLI and the future desktop
 
 Boundaries:

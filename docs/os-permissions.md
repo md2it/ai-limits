@@ -20,7 +20,7 @@ Allowed:
 - Local read: provider data under `~/.codex`, `~/.claude`, `~/.config/claude`, and Xcode Claude agent project data.
 - Local write: ai-limits cache/config under `~/.config/ai-limits`.
 - External browser open: documented setup links only.
-- CLI execution: `claude` and `codex` only when CLI fallback is enabled.
+- CLI execution: `claude` and `codex` only when Full or Best source priority is selected.
 
 Not allowed without a new documented reason:
 

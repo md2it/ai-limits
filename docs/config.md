@@ -38,15 +38,9 @@ A list of source identifiers queried when the command runs without explicit sour
 
 Valid identifiers: `codex_local`, `codex_cli`, `claude_statusline`, `claude_cli`, `claude_local`, `cursor_api2`.
 
-When `default_sources` is empty, not set, or the config file does not exist, the command uses built-in fast free provider chains:
+When `default_sources` is empty, not set, or the config file does not exist, the command uses the `fast_free` source chain from [get-info/source-chains.md](get-info/source-chains.md).
 
-```text
-Codex: codex_local
-Claude: claude_statusline -> claude_local
-Cursor: cursor_api2
-```
-
-`--best`/`-b` ignores `default_sources` and uses best-source provider chains. `--all`/`-a` ignores `default_sources` and queries every current source separately.
+`--best`/`-b` ignores `default_sources` and uses the `cli_fallback` source chain. `--all`/`-a` ignores `default_sources` and queries every current source separately.
 
 ### `watch_interval`
 
