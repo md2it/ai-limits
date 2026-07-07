@@ -1,5 +1,4 @@
 use std::collections::{HashMap, HashSet};
-use std::env;
 use std::fs::{self, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
@@ -7,6 +6,7 @@ use std::path::{Path, PathBuf};
 use chrono::{DateTime, Duration, Utc};
 use serde_json::{json, Value};
 
+use crate::infra::os_access::claude_local_roots;
 use crate::types::{
     AccountInfo, ActivityUsage, LimitInfo, ModelUsage, MoneyUsage, SourceData, SourceStatus,
     StructuredSourceInfo, TokenUsage, UsageInfo,
@@ -71,24 +71,7 @@ pub fn collect() -> io::Result<SourceData> {
 }
 
 fn default_roots() -> io::Result<Vec<PathBuf>> {
-    let home = env::var_os("HOME").ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            "HOME is not set; cannot locate Claude local transcript roots",
-        )
-    })?;
-    let home = PathBuf::from(home);
-
-    Ok(vec![
-        home.join(".config").join("claude").join("projects"),
-        home.join(".claude").join("projects"),
-        home.join("Library")
-            .join("Developer")
-            .join("Xcode")
-            .join("CodingAssistant")
-            .join("ClaudeAgentConfig")
-            .join("projects"),
-    ])
+    claude_local_roots()
 }
 
 fn scan_root(root: &Path, usage: &mut ClaudeLocalUsage) -> io::Result<()> {
@@ -646,6 +629,7 @@ fn top_model(models: &HashMap<String, u64>) -> Option<&str> {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::fs;
 
     use super::*;

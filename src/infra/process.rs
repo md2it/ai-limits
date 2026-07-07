@@ -1,15 +1,13 @@
-use std::env;
-use std::ffi::OsString;
 use std::io::{self, Read};
-use std::path::PathBuf;
 use std::process::{Command, Stdio};
 use std::thread;
 use std::time::{Duration, Instant};
 
+pub use crate::infra::os_access::cli_process_path;
+use crate::infra::os_access::EXPECT_COMMAND;
 use crate::infra::terminal::{clean_terminal_output, compact_terminal_text};
 use crate::types::ProviderRun;
 
-const EXPECT_COMMAND: &str = "expect";
 const SHUTDOWN_WAIT: Duration = Duration::from_secs(2);
 const PROCESS_TIMEOUT: Duration = Duration::from_secs(60);
 
@@ -63,34 +61,6 @@ pub fn run_provider(expect_script: &str) -> io::Result<ProviderRun> {
         compacted_stdout,
         stderr,
     })
-}
-
-pub fn cli_process_path() -> OsString {
-    let current_path = env::var_os("PATH").unwrap_or_default();
-    let mut paths: Vec<_> = env::split_paths(&current_path).collect();
-
-    let mut extra_paths: Vec<PathBuf> = vec![
-        "/usr/local/bin".into(),
-        "/usr/bin".into(),
-        "/bin".into(),
-        "/usr/sbin".into(),
-        "/sbin".into(),
-        "/opt/homebrew/bin".into(),
-    ];
-
-    if let Some(home) = env::var_os("HOME") {
-        let home = PathBuf::from(home);
-        extra_paths.push(home.join(".local").join("bin"));
-        extra_paths.push(home.join(".cargo").join("bin"));
-    }
-
-    for path in extra_paths {
-        if !paths.contains(&path) {
-            paths.push(path);
-        }
-    }
-
-    env::join_paths(paths).unwrap_or(current_path)
 }
 
 fn read_stream<R>(mut stream: R) -> thread::JoinHandle<String>

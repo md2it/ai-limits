@@ -1,10 +1,10 @@
 use std::collections::HashSet;
-use std::process::Command;
 use std::sync::{Arc, Mutex};
 
 use ai_limits::get_limits::{
     get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions,
 };
+use ai_limits::infra::os_access;
 use ai_limits::notifications as core_notifications;
 use ai_limits::presentation::{
     format_user_timestamp, normalize_percent, remaining_percent_for_display,
@@ -94,7 +94,7 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
         return Err("External URL is not allowed".to_string());
     }
 
-    open_url_with_system(&url).map_err(|error| error.to_string())
+    os_access::open_external_url_with_system(&url).map_err(|error| error.to_string())
 }
 
 fn collect_provider_limits(
@@ -244,30 +244,5 @@ fn provider_label(id: &str) -> String {
 }
 
 fn is_allowed_external_url(url: &str) -> bool {
-    matches!(
-        url,
-        "https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md"
-            | "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md"
-    )
-}
-
-#[cfg(target_os = "macos")]
-fn open_url_with_system(url: &str) -> std::io::Result<()> {
-    Command::new("open").arg(url).spawn()?.wait()?;
-    Ok(())
-}
-
-#[cfg(target_os = "windows")]
-fn open_url_with_system(url: &str) -> std::io::Result<()> {
-    Command::new("cmd")
-        .args(["/C", "start", "", url])
-        .spawn()?
-        .wait()?;
-    Ok(())
-}
-
-#[cfg(all(unix, not(target_os = "macos")))]
-fn open_url_with_system(url: &str) -> std::io::Result<()> {
-    Command::new("xdg-open").arg(url).spawn()?.wait()?;
-    Ok(())
+    os_access::is_allowed_external_url(url)
 }

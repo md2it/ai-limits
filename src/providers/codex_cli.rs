@@ -1,21 +1,20 @@
 use std::io;
-use std::process::{Command, Stdio};
 
 use chrono::Utc;
 
-use crate::infra::process::{cli_process_path, run_provider};
+use crate::infra::os_access::{allowed_cli_command_is_available, CODEX_CLI_COMMAND};
+use crate::infra::process::run_provider;
 use crate::types::{
     AccountInfo, LimitInfo, SourceData, SourceStatus, StructuredSourceInfo, UsageInfo,
 };
 
-const CODEX_COMMAND: &str = "codex";
 const PROVIDER: &str = "codex";
 const SOURCE: &str = "codex_cli";
 const SOURCE_LINK: &str = "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md";
 const SETUP_LINK: &str = SOURCE_LINK;
 
 pub fn collect_usage() -> io::Result<SourceData> {
-    if !command_is_available(CODEX_COMMAND) {
+    if !allowed_cli_command_is_available(CODEX_CLI_COMMAND) {
         return Ok(unavailable_source_data(
             None,
             &format!(
@@ -149,17 +148,6 @@ fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
     }
 }
 
-fn command_is_available(command: &str) -> bool {
-    Command::new(command)
-        .arg("--version")
-        .env("PATH", cli_process_path())
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok()
-}
-
 fn output_requires_authorization(raw: &str) -> bool {
     let compact = raw
         .chars()
@@ -259,7 +247,7 @@ fn expect_script() -> String {
     format!(
         r#"set timeout 20
 log_user 1
-spawn env TERM=xterm-256color COLUMNS=120 LINES=40 sh -c {{stty cols 120 rows 40; exec {CODEX_COMMAND} --no-alt-screen}}
+spawn env TERM=xterm-256color COLUMNS=120 LINES=40 sh -c {{stty cols 120 rows 40; exec {CODEX_CLI_COMMAND} --no-alt-screen}}
 expect {{
     -re {{OpenAI Codex}} {{}}
     timeout {{}}

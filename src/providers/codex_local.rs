@@ -1,4 +1,3 @@
-use std::env;
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
@@ -7,6 +6,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 
+use crate::infra::os_access::codex_local_root;
 use crate::types::{
     AccountInfo, ActivityUsage, LimitInfo, SourceData, SourceStatus, StructuredSourceInfo,
     TokenUsage, UsageInfo,
@@ -261,18 +261,7 @@ fn calc_remaining_percent(used_percent: f64) -> f64 {
 }
 
 fn codex_home() -> io::Result<PathBuf> {
-    if let Some(value) = env::var_os("CODEX_HOME") {
-        return Ok(PathBuf::from(value));
-    }
-
-    let home = env::var_os("HOME").ok_or_else(|| {
-        io::Error::new(
-            io::ErrorKind::NotFound,
-            "HOME is not set; cannot locate ${CODEX_HOME:-~/.codex}",
-        )
-    })?;
-
-    Ok(PathBuf::from(home).join(".codex"))
+    codex_local_root()
 }
 
 fn scan_dir(path: &Path, usage: &mut CodexLocalUsage) -> io::Result<()> {
@@ -470,6 +459,7 @@ fn format_unix_utc(seconds: u64) -> String {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
     use std::fs;
 
     use super::*;

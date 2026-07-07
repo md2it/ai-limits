@@ -1,25 +1,19 @@
 use std::io::{self, Write};
-use std::process::{Command, Stdio};
+use std::process::Stdio;
 
 use chrono::Utc;
 
+use crate::infra::os_access::{cursor_usage_request_command, read_cursor_access_token};
 use crate::types::{
     LimitInfo, MoneyUsage, SourceData, SourceStatus, StructuredSourceInfo, UsageInfo,
 };
 
-const SECURITY_COMMAND: &str = "security";
-const CURL_COMMAND: &str = "curl";
-const CURSOR_USAGE_URL: &str =
-    "https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage";
 const PROVIDER: &str = "cursor";
 const SOURCE: &str = "cursor_api2";
 const SOURCE_LINK: &str = "docs/get-info/providers/cursor.md";
 
 pub fn collect_usage() -> io::Result<SourceData> {
-    let token_output = Command::new(SECURITY_COMMAND)
-        .args(["find-generic-password", "-s", "cursor-access-token", "-w"])
-        .stdin(Stdio::null())
-        .output();
+    let token_output = read_cursor_access_token();
 
     let token_output = match token_output {
         Ok(output) => output,
@@ -50,8 +44,7 @@ pub fn collect_usage() -> io::Result<SourceData> {
         ));
     }
 
-    let curl = Command::new(CURL_COMMAND)
-        .args(["-sS", "-X", "POST", CURSOR_USAGE_URL, "-K", "-", "-d", "{}"])
+    let curl = cursor_usage_request_command()
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())

@@ -8,6 +8,7 @@ use std::time::{Duration, SystemTime};
 use chrono::{DateTime, Utc};
 use serde_json::Value;
 
+use crate::infra::os_access::ai_limits_config_dir;
 use crate::types::{
     AccountInfo, LimitInfo, SourceData, SourceStatus, StructuredSourceInfo, UsageInfo,
 };
@@ -430,12 +431,7 @@ fn read_stdin_with_timeout(timeout: Duration) -> io::Result<String> {
 }
 
 fn cache_path() -> io::Result<PathBuf> {
-    let home = std::env::var_os("HOME")
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "HOME is not set"))?;
-    Ok(PathBuf::from(home)
-        .join(".config")
-        .join("ai-limits")
-        .join(CACHE_FILE_NAME))
+    Ok(ai_limits_config_dir()?.join(CACHE_FILE_NAME))
 }
 
 fn write_cache(payload: &str) -> io::Result<()> {
