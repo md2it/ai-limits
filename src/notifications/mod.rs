@@ -2,23 +2,15 @@ use std::collections::HashSet;
 use std::io;
 
 use chrono::{DateTime, Local, TimeZone, Utc};
+use serde::{Deserialize, Serialize};
 
 use crate::types::{LimitInfo, SourceReport, StructuredSourceInfo};
 
-#[cfg(target_os = "linux")]
-mod linux;
-#[cfg(target_os = "macos")]
-mod macos;
-#[cfg(any(
-    target_os = "windows",
-    target_os = "linux",
-    not(any(target_os = "macos", target_os = "windows", target_os = "linux"))
-))]
-mod noop;
-#[cfg(target_os = "windows")]
-mod windows;
+mod tauri_bridge;
 
-#[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
+pub const TAURI_NOTIFICATION_BRIDGE_ADDR: &str = tauri_bridge::NOTIFICATION_BRIDGE_ADDR;
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub enum NotificationColor {
     Green,
     Yellow,
@@ -80,7 +72,7 @@ impl LimitNotificationKind {
     }
 }
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Deserialize, Eq, Hash, PartialEq, Serialize)]
 pub struct Notification {
     pub dedupe_key: String,
     pub title: String,
@@ -129,17 +121,29 @@ impl Notification {
 }
 
 pub fn notify(notification: &Notification) -> io::Result<()> {
-    platform_notify(notification)
+    tauri_bridge::TauriNotificationBridge.deliver(notification)
 }
 
 pub fn notify_test(kind: LimitNotificationKind) -> io::Result<()> {
     notify(&Notification::test(kind))
 }
 
+pub trait NotificationDelivery {
+    fn deliver(&self, notification: &Notification) -> io::Result<()>;
+}
+
 pub fn send_for_report(report: &SourceReport, sent: &mut HashSet<String>) {
+    send_for_report_with_delivery(report, sent, &tauri_bridge::TauriNotificationBridge);
+}
+
+pub fn send_for_report_with_delivery(
+    report: &SourceReport,
+    sent: &mut HashSet<String>,
+    delivery: &impl NotificationDelivery,
+) {
     for notification in notifications_for_report(report) {
         if sent.insert(notification.dedupe_key.clone()) {
-            let _ = notify(&notification);
+            let _ = delivery.deliver(&notification);
         }
     }
 }
@@ -279,30 +283,11 @@ fn format_utc_offset(offset_seconds: i32) -> String {
     }
 }
 
-#[cfg(target_os = "macos")]
-fn platform_notify(notification: &Notification) -> io::Result<()> {
-    macos::notify(notification)
-}
-
-#[cfg(target_os = "windows")]
-fn platform_notify(notification: &Notification) -> io::Result<()> {
-    windows::notify(notification)
-}
-
-#[cfg(target_os = "linux")]
-fn platform_notify(notification: &Notification) -> io::Result<()> {
-    linux::notify(notification)
-}
-
-#[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
-fn platform_notify(notification: &Notification) -> io::Result<()> {
-    noop::notify(notification)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::types::{AccountInfo, Source, SourceData, SourceStatus, UsageInfo};
+    use std::cell::Cell;
 
     fn structured_with_limit(remaining_percent: Option<f64>) -> StructuredSourceInfo {
         StructuredSourceInfo {
@@ -389,6 +374,15 @@ mod tests {
 
     #[test]
     fn send_for_report_dedupes_within_session() {
+        struct CountingDelivery(Cell<usize>);
+
+        impl NotificationDelivery for CountingDelivery {
+            fn deliver(&self, _notification: &Notification) -> io::Result<()> {
+                self.0.set(self.0.get() + 1);
+                Ok(())
+            }
+        }
+
         let report = SourceReport {
             source: Source::CodexLocal,
             data: SourceData {
@@ -398,12 +392,15 @@ mod tests {
             },
         };
         let mut sent = HashSet::new();
+        let delivery = CountingDelivery(Cell::new(0));
 
-        send_for_report(&report, &mut sent);
+        send_for_report_with_delivery(&report, &mut sent, &delivery);
         assert_eq!(sent.len(), 1);
+        assert_eq!(delivery.0.get(), 1);
 
-        send_for_report(&report, &mut sent);
+        send_for_report_with_delivery(&report, &mut sent, &delivery);
         assert_eq!(sent.len(), 1);
+        assert_eq!(delivery.0.get(), 1);
     }
 
     #[test]

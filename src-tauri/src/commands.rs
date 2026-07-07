@@ -2,8 +2,10 @@ use std::collections::HashSet;
 use std::process::Command;
 use std::sync::{Arc, Mutex};
 
-use ai_limits::get_limits::{get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions};
-use ai_limits::notifications;
+use ai_limits::get_limits::{
+    get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions,
+};
+use ai_limits::notifications as core_notifications;
 use ai_limits::presentation::{
     format_user_timestamp, normalize_percent, remaining_percent_for_display,
     source_label_for_display, window_label_for_display, TimeContext,
@@ -58,25 +60,29 @@ pub struct ProviderLimitRow {
 #[tauri::command]
 pub async fn get_provider_limits(
     query: ProviderLimitsQuery,
+    app: tauri::AppHandle,
     sent_notifications: tauri::State<'_, Arc<Mutex<HashSet<String>>>>,
 ) -> Result<Vec<ProviderLimits>, String> {
     let sent_notifications = Arc::clone(sent_notifications.inner());
 
-    tauri::async_runtime::spawn_blocking(move || collect_provider_limits(&query, sent_notifications))
-        .await
-        .map_err(|error| error.to_string())
+    tauri::async_runtime::spawn_blocking(move || {
+        collect_provider_limits(&query, app, sent_notifications)
+    })
+    .await
+    .map_err(|error| error.to_string())
 }
 
 #[tauri::command]
 pub async fn get_single_provider_limits(
     provider_id: String,
     query: ProviderLimitsQuery,
+    app: tauri::AppHandle,
     sent_notifications: tauri::State<'_, Arc<Mutex<HashSet<String>>>>,
 ) -> Result<ProviderLimits, String> {
     let sent_notifications = Arc::clone(sent_notifications.inner());
 
     tauri::async_runtime::spawn_blocking(move || {
-        collect_single_provider_limits(&provider_id, &query, sent_notifications)
+        collect_single_provider_limits(&provider_id, &query, app, sent_notifications)
     })
     .await
     .map_err(|error| error.to_string())?
@@ -93,12 +99,18 @@ pub async fn open_external_url(url: String) -> Result<(), String> {
 
 fn collect_provider_limits(
     query: &ProviderLimitsQuery,
+    app: tauri::AppHandle,
     sent_notifications: Arc<Mutex<HashSet<String>>>,
 ) -> Vec<ProviderLimits> {
     ui_source_plan(source_plan_options(query))
         .into_iter()
         .map(|source_plan| {
-            collect_provider_limits_for_plan(source_plan, query, Arc::clone(&sent_notifications))
+            collect_provider_limits_for_plan(
+                source_plan,
+                query,
+                app.clone(),
+                Arc::clone(&sent_notifications),
+            )
         })
         .collect()
 }
@@ -106,6 +118,7 @@ fn collect_provider_limits(
 fn collect_single_provider_limits(
     provider_id: &str,
     query: &ProviderLimitsQuery,
+    app: tauri::AppHandle,
     sent_notifications: Arc<Mutex<HashSet<String>>>,
 ) -> Result<ProviderLimits, String> {
     let source_plan = ui_source_plan(source_plan_options(query))
@@ -116,6 +129,7 @@ fn collect_single_provider_limits(
     Ok(collect_provider_limits_for_plan(
         source_plan,
         query,
+        app,
         sent_notifications,
     ))
 }
@@ -123,13 +137,14 @@ fn collect_single_provider_limits(
 fn collect_provider_limits_for_plan(
     source_plan: SourcePlan,
     query: &ProviderLimitsQuery,
+    app: tauri::AppHandle,
     sent_notifications: Arc<Mutex<HashSet<String>>>,
 ) -> ProviderLimits {
     let id = source_plan.label().to_string();
     match get_source_plan_limits(source_plan) {
         Ok(report) => {
             if query.notifications_enabled {
-                notify_for_report(&report, &sent_notifications);
+                notify_for_report(&report, app, &sent_notifications);
             }
             provider_limits_from_structured(&id, &report.data.structured)
         }
@@ -146,12 +161,17 @@ fn source_plan_options(query: &ProviderLimitsQuery) -> UiSourcePlanOptions {
     }
 }
 
-fn notify_for_report(report: &SourceReport, sent_notifications: &Arc<Mutex<HashSet<String>>>) {
+fn notify_for_report(
+    report: &SourceReport,
+    app: tauri::AppHandle,
+    sent_notifications: &Arc<Mutex<HashSet<String>>>,
+) {
     let Ok(mut sent) = sent_notifications.lock() else {
         return;
     };
 
-    notifications::send_for_report(report, &mut sent);
+    let delivery = crate::notifications::TauriNotificationDelivery::new(app);
+    core_notifications::send_for_report_with_delivery(report, &mut sent, &delivery);
 }
 
 fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> ProviderLimits {
