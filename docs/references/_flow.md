@@ -1,8 +1,6 @@
 # Analog Research Flow
 
-Note: "reference" is the working directory/file naming convention. The research
-object may be a direct analog, a partial analog, or just a related product we can
-learn from. Do not assume market overlap or user overlap.
+Note: "reference" is the working directory/file naming convention. The research object may be a direct analog, a partial analog, or just a related product we can learn from. Do not assume market overlap or user overlap.
 
 ## Document hierarchy
 
