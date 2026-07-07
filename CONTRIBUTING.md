@@ -9,6 +9,7 @@
 
 - Set up local contributor tooling with `npm run setup:contributor`.
 - Use commit prefixes: `feat:`, `fix:`, `docs:`, `chore:`.
+- Use [Testing](docs/testing.md) as the entry point for test guidance.
 - Keep documentation up to date when behavior, setup, or release process changes.
 
 ---

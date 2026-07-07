@@ -191,6 +191,8 @@ Notification calculation is independent from the delivery channel. The same cand
 
 ## Testing
 
+General testing entry point: [Testing](testing.md).
+
 Manual testing can use fake notification triggers without provider data:
 
 ```text
