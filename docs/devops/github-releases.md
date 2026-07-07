@@ -6,17 +6,13 @@ Status: active.
 
 Purpose:
 
-- Give collaborators and early users one GitHub place to download the latest
-  working desktop build.
+- Give collaborators and early users one GitHub place to download the latest working desktop build.
 - Make the build clearly usable but unstable.
-- Avoid asking people to find a specific GitHub Actions run and download
-  workflow artifacts manually.
+- Avoid asking people to find a specific GitHub Actions run and download workflow artifacts manually.
 
 GitHub Actions workflow:
 
-```text
-.github/workflows/desktop-build.yml
-```
+[Desktop build workflow](../../.github/workflows/desktop-build.yml)
 
 Trigger:
 
@@ -50,9 +46,9 @@ User-facing meaning:
 
 - These are working desktop builds.
 - They are unstable and may contain bugs.
+- GitHub builds can be unsigned or signed depending on platform and workflow path.
 - macOS is signed with Apple Developer ID in GitHub Actions.
-- macOS notarization depends on the selected workflow input:
-  `sign-only`, `submit-only`, or `full`.
+- macOS notarization depends on the selected workflow input: `sign-only`, `submit-only`, or `full`.
 - Windows and Linux are unsigned.
 - Windows may show security warnings.
 - They are not stable releases or store-ready.
@@ -72,7 +68,6 @@ Status: active for macOS, future for Windows and Linux.
 Plan:
 
 - Revisit macOS DMG packaging after `.app` GitHub builds are stable.
-- Keep Apple signing and notarization documented as part of the macOS GitHub
-  Actions path.
+- Keep Apple signing and notarization documented as part of the macOS GitHub Actions path.
 - Add Windows signing later if distribution needs it.
 - Add Linux packaging refinements after confirming the first Linux artifact.

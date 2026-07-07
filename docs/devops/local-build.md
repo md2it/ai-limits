@@ -24,15 +24,12 @@ target/debug/bundle/macos/AI Limits.app
 Distribution meaning:
 
 - this is a local build, not a GitHub build;
-- how it is used depends on the task, but it is not the primary distribution
-  channel;
+- how it is used depends on the task, but it is not the primary distribution channel;
 - for prod, pre-prod, and shared test builds, use GitHub Actions;
 - local macOS builds do not replace GitHub signing or notarization.
 
 Related documents:
 
-```text
-dev.md
-github-builds.md
-macos-signing.md
-```
+- [Dev run](dev.md)
+- [GitHub builds](github-builds.md)
+- [macOS signing](macos-signing.md)

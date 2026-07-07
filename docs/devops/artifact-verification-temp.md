@@ -6,8 +6,7 @@ Status: in progress.
 
 Plan:
 
-- Verify that downloaded artifacts can be opened or installed on target
-  platforms.
+- Verify that downloaded artifacts can be opened or installed on target platforms.
 - Keep this as a manual verification step before GitHub Releases.
 - Do not change signing or notarization during artifact verification.
 - Do not create GitHub Releases during artifact verification.
@@ -56,8 +55,7 @@ macOS:
     System Settings -> Privacy & Security -> Open Anyway was not required
     launch was not blocked
   note:
-    result was observed on the development device, so external macOS behavior
-    may differ
+    result was observed on the development device, so external macOS behavior may differ
 
 Windows:
   status: pending external tester

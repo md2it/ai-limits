@@ -1,10 +1,8 @@
 # Desktop DevOps
 
-This directory is the source of truth for desktop build, artifacts, and release
-work until the desktop release pipeline is stable.
+This directory is the source of truth for desktop build, artifacts, and release work until the desktop release pipeline is stable.
 
-Detailed Tauri integration rules remain in `../architecture.md` and
-`../tauri/`.
+Detailed Tauri integration rules remain in [architecture](../architecture.md) and [Tauri docs](../tauri/).
 
 ## Documents
 
@@ -19,17 +17,13 @@ Detailed Tauri integration rules remain in `../architecture.md` and
 
 ## Goal
 
-Build and publish desktop artifacts for the Tauri app across supported
-platforms:
+Build and publish desktop artifacts for the Tauri app across supported platforms:
 
 - macOS
 - Windows
 - Linux
 
-The current GitHub Actions workflow proves that every platform can produce a
-downloadable artifact. It also publishes those files as an unstable GitHub
-pre-release for easier downloading. macOS signing is now supported in GitHub
-Actions. Windows and Linux artifacts remain unsigned.
+The current GitHub Actions workflow proves that every platform can produce a downloadable artifact. It also publishes those files as an unstable GitHub pre-release for easier downloading. macOS signing is now supported in GitHub Actions. Windows and Linux artifacts remain unsigned.
 
 ## Current Status
 
@@ -39,16 +33,15 @@ Confirmed:
 - `src/` is the shared Rust core and CLI.
 - `src-tauri/` is the Tauri desktop adapter.
 - Tauri uses structured data from the Rust core through commands.
-- Tauri must not duplicate provider logic, limit semantics, configuration, or
-  notification rules.
+- Tauri must not duplicate provider logic, limit semantics, configuration, or notification rules.
 - Local macOS production `.app` build is confirmed.
 - The produced macOS `.app` was manually launched and checked by the user.
 - GitHub Actions desktop build workflow is implemented and verified.
 - GitHub Actions produces a signed macOS `.app` artifact.
 - GitHub Actions produces unsigned artifacts for Windows and Linux.
+- GitHub build modes are documented as unsigned and signed.
 - GitHub Actions artifacts were downloaded and inspected by file name/path.
-- GitHub Actions publishes unstable GitHub pre-releases with desktop files for
-  macOS, Windows, and Linux.
+- GitHub Actions publishes unstable GitHub pre-releases with desktop files for macOS, Windows, and Linux.
 
 Known local macOS production build result:
 
@@ -65,8 +58,7 @@ target/release/bundle/macos/AI Limits.app
 
 Known issue:
 
-- Default `npm exec tauri -- build` currently reaches DMG packaging and fails on
-  the DMG bundling step.
+- Default `npm exec tauri -- build` currently reaches DMG packaging and fails on the DMG bundling step.
 - DMG is not a blocker for the current `.app` artifact stage.
 - DMG packaging should be handled as a later, separate task.
 
@@ -87,8 +79,7 @@ The desktop build/release work covers:
 - Native OS builds on GitHub-hosted runners.
 - Uploading build artifacts from GitHub Actions.
 - Publishing unstable GitHub pre-releases from GitHub Actions.
-- Documentation of build commands, produced paths, and known platform-specific
-  issues.
+- Documentation of build commands, produced paths, and known platform-specific issues.
 
 Out of scope for the first stages:
 
@@ -110,8 +101,7 @@ Outcome:
 
 - Local macOS `.app` build is confirmed.
 - Default DMG packaging is not confirmed.
-- First GitHub Actions stage should use `.app`, not DMG, as the required macOS
-  artifact.
+- First GitHub Actions stage should use `.app`, not DMG, as the required macOS artifact.
 
 ### 2. Build GitHub Artifacts
 
@@ -145,5 +135,4 @@ See [GitHub releases](github-releases.md).
 
 ## Recommended Next Task
 
-Verify downloaded unstable pre-release files on target platforms and document
-the results.
+Verify downloaded unstable pre-release files on target platforms and document the results.

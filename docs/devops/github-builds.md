@@ -6,9 +6,7 @@ Status: done.
 
 GitHub Actions workflow:
 
-```text
-.github/workflows/desktop-build.yml
-```
+[Desktop build workflow](../../.github/workflows/desktop-build.yml)
 
 Workflow name:
 
@@ -23,6 +21,40 @@ workflow_dispatch
 ```
 
 No automatic `push`, `pull_request`, or tag trigger is included.
+
+## GitHub Build Modes
+
+There are two distribution-relevant GitHub build modes:
+
+### Unsigned
+
+Purpose:
+
+- technical artifact check;
+- early internal testing;
+- platforms where signing is not configured yet.
+
+Current status:
+
+- Windows GitHub artifacts are unsigned.
+- Linux GitHub artifacts are unsigned.
+- Unsigned macOS is not the current macOS GitHub workflow path.
+
+### Signed
+
+Purpose:
+
+- realistic macOS distribution testing;
+- builds that should behave closer to a user-facing macOS download.
+
+Current status:
+
+- macOS GitHub artifacts are signed with Apple Developer ID.
+- Notarization is controlled by the workflow input: `sign-only`, `submit-only`, or `full`.
+
+The workflow file is the source of truth for the exact implementation:
+
+[Desktop build workflow](../../.github/workflows/desktop-build.yml)
 
 Verified jobs:
 
@@ -51,8 +83,7 @@ artifact name: ai-limits-macos-app
 artifact path: target/release/bundle/macos/AI Limits.app.zip
 ```
 
-The macOS job builds a signed universal Apple app. It imports a Developer ID
-Application certificate from GitHub secrets before running Tauri.
+The macOS job builds a signed universal Apple app. It imports a Developer ID Application certificate from GitHub secrets before running Tauri.
 
 Required signing secrets:
 
@@ -87,8 +118,7 @@ sign-only
 Mode meaning:
 
 - `sign-only`: signed by Apple Developer ID, not notarized;
-- `submit-only`: signed and submitted to Apple notarization without waiting for
-  stapling;
+- `submit-only`: signed and submitted to Apple notarization without waiting for stapling;
 - `full`: signed, notarized, and stapled.
 
 The workflow verifies the final `.app` before archive upload:
@@ -97,8 +127,7 @@ The workflow verifies the final `.app` before archive upload:
 codesign --verify --deep --strict --verbose=4 "target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
 ```
 
-The `.app` bundle is archived with `ditto` after signing to preserve the bundle
-structure.
+The `.app` bundle is archived with `ditto` after signing to preserve the bundle structure.
 
 Windows job:
 
@@ -140,8 +169,7 @@ GitHub build verification result:
 - macOS, Windows, and Linux jobs passed.
 - Artifacts were created and uploaded for all three platforms.
 - Artifacts were downloaded locally and file paths were confirmed.
-- Release publishing now creates an unstable GitHub pre-release after all
-  platform jobs pass.
+- Release publishing now creates an unstable GitHub pre-release after all platform jobs pass.
 - macOS signing is used.
 - macOS notarization is controlled by workflow input.
 - Windows and Linux signing are not used.
@@ -175,8 +203,7 @@ Local download location used during verification:
 /private/tmp/ai-limits-run-28758826398
 ```
 
-This temporary directory is not a release storage location and may be cleaned by
-the operating system.
+This temporary directory is not a release storage location and may be cleaned by the operating system.
 
 Implementation guardrails:
 
@@ -184,7 +211,5 @@ Implementation guardrails:
 - Do not change Tauri command behavior in `src-tauri/src/`.
 - Do not change frontend UI behavior.
 - Do not change provider, limit, config, or notification logic.
-- Keep Windows and Linux signing out of the current workflow unless explicitly
-  requested.
-- Keep unstable release publishing clear about the selected macOS notarization
-  mode.
+- Keep Windows and Linux signing out of the current workflow unless explicitly requested.
+- Keep unstable release publishing clear about the selected macOS notarization mode.

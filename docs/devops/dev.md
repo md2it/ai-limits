@@ -2,7 +2,7 @@
 
 ## Local Tauri Dev Run
 
-Command:
+### Command
 
 ```text
 npm run tauri:dev
@@ -14,24 +14,13 @@ Equivalent command:
 npm run tauri
 ```
 
-What happens:
+### Runtime
 
-- `scripts/tauri-clean-dev-assets.sh` removes stale generated Tauri codegen
-  assets from `target/debug/build` and `target/release/build`;
+- [Tauri dev asset cleanup](../../scripts/tauri-clean-dev-assets.sh) removes stale generated Tauri codegen assets from `target/debug/build` and `target/release/build`;
 - Tauri starts in development mode;
-- `scripts/tauri-dev-server.sh` serves `frontend/` for the desktop WebView.
-
-Dev server:
-
-```text
-http://127.0.0.1:1420
-```
-
-Config:
-
-```text
-src-tauri/tauri.conf.json
-```
+- [Tauri dev server](../../scripts/tauri-dev-server.sh) serves `frontend/` for the desktop WebView.
+- Dev server: http://127.0.0.1:1420
+- Config: [Tauri config](../../src-tauri/tauri.conf.json)
 
 Relevant fields:
 
@@ -41,15 +30,15 @@ devUrl: http://127.0.0.1:1420
 frontendDist: ../frontend
 ```
 
-Output:
+### Output
 
-- dev mode opens the local Tauri desktop app;
-- it does not create release artifacts;
-- local build artifacts are created by `tauri build`, not by the dev run.
+- Dev mode opens the local Tauri desktop app;
+- It does not create release artifacts;
+- Local build artifacts are created by `tauri build`, not by the dev run.
 - GitHub build artifacts are created by GitHub Actions.
 
-Related document:
+### Related
 
-```text
-local-build.md
-```
+[Local build](local-build.md)
+
+Use it when a ready local app artifact is needed for testing.
