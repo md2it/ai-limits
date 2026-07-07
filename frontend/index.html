@@ -44,30 +44,66 @@
               </svg>
             </button>
             <div class="settings-dropdown" id="settings-dropdown" hidden>
-              <label class="settings-toggle">
-                <span>Notifications</span>
-                <input type="checkbox" id="setting-notifications" checked />
-              </label>
-              <label class="settings-toggle">
-                <span>Cursor</span>
-                <input type="checkbox" id="setting-cursor" checked />
-              </label>
-              <label class="settings-toggle">
-                <span>Cloud</span>
-                <input type="checkbox" id="setting-cloud" checked />
-              </label>
-              <label class="settings-toggle">
-                <span>Codex</span>
-                <input type="checkbox" id="setting-codex" checked />
-              </label>
-              <label class="settings-toggle">
-                <span>Use CLI too</span>
-                <input type="checkbox" id="setting-cli-fallback" />
-              </label>
-              <label class="settings-toggle">
-                <span>Dark theme</span>
-                <input type="checkbox" id="setting-dark-theme" />
-              </label>
+              <div class="settings-section">
+                <p class="settings-section-label">Behavior</p>
+                <div class="source-priority-row">
+                  <div
+                    class="segmented-control"
+                    id="setting-source-priority"
+                    role="group"
+                    aria-label="Source priority"
+                  ></div>
+                  <button
+                    type="button"
+                    class="source-priority-info"
+                    id="setting-source-priority-info"
+                    aria-label="Source priority details"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      aria-hidden="true"
+                    >
+                      <circle cx="12" cy="12" r="10" />
+                      <path d="M12 16v-4" />
+                      <path d="M12 8h.01" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              <div class="settings-section">
+                <p class="settings-section-label">Providers</p>
+                <label class="settings-toggle">
+                  <span>Cursor</span>
+                  <input type="checkbox" id="setting-cursor" checked />
+                </label>
+                <label class="settings-toggle">
+                  <span>Cloud</span>
+                  <input type="checkbox" id="setting-cloud" checked />
+                </label>
+                <label class="settings-toggle">
+                  <span>Codex</span>
+                  <input type="checkbox" id="setting-codex" checked />
+                </label>
+              </div>
+              <div class="settings-section">
+                <p class="settings-section-label">Other</p>
+                <label class="settings-toggle">
+                  <span>Notifications</span>
+                  <input type="checkbox" id="setting-notifications" checked />
+                </label>
+                <label class="settings-toggle">
+                  <span>Dark theme</span>
+                  <input type="checkbox" id="setting-dark-theme" />
+                </label>
+              </div>
             </div>
           </div>
         </div>
@@ -79,29 +115,38 @@
       <section class="status-line" aria-live="polite" id="status-line" hidden></section>
     </main>
 
-    <div class="modal-backdrop" id="cli-details-modal" hidden>
+    <div class="modal-backdrop" id="source-priority-modal" hidden>
       <section
         class="modal"
         role="dialog"
         aria-modal="true"
-        aria-labelledby="cli-details-title"
+        aria-labelledby="source-priority-title"
       >
         <div class="modal-header">
-          <h2 id="cli-details-title">CLI data source</h2>
-          <button type="button" class="modal-close" data-close-cli-details aria-label="Close">
+          <h2 id="source-priority-title">Source priority</h2>
+          <button
+            type="button"
+            class="modal-close"
+            data-close-source-priority
+            aria-label="Close"
+          >
             &times;
           </button>
         </div>
         <div class="modal-body">
-          <p>CLI fallback is off by default because it can take more time.</p>
+          <p>Fast uses quick local/provider-native sources only.</p>
           <p>
-            If you mostly use Claude or Codex through CLI, this source is usually the most
-            relevant one.
+            Full checks quick sources first, then uses CLI fallback for Codex and Claude.
           </p>
           <p>
-            If you do not use CLI but still have trouble getting current limit data, enabling CLI
-            fallback can still help. It is used only as a fallback for providers that do not return
-            data through faster sources.
+            Best checks CLI first for Codex and Claude, then falls back to quick sources.
+          </p>
+          <p>
+            CLI checks may take longer, but usually provide more accurate and current Codex and
+            Claude data.
+          </p>
+          <p>
+            This setting affects Codex and Claude. Cursor keeps its existing source behavior.
           </p>
           <p>Provider refreshes run asynchronously, so one slower provider should not block the others.</p>
           <div class="modal-links" aria-label="Setup guides">
@@ -112,7 +157,6 @@
               Codex&nbsp;guide&nbsp;on&nbsp;GitHub
             </button>
           </div>
-          <p class="provider-hint">You can give this guide to your agent to set it up.</p>
         </div>
       </section>
     </div>
@@ -137,12 +181,19 @@
         codex: "https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md",
       };
 
+      const SOURCE_PRIORITY_OPTIONS = ["fast", "full", "best"];
+      const SOURCE_PRIORITY_LABELS = {
+        fast: "Fast",
+        full: "Full",
+        best: "Best",
+      };
+
       const DEFAULT_APP_SETTINGS = {
         notifications: true,
         cursor: true,
         cloud: true,
         codex: true,
-        useCliFallback: false,
+        sourcePriority: "fast",
       };
 
       const THEME_ACCENTS = {
@@ -158,13 +209,14 @@
       const settingsMenu = document.querySelector("#settings-menu");
       const settingsButton = document.querySelector("#settings-button");
       const settingsDropdown = document.querySelector("#settings-dropdown");
-      const cliDetailsModal = document.querySelector("#cli-details-modal");
+      const sourcePriorityModal = document.querySelector("#source-priority-modal");
       const settingInputs = {
         notifications: document.querySelector("#setting-notifications"),
         cursor: document.querySelector("#setting-cursor"),
         cloud: document.querySelector("#setting-cloud"),
         codex: document.querySelector("#setting-codex"),
-        useCliFallback: document.querySelector("#setting-cli-fallback"),
+        sourcePriority: document.querySelector("#setting-source-priority"),
+        sourcePriorityInfo: document.querySelector("#setting-source-priority-info"),
         darkTheme: document.querySelector("#setting-dark-theme"),
       };
 
@@ -239,6 +291,22 @@
         applyAppTheme();
       }
 
+      function normalizeSourcePriority(value) {
+        return SOURCE_PRIORITY_OPTIONS.includes(value) ? value : DEFAULT_APP_SETTINGS.sourcePriority;
+      }
+
+      function migrateSourcePriority(parsed) {
+        if (SOURCE_PRIORITY_OPTIONS.includes(parsed.sourcePriority)) {
+          return parsed.sourcePriority;
+        }
+
+        if (parsed.useCliFallback === true) {
+          return "full";
+        }
+
+        return DEFAULT_APP_SETTINGS.sourcePriority;
+      }
+
       function loadAppSettings() {
         try {
           const stored = localStorage.getItem(SETTINGS_STORAGE_KEY);
@@ -256,10 +324,7 @@
               typeof parsed.cursor === "boolean" ? parsed.cursor : DEFAULT_APP_SETTINGS.cursor,
             cloud: typeof parsed.cloud === "boolean" ? parsed.cloud : DEFAULT_APP_SETTINGS.cloud,
             codex: typeof parsed.codex === "boolean" ? parsed.codex : DEFAULT_APP_SETTINGS.codex,
-            useCliFallback:
-              typeof parsed.useCliFallback === "boolean"
-                ? parsed.useCliFallback
-                : DEFAULT_APP_SETTINGS.useCliFallback,
+            sourcePriority: migrateSourcePriority(parsed),
           };
         } catch {
           return { ...DEFAULT_APP_SETTINGS };
@@ -320,20 +385,55 @@
         localStorage.setItem(PROVIDER_INTERVALS_STORAGE_KEY, JSON.stringify(payload));
       }
 
+      function buildSourcePriorityControlHtml() {
+        return SOURCE_PRIORITY_OPTIONS.map((priority) => {
+          const selected = priority === appSettings.sourcePriority;
+          return `<button type="button" data-source-priority="${priority}" aria-pressed="${selected}">${SOURCE_PRIORITY_LABELS[priority]}</button>`;
+        }).join("");
+      }
+
+      function renderSettingsSourcePriorityControl() {
+        settingInputs.sourcePriority.innerHTML = buildSourcePriorityControlHtml();
+        attachSourcePriorityControls(settingInputs.sourcePriority);
+      }
+
+      function syncSourcePriorityControls() {
+        for (const control of document.querySelectorAll("[data-source-priority-control]")) {
+          for (const button of control.querySelectorAll("[data-source-priority]")) {
+            const selected = button.dataset.sourcePriority === appSettings.sourcePriority;
+            button.setAttribute("aria-pressed", String(selected));
+          }
+        }
+      }
+
+      function setSourcePriority(priority) {
+        const normalized = normalizeSourcePriority(priority);
+        if (appSettings.sourcePriority === normalized) {
+          return;
+        }
+
+        appSettings.sourcePriority = normalized;
+        saveAppSettings();
+        syncSourcePriorityControls();
+      }
+
+      function attachSourcePriorityControls(container) {
+        container.dataset.sourcePriorityControl = "";
+        for (const button of container.querySelectorAll("[data-source-priority]")) {
+          button.addEventListener("click", () => {
+            setSourcePriority(button.dataset.sourcePriority);
+          });
+        }
+      }
+
       function syncSettingsInputs() {
         settingInputs.notifications.checked = appSettings.notifications;
         settingInputs.cursor.checked = appSettings.cursor;
         settingInputs.cloud.checked = appSettings.cloud;
         settingInputs.codex.checked = appSettings.codex;
-        settingInputs.useCliFallback.checked = appSettings.useCliFallback;
         settingInputs.darkTheme.checked = appTheme.value === "dark";
-        syncInlineCliFallbackToggles();
-      }
-
-      function syncInlineCliFallbackToggles() {
-        for (const input of providerList.querySelectorAll("[data-cli-fallback-toggle]")) {
-          input.checked = appSettings.useCliFallback;
-        }
+        renderSettingsSourcePriorityControl();
+        syncSourcePriorityControls();
       }
 
       function settingsToQuery() {
@@ -341,7 +441,7 @@
           enabledCodex: appSettings.codex,
           enabledClaude: appSettings.cloud,
           enabledCursor: appSettings.cursor,
-          useCliFallback: appSettings.useCliFallback,
+          sourcePriority: appSettings.sourcePriority,
           notificationsEnabled: appSettings.notifications,
         };
       }
@@ -376,8 +476,8 @@
         settingsButton.setAttribute("aria-expanded", String(isOpen));
       }
 
-      function setCliDetailsModalOpen(isOpen) {
-        cliDetailsModal.hidden = !isOpen;
+      function setSourcePriorityModalOpen(isOpen) {
+        sourcePriorityModal.hidden = !isOpen;
       }
 
       function cacheProviderData(provider) {
@@ -436,7 +536,7 @@
           cursor: settingInputs.cursor.checked,
           cloud: settingInputs.cloud.checked,
           codex: settingInputs.codex.checked,
-          useCliFallback: settingInputs.useCliFallback.checked,
+          sourcePriority: appSettings.sourcePriority,
         };
         saveAppSettings();
 
@@ -446,7 +546,7 @@
         );
 
         removeDisabledProviderBlocks();
-        syncInlineCliFallbackToggles();
+        syncSourcePriorityControls();
         restoreNewlyEnabledProviders(newlyEnabled);
       }
 
@@ -725,7 +825,7 @@
           }
 
           if (provider.noFreshData) {
-            return buildNoFreshDataHtml(provider);
+            return buildNoFreshDataHtml();
           }
 
           return `<p class="provider-message">${escapeHtml(provider.errorMessage || "No usable limit records from this source")}</p>`;
@@ -753,15 +853,14 @@
           .join("");
       }
 
-      function buildNoFreshDataHtml(provider) {
+      function buildNoFreshDataHtml() {
         return `
           <div class="no-fresh-data">
-            <p>No fresh limits' data. Try this:</p>
-            <label class="inline-cli-toggle">
-              <span>Use CLI too</span>
-              <input type="checkbox" data-cli-fallback-toggle ${appSettings.useCliFallback ? "checked" : ""} />
-            </label>
-            <button type="button" class="provider-link" data-open-cli-details>
+            <p>No fresh limits' data. Try another source mode:</p>
+            <div class="segmented-control" data-source-priority-control role="group" aria-label="Source priority">
+              ${buildSourcePriorityControlHtml()}
+            </div>
+            <button type="button" class="provider-link" data-open-source-priority>
               More details
             </button>
           </div>
@@ -883,8 +982,7 @@
 
         block.querySelector(".source-id").textContent = formatSourceIdLine(provider);
         block.querySelector(".source-timestamp").textContent = formatSourceTimestampLine(provider);
-        attachInlineCliFallbackHandler(block);
-        attachCliDetailsHandler(block);
+        attachSourcePriorityBlockHandlers(block);
       }
 
       function isProviderRefreshSuccess(provider) {
@@ -900,33 +998,22 @@
         block.querySelector("[data-manual-refresh]")?.addEventListener("click", () => {
           refreshSingleProvider(providerId);
         });
-        attachInlineCliFallbackHandler(block);
-        attachCliDetailsHandler(block);
+        attachSourcePriorityBlockHandlers(block);
       }
 
-      function attachInlineCliFallbackHandler(block) {
-        const input = block.querySelector("[data-cli-fallback-toggle]");
-        if (!input) {
-          return;
+      function attachSourcePriorityBlockHandlers(block) {
+        const control = block.querySelector("[data-source-priority-control]");
+        if (control) {
+          attachSourcePriorityControls(control);
+          syncSourcePriorityControls();
         }
 
-        input.checked = appSettings.useCliFallback;
-        input.addEventListener("change", (event) => {
-          appSettings.useCliFallback = event.target.checked;
-          saveAppSettings();
-          syncSettingsInputs();
-        });
-      }
-
-      function attachCliDetailsHandler(block) {
-        const button = block.querySelector("[data-open-cli-details]");
-        if (!button) {
-          return;
+        const detailsButton = block.querySelector("[data-open-source-priority]");
+        if (detailsButton) {
+          detailsButton.addEventListener("click", () => {
+            setSourcePriorityModalOpen(true);
+          });
         }
-
-        button.addEventListener("click", () => {
-          setCliDetailsModalOpen(true);
-        });
       }
 
       async function openExternalSetup(providerId) {
@@ -1067,23 +1154,34 @@
         event.stopPropagation();
       });
 
-      cliDetailsModal.addEventListener("click", (event) => {
-        if (event.target === cliDetailsModal) {
-          setCliDetailsModalOpen(false);
+      settingInputs.sourcePriorityInfo.addEventListener("click", (event) => {
+        event.stopPropagation();
+        setSourcePriorityModalOpen(true);
+      });
+
+      sourcePriorityModal.addEventListener("click", (event) => {
+        if (event.target === sourcePriorityModal) {
+          setSourcePriorityModalOpen(false);
         }
       });
 
-      cliDetailsModal.querySelector("[data-close-cli-details]").addEventListener("click", () => {
-        setCliDetailsModalOpen(false);
-      });
+      sourcePriorityModal
+        .querySelector("[data-close-source-priority]")
+        .addEventListener("click", () => {
+          setSourcePriorityModalOpen(false);
+        });
 
-      for (const button of cliDetailsModal.querySelectorAll("[data-open-external]")) {
+      for (const button of sourcePriorityModal.querySelectorAll("[data-open-external]")) {
         button.addEventListener("click", () => {
           openExternalSetup(button.dataset.openExternal);
         });
       }
 
       for (const input of Object.values(settingInputs)) {
+        if (input === settingInputs.sourcePriority || input === settingInputs.sourcePriorityInfo) {
+          continue;
+        }
+
         if (input === settingInputs.darkTheme) {
           input.addEventListener("change", (event) => {
             setManualTheme(event.target.checked);
@@ -1106,7 +1204,7 @@
       document.addEventListener("keydown", (event) => {
         if (event.key === "Escape") {
           setSettingsMenuOpen(false);
-          setCliDetailsModalOpen(false);
+          setSourcePriorityModalOpen(false);
         }
       });
 

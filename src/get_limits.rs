@@ -23,50 +23,92 @@ impl SourcePlan {
     }
 }
 
-const DEFAULT_CODEX_CHAIN: &[Source] = &[Source::CodexLocal];
-const DEFAULT_CLAUDE_CHAIN: &[Source] = &[Source::ClaudeStatusline, Source::ClaudeLocal];
-const DEFAULT_CURSOR_CHAIN: &[Source] = &[Source::CursorApi2];
+const FAST_CODEX_CHAIN: &[Source] = &[Source::CodexLocal];
+const FAST_CLAUDE_CHAIN: &[Source] = &[Source::ClaudeStatusline, Source::ClaudeLocal];
+const FAST_CURSOR_CHAIN: &[Source] = &[Source::CursorApi2];
 
-const BEST_CODEX_CHAIN: &[Source] = &[Source::CodexLocal, Source::CodexCli];
-const BEST_CLAUDE_CHAIN: &[Source] = &[
+const CLI_FALLBACK_CODEX_CHAIN: &[Source] = &[Source::CodexLocal, Source::CodexCli];
+const CLI_FALLBACK_CLAUDE_CHAIN: &[Source] = &[
     Source::ClaudeStatusline,
     Source::ClaudeLocal,
     Source::ClaudeCli,
 ];
-const BEST_CURSOR_CHAIN: &[Source] = &[Source::CursorApi2];
+const CLI_FALLBACK_CURSOR_CHAIN: &[Source] = &[Source::CursorApi2];
+
+const CLI_FIRST_CODEX_CHAIN: &[Source] = &[Source::CodexCli, Source::CodexLocal];
+const CLI_FIRST_CLAUDE_CHAIN: &[Source] = &[
+    Source::ClaudeCli,
+    Source::ClaudeStatusline,
+    Source::ClaudeLocal,
+];
+const CLI_FIRST_CURSOR_CHAIN: &[Source] = &[Source::CursorApi2];
 
 pub fn default_source_plan() -> Vec<SourcePlan> {
+    fast_free_source_plan()
+}
+
+pub fn best_source_plan() -> Vec<SourcePlan> {
+    cli_fallback_source_plan()
+}
+
+pub fn fast_free_source_plan() -> Vec<SourcePlan> {
     vec![
         SourcePlan::Chain {
             label: "codex",
-            sources: DEFAULT_CODEX_CHAIN,
+            sources: FAST_CODEX_CHAIN,
         },
         SourcePlan::Chain {
             label: "claude",
-            sources: DEFAULT_CLAUDE_CHAIN,
+            sources: FAST_CLAUDE_CHAIN,
         },
         SourcePlan::Chain {
             label: "cursor",
-            sources: DEFAULT_CURSOR_CHAIN,
+            sources: FAST_CURSOR_CHAIN,
         },
     ]
 }
 
-pub fn best_source_plan() -> Vec<SourcePlan> {
+pub fn cli_fallback_source_plan() -> Vec<SourcePlan> {
     vec![
         SourcePlan::Chain {
             label: "codex",
-            sources: BEST_CODEX_CHAIN,
+            sources: CLI_FALLBACK_CODEX_CHAIN,
         },
         SourcePlan::Chain {
             label: "claude",
-            sources: BEST_CLAUDE_CHAIN,
+            sources: CLI_FALLBACK_CLAUDE_CHAIN,
         },
         SourcePlan::Chain {
             label: "cursor",
-            sources: BEST_CURSOR_CHAIN,
+            sources: CLI_FALLBACK_CURSOR_CHAIN,
         },
     ]
+}
+
+pub fn cli_first_source_plan() -> Vec<SourcePlan> {
+    vec![
+        SourcePlan::Chain {
+            label: "codex",
+            sources: CLI_FIRST_CODEX_CHAIN,
+        },
+        SourcePlan::Chain {
+            label: "claude",
+            sources: CLI_FIRST_CLAUDE_CHAIN,
+        },
+        SourcePlan::Chain {
+            label: "cursor",
+            sources: CLI_FIRST_CURSOR_CHAIN,
+        },
+    ]
+}
+
+#[derive(Clone, Copy, Debug, Eq, PartialEq, Default, serde::Deserialize)]
+#[serde(rename_all = "lowercase")]
+pub enum SourcePriority {
+    #[default]
+    Fast,
+    Full,
+    Best,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -74,7 +116,7 @@ pub struct UiSourcePlanOptions {
     pub enabled_codex: bool,
     pub enabled_claude: bool,
     pub enabled_cursor: bool,
-    pub use_cli_fallback: bool,
+    pub source_priority: SourcePriority,
 }
 
 impl Default for UiSourcePlanOptions {
@@ -83,16 +125,16 @@ impl Default for UiSourcePlanOptions {
             enabled_codex: true,
             enabled_claude: true,
             enabled_cursor: true,
-            use_cli_fallback: false,
+            source_priority: SourcePriority::Fast,
         }
     }
 }
 
 pub fn ui_source_plan(options: UiSourcePlanOptions) -> Vec<SourcePlan> {
-    let plans = if options.use_cli_fallback {
-        best_source_plan()
-    } else {
-        default_source_plan()
+    let plans = match options.source_priority {
+        SourcePriority::Fast => fast_free_source_plan(),
+        SourcePriority::Full => cli_fallback_source_plan(),
+        SourcePriority::Best => cli_first_source_plan(),
     };
 
     plans
@@ -222,15 +264,15 @@ mod tests {
             vec![
                 SourcePlan::Chain {
                     label: "codex",
-                    sources: DEFAULT_CODEX_CHAIN
+                    sources: FAST_CODEX_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "claude",
-                    sources: DEFAULT_CLAUDE_CHAIN
+                    sources: FAST_CLAUDE_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "cursor",
-                    sources: DEFAULT_CURSOR_CHAIN
+                    sources: FAST_CURSOR_CHAIN
                 },
             ]
         );
@@ -243,15 +285,36 @@ mod tests {
             vec![
                 SourcePlan::Chain {
                     label: "codex",
-                    sources: BEST_CODEX_CHAIN
+                    sources: CLI_FALLBACK_CODEX_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "claude",
-                    sources: BEST_CLAUDE_CHAIN
+                    sources: CLI_FALLBACK_CLAUDE_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "cursor",
-                    sources: BEST_CURSOR_CHAIN
+                    sources: CLI_FALLBACK_CURSOR_CHAIN
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn cli_first_plan_prefers_cli_for_codex_and_claude() {
+        assert_eq!(
+            cli_first_source_plan(),
+            vec![
+                SourcePlan::Chain {
+                    label: "codex",
+                    sources: CLI_FIRST_CODEX_CHAIN
+                },
+                SourcePlan::Chain {
+                    label: "claude",
+                    sources: CLI_FIRST_CLAUDE_CHAIN
+                },
+                SourcePlan::Chain {
+                    label: "cursor",
+                    sources: CLI_FIRST_CURSOR_CHAIN
                 },
             ]
         );
@@ -264,38 +327,60 @@ mod tests {
                 enabled_codex: true,
                 enabled_claude: false,
                 enabled_cursor: true,
-                use_cli_fallback: false,
+                source_priority: SourcePriority::Fast,
             }),
             vec![
                 SourcePlan::Chain {
                     label: "codex",
-                    sources: DEFAULT_CODEX_CHAIN
+                    sources: FAST_CODEX_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "cursor",
-                    sources: DEFAULT_CURSOR_CHAIN
+                    sources: FAST_CURSOR_CHAIN
                 },
             ]
         );
     }
 
     #[test]
-    fn ui_source_plan_uses_cli_fallback_chains_when_enabled() {
+    fn ui_source_plan_uses_cli_fallback_chains_for_full_priority() {
         assert_eq!(
             ui_source_plan(UiSourcePlanOptions {
                 enabled_codex: true,
                 enabled_claude: true,
                 enabled_cursor: false,
-                use_cli_fallback: true,
+                source_priority: SourcePriority::Full,
             }),
             vec![
                 SourcePlan::Chain {
                     label: "codex",
-                    sources: BEST_CODEX_CHAIN
+                    sources: CLI_FALLBACK_CODEX_CHAIN
                 },
                 SourcePlan::Chain {
                     label: "claude",
-                    sources: BEST_CLAUDE_CHAIN
+                    sources: CLI_FALLBACK_CLAUDE_CHAIN
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn ui_source_plan_uses_cli_first_chains_for_best_priority() {
+        assert_eq!(
+            ui_source_plan(UiSourcePlanOptions {
+                enabled_codex: true,
+                enabled_claude: true,
+                enabled_cursor: false,
+                source_priority: SourcePriority::Best,
+            }),
+            vec![
+                SourcePlan::Chain {
+                    label: "codex",
+                    sources: CLI_FIRST_CODEX_CHAIN
+                },
+                SourcePlan::Chain {
+                    label: "claude",
+                    sources: CLI_FIRST_CLAUDE_CHAIN
                 },
             ]
         );

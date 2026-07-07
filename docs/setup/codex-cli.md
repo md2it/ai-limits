@@ -1,5 +1,7 @@
 # Codex CLI setup for ai-limits
 
+You can give this guide to your agent to set it up.
+
 `ai-limits --codex-cli` needs the Codex CLI installed and authorized.
 
 Check installation:

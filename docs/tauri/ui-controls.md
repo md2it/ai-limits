@@ -29,7 +29,7 @@ This button refreshes only that provider block.
 
 ## Settings
 
-The settings button opens a dropdown grouped into behavior, provider visibility, and appearance sections.
+The settings button opens a dropdown grouped into behavior, provider visibility, and other sections.
 
 The behavior section is first.
 
@@ -54,18 +54,15 @@ Source priority behavior:
 
 The behavior section includes an information action. It opens the shared source priority modal explaining the Fast, Full, and Best modes, their source chains, the speed/accuracy tradeoff, and the provider scope.
 
-The behavior section has toggles:
-
-- Notifications
-
 The provider visibility section has toggles:
 
 - Cursor
 - Cloud
 - Codex
 
-The appearance section has toggles:
+The other section has toggles:
 
+- Notifications
 - Dark theme
 
 Defaults:

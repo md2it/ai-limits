@@ -96,6 +96,11 @@
   --overlay: rgba(23, 26, 31, 0.34);
   --meter-bg: var(--white);
   --focus: var(--accent-success);
+  --segmented-track: #e2e6eb;
+  --segmented-track-border: #bfc6d0;
+  --segmented-unselected-text: #3d4450;
+  --segmented-selected-bg: #ffffff;
+  --segmented-selected-text: #171a1f;
   color: var(--text);
   background: var(--app-bg);
   font-family: var(--font-family-base);
@@ -144,6 +149,11 @@
   --shadow: rgba(0, 0, 0, 0.42);
   --overlay: rgba(0, 0, 0, 0.62);
   --meter-bg: #59616c;
+  --segmented-track: #2d3239;
+  --segmented-track-border: #5c6674;
+  --segmented-unselected-text: #e8ecf2;
+  --segmented-selected-bg: #434b56;
+  --segmented-selected-text: #f5f7fa;
 }
 
 * {
@@ -203,6 +213,12 @@ body {
   background: var(--surface-hover);
 }
 
+:root[data-theme="dark"] .settings-button:hover {
+  border-color: var(--accent-warning);
+  background: color-mix(in srgb, var(--accent-warning) 32%, var(--surface));
+  color: var(--text);
+}
+
 .settings-button[aria-expanded="true"] {
   border-color: var(--accent-warning);
   background: color-mix(in srgb, var(--accent-warning) var(--mix-active-warning), var(--surface));
@@ -234,6 +250,97 @@ body {
 
 .settings-dropdown[hidden] {
   display: none;
+}
+
+.settings-section {
+  display: grid;
+  gap: var(--space-10);
+}
+
+.settings-section + .settings-section {
+  border-top: var(--border-width) solid var(--border);
+  padding-top: var(--space-10);
+}
+
+.settings-section-label {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: var(--font-weight-bold);
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.source-priority-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+}
+
+.segmented-control {
+  display: inline-flex;
+  flex: 1 1 auto;
+  gap: var(--space-2);
+  border: var(--border-width) solid var(--segmented-track-border);
+  border-radius: var(--radius-sm);
+  background: var(--segmented-track);
+  padding: var(--space-2);
+}
+
+.segmented-control button {
+  flex: 1 1 0;
+  border: var(--border-width) solid transparent;
+  border-radius: calc(var(--radius-sm) - 2px);
+  background: transparent;
+  color: var(--segmented-unselected-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  padding: var(--space-6) var(--space-8);
+  cursor: pointer;
+}
+
+.segmented-control button[aria-pressed="true"] {
+  border-color: var(--segmented-track-border);
+  background: var(--segmented-selected-bg);
+  color: var(--segmented-selected-text);
+  box-shadow: var(--shadow-control);
+}
+
+.segmented-control button:focus-visible {
+  outline: var(--border-width-focus) solid var(--focus);
+  outline-offset: var(--space-2);
+}
+
+.source-priority-info {
+  display: inline-flex;
+  width: var(--settings-button-size);
+  height: var(--settings-button-size);
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  border: var(--border-control);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.source-priority-info:hover {
+  background: var(--surface-hover);
+  color: var(--text);
+}
+
+:root[data-theme="dark"] .source-priority-info:hover {
+  border-color: var(--accent-warning);
+  background: color-mix(in srgb, var(--accent-warning) 32%, var(--surface));
+  color: var(--text);
+}
+
+.source-priority-info:focus-visible {
+  outline: var(--border-width-focus) solid var(--focus);
+  outline-offset: var(--space-2);
 }
 
 .last-updated {
@@ -391,7 +498,7 @@ body {
 .provider-block h2,
 .provider-block .limit-top,
 .provider-block .frequency-row,
-.provider-block .inline-cli-toggle,
+.provider-block .segmented-control button,
 .provider-block .provider-manual-refresh,
 .provider-block select {
   color: var(--provider-text);
@@ -643,68 +750,24 @@ select {
   margin: 0;
 }
 
-.inline-cli-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-16);
-  border: var(--border-width) solid var(--provider-brand);
-  border-radius: var(--radius-sm);
-  background: rgba(var(--provider-brand-rgb), var(--provider-inline-bg-opacity));
-  box-shadow: inset 0 0 0 1px rgba(var(--provider-brand-rgb), var(--provider-inline-border-opacity));
-  padding: var(--space-10) var(--space-12);
-  color: var(--provider-text);
-  font-weight: var(--font-weight-bold);
-  cursor: pointer;
-}
-
-.inline-cli-toggle:hover {
-  background: rgba(var(--provider-brand-rgb), var(--provider-inline-bg-hover-opacity));
-}
-
-.inline-cli-toggle input[type="checkbox"] {
-  position: relative;
-  width: var(--toggle-width);
-  height: var(--toggle-height);
-  flex: 0 0 auto;
-  margin: 0;
-  appearance: none;
-  border: var(--border-width) solid var(--provider-brand);
-  border-radius: var(--radius-pill);
-  background: rgba(var(--provider-brand-rgb), var(--provider-inline-toggle-bg-opacity));
-  cursor: pointer;
-  transition: background var(--motion-fast), border-color var(--motion-fast);
-}
-
-.inline-cli-toggle input[type="checkbox"]::before {
-  content: "";
-  position: absolute;
-  top: var(--space-2);
-  left: var(--space-2);
-  width: var(--toggle-knob-size);
-  height: var(--toggle-knob-size);
-  border-radius: var(--radius-circle);
-  background: var(--surface);
-  box-shadow: var(--shadow-control);
-  transition: transform var(--motion-fast);
-}
-
-.inline-cli-toggle input[type="checkbox"]:checked {
+.provider-block .segmented-control {
   border-color: var(--provider-brand);
-  background: var(--provider-brand);
+  background: color-mix(
+    in srgb,
+    var(--provider-brand) 18%,
+    var(--segmented-track)
+  );
 }
 
-.inline-cli-toggle input[type="checkbox"]:checked::before {
-  transform: translateX(var(--toggle-knob-travel));
+.provider-block .segmented-control button {
+  color: var(--provider-text);
 }
 
-.inline-cli-toggle input[type="checkbox"]:focus-visible {
-  outline: var(--border-width-focus) solid var(--provider-brand);
-  outline-offset: var(--space-2);
-}
-
-.provider-hint {
-  color: var(--text-muted);
+.provider-block .segmented-control button[aria-pressed="true"] {
+  border-color: var(--provider-brand);
+  background: var(--segmented-selected-bg);
+  color: var(--provider-text);
+  box-shadow: var(--shadow-control);
 }
 
 .provider-link {
@@ -751,9 +814,10 @@ select {
 }
 
 .modal-header {
+  position: relative;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   gap: var(--space-16);
   border-bottom: var(--border-width) solid var(--border);
   padding: var(--space-14) var(--space-16);
@@ -763,9 +827,12 @@ select {
   margin: 0;
   font-size: var(--font-size-lg);
   line-height: var(--line-height-tight);
+  text-align: center;
 }
 
 .modal-close {
+  position: absolute;
+  right: var(--space-16);
   display: inline-flex;
   width: var(--modal-close-size);
   height: var(--modal-close-size);

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
 use ai_limits::get_limits::{
-    get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions,
+    get_source_plan_limits, ui_source_plan, SourcePlan, SourcePriority, UiSourcePlanOptions,
 };
 use ai_limits::infra::os_access;
 use ai_limits::notifications as core_notifications;
@@ -18,7 +18,7 @@ pub struct ProviderLimitsQuery {
     pub enabled_codex: bool,
     pub enabled_claude: bool,
     pub enabled_cursor: bool,
-    pub use_cli_fallback: bool,
+    pub source_priority: SourcePriority,
     pub notifications_enabled: bool,
 }
 
@@ -29,7 +29,7 @@ impl Default for ProviderLimitsQuery {
             enabled_codex: defaults.enabled_codex,
             enabled_claude: defaults.enabled_claude,
             enabled_cursor: defaults.enabled_cursor,
-            use_cli_fallback: defaults.use_cli_fallback,
+            source_priority: defaults.source_priority,
             notifications_enabled: true,
         }
     }
@@ -157,7 +157,7 @@ fn source_plan_options(query: &ProviderLimitsQuery) -> UiSourcePlanOptions {
         enabled_codex: query.enabled_codex,
         enabled_claude: query.enabled_claude,
         enabled_cursor: query.enabled_cursor,
-        use_cli_fallback: query.use_cli_fallback,
+        source_priority: query.source_priority,
     }
 }
 

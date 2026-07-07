@@ -51,11 +51,7 @@ The setup links must open externally from the Tauri app:
 - Claude guide on GitHub: <https://github.com/md2it/ai-limits/blob/main/docs/setup/claude-cli.md>
 - Codex guide on GitHub: <https://github.com/md2it/ai-limits/blob/main/docs/setup/codex-cli.md>
 
-Optional modal helper copy:
-
-```text
-You can give this guide to your agent to set it up.
-```
+Each setup guide opens with helper copy for sharing the guide with an agent.
 
 Backend state:
 
