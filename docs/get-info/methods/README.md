@@ -31,9 +31,9 @@ The product goal is to show the user current limits locally with minimal setup. 
 
 | Provider | Primary known option | Status | Documents |
 |---|---|---|---|
-| Codex | CLI `/status` | Implemented in PoC | [../providers/codex.md](../providers/codex.md) |
-| Claude | CLI `/usage` + statusline runtime capture (`rate_limits`) | CLI implemented in PoC; statusline capture is the strongest known local live-limit method | [../providers/claude.md](../providers/claude.md), [statusline.md](statusline.md) |
-| Cursor | `api2.cursor.sh` `GetCurrentPeriodUsage` via Cursor Agent token | Implemented in PoC; `cursor agent about/status` remains fallback | [../providers/cursor.md](../providers/cursor.md), [../../references/cursor-api2-cursor-sh.md](../../references/cursor-api2-cursor-sh.md) |
+| Codex | Local JSONL history and `rate_limits` snapshots from `${CODEX_HOME:-~/.codex}` (`codex_local`) | Default implemented source. Provides token usage and current local limit/reset snapshots when present; CLI `/status` (`codex_cli`) remains a broader fallback for `--best`. | [../providers/codex.md](../providers/codex.md) |
+| Claude | Claude Code statusline runtime capture (`claude_statusline`) with local transcript reconstruction fallback (`claude_local`) | Default implemented chain. Statusline `rate_limits` is the strongest known local live-limit signal; local transcripts provide usage/history and estimated limits; CLI `/usage` (`claude_cli`) remains a broader fallback for `--best`. | [../providers/claude.md](../providers/claude.md), [statusline.md](statusline.md) |
+| Cursor | `api2.cursor.sh` `GetCurrentPeriodUsage` via Cursor Agent token (`cursor_api2`) | Default implemented source. Provides numeric usage/limits through an unofficial backend contract; `cursor agent about/status` is diagnostic only and does not provide numeric limits in the verified build. | [../providers/cursor.md](../providers/cursor.md), [../../references/cursor-api2-cursor-sh.md](../../references/cursor-api2-cursor-sh.md) |
 
 ## Method selection principles
 
