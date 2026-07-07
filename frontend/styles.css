@@ -833,19 +833,34 @@ select {
 .modal-close {
   position: absolute;
   right: var(--space-16);
-  display: inline-flex;
   width: var(--modal-close-size);
   height: var(--modal-close-size);
-  align-items: center;
-  justify-content: center;
   border: var(--border-control);
   border-radius: var(--radius-sm);
   background: var(--surface);
   color: var(--text);
-  font: inherit;
-  font-size: var(--font-size-xl);
-  line-height: var(--line-height-solid);
+  padding: 0;
   cursor: pointer;
+}
+
+.modal-close::before,
+.modal-close::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 14px;
+  height: 2px;
+  border-radius: 1px;
+  background: currentColor;
+}
+
+.modal-close::before {
+  transform: translate(-50%, -50%) rotate(45deg);
+}
+
+.modal-close::after {
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .modal-close:hover {
