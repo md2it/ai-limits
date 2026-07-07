@@ -22,44 +22,55 @@ This creates several practical risks:
 
 A lightweight local tracker focused on AI usage through CLIs.
 
+## Interfaces
+
+The product ships as two interfaces sharing one core:
+
+- a desktop app (macOS available, Windows and Linux in beta)
+- a terminal CLI
+
 ## User capabilities
 
 From the user's point of view, the system provides five core capabilities:
 
 1. Get limits
 
-   The user can see the current usage limits that apply to their AI tools, accounts, plans, or providers.
+   The user can see the current usage limits that apply to their AI tools, accounts, plans, or providers: Codex, Claude, and Cursor.
 
 2. Get usage
 
-   The user can see how much of the available limit has already been used for a selected tool, provider, model, account, or time window.
+   The user can see how much of the available limit has already been used for a selected tool or provider. This is currently available only in the terminal, not in the desktop app.
 
 3. Check access
 
    The user can verify whether the system has enough access to read the required usage and limit information from the relevant source.
 
-4. Configure and receive notifications
+4. Configure defaults and repeat checks
 
-   The user can configure notifications and then receive alerts when usage reaches important thresholds or when relevant limit conditions change.
+   The user can set default sources and a check interval. In the terminal this is done through a config file or a repeat flag; the desktop app exposes the same settings in a user-friendly form.
 
-5. Hard usage blocking
+5. Receive notifications
 
-   The user can enable hard blocking so that usage is stopped when a defined limit or policy condition is reached.
+   The user receives native system notifications when remaining limits cross defined thresholds. Notifications are delivered through the desktop app; the terminal can request delivery from an installed, running desktop app.
 
-Notifications and hard blocking are part of the target product scope, but their detailed setup and behavior will be defined later.
+Hard usage blocking, stopping usage automatically when a limit is reached, is a planned capability and not yet implemented.
 
 ## Business process
 
-The product flow can be described as a business-readable technical process:
+The product flow can be described as a business-readable process:
 
-1. [docs/get-info](get-info/)
+1. Get information from sources
 
-   The system works with a defined set of information sources. Each source can have its own request format, access method, data location, limitations, fallback paths, and reliability constraints.
+   The system works with a defined set of information sources, one per provider and access method. Each source can have its own request format, access method, data location, and reliability constraints.
 
-2. [docs/get-info/structured-info](get-info/structured-info.md)
+2. Normalize the information
 
-   The system processes the raw information received from each source and extracts normalized, structured data from it. This structured data should represent business-relevant facts such as available limits, used volume, reset periods, account context, provider context, and access status.
+   The system processes the raw information received from each source into a common, normalized form: available limits, used volume, reset periods, account context, provider context, and access status.
 
 3. Provide user-facing results
 
-   The system exposes the structured information to the user as clear answers about limits and usage. Notification configuration and hard blocking will use the same structured information later, but they are outside the current process detail.
+   The system exposes the normalized information to the user as clear answers about limits and usage, in the desktop app and in the terminal.
+
+4. Notify on threshold crossings
+
+   The system turns the normalized information into notification candidates when remaining limits cross defined thresholds, and the desktop app delivers them as native system notifications. Hard usage blocking will reuse the same normalized information once implemented.
