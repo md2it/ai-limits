@@ -1,0 +1,1 @@
+Commit messages must start with one of: `feat:`, `fix:`, `docs:`, `chore:`.
