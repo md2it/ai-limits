@@ -24,7 +24,7 @@ Current GitHub behavior:
 
 - Build macOS, Windows, and Linux files in separate jobs.
 - Upload GitHub Actions artifacts with 14-day retention.
-- After all platform jobs pass, create an unstable GitHub pre-release.
+- After all platform build jobs pass, create an unstable GitHub pre-release.
 - Attach separate files for each platform to that pre-release.
 - Use an automatic tag based on the workflow run number and attempt:
 

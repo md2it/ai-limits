@@ -97,18 +97,18 @@ jobs:
 
           npm exec tauri -- build "${BUILD_ARGS[@]}"
 
-      - name: Archive macOS app bundle
+      - name: Verify macOS app signing and notarization
         run: |
           set -euo pipefail
 
           APP_PATH="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
-          ZIP_PATH="target/release/bundle/macos/AI Limits.app.zip"
           NOTARIZATION_MODE="${{ inputs.macos_notarization }}"
 
           codesign --verify --deep --strict --verbose=4 "$APP_PATH"
 
           if [[ "$NOTARIZATION_MODE" == "full" ]]; then
             stapler validate "$APP_PATH"
+            echo "macOS app is signed, notarized, and stapled."
           elif [[ "$NOTARIZATION_MODE" == "submit-only" ]]; then
             echo "Notarization submitted without waiting. Check status with:"
             echo "  xcrun notarytool history --key ... --key-id ... --issuer ..."
@@ -117,6 +117,13 @@ jobs:
           else
             echo "Signed only. Gatekeeper may warn until the app is notarized."
           fi
+
+      - name: Archive macOS app bundle
+        run: |
+          set -euo pipefail
+
+          APP_PATH="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+          ZIP_PATH="target/release/bundle/macos/AI Limits.app.zip"
 
           mkdir -p "$(dirname "$ZIP_PATH")"
           ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"

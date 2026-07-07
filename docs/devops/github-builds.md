@@ -51,7 +51,7 @@ See [macOS signing](macos-signing.md) for secrets and signing details.
 Verified jobs:
 
 ```text
-build-macos:   signed macOS app, artifact uploaded
+build-macos:   signed macOS app, notarization verified when full, artifact uploaded
 build-windows: passed, artifact uploaded
 build-linux:   passed, artifact uploaded
 ```
@@ -82,6 +82,12 @@ The workflow verifies the final `.app` before archive upload:
 
 ```text
 codesign --verify --deep --strict --verbose=4 "target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+```
+
+In `full` mode, the workflow also verifies notarization and stapling in a separate macOS job step:
+
+```text
+stapler validate "target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
 ```
 
 The `.app` bundle is archived with `ditto` after signing to preserve the bundle structure.
