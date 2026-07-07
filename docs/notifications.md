@@ -1,63 +1,127 @@
 # Notifications
 
-This document defines the initial requirements for system notifications.
+This document defines the target behavior for system notifications.
 
 ---
 
 ## Goal
 
-The application should be able to notify the user when an important event happens.
+The application notifies the user when an important limit event requires attention.
 
-Notifications are a shared application capability. They are not tied only to a future desktop interface.
+Notifications are a shared product capability. They are used by the desktop interface and can be requested from the terminal interface.
 
 ---
 
 ## Architecture
 
-The application uses one common notification tool.
+The application uses one common notification domain model.
 
-Application logic calls a single interface, for example `notify(title, message)`.
+Provider and limit logic produce notification candidates from structured source data. The notification rules stay in the shared Rust core and must not be duplicated in the Tauri frontend.
 
-Platform-specific behavior is hidden behind three adapters:
+Notification delivery is separate from notification logic.
 
-- macOS adapter
-- Windows adapter
-- Linux adapter
-
-The target source structure is:
+The target delivery adapter is Tauri notifications. Platform-specific notification behavior for macOS, Windows, and Linux is delegated to Tauri unless a supported platform later requires product behavior that Tauri cannot provide.
 
 ```text
-src/
-  notifications/
-    mod.rs
-    macos.rs
-    windows.rs
-    linux.rs
-    noop.rs
+shared core
+  structured source data
+  notification thresholds
+  notification text
+  dedupe keys
+
+delivery adapter
+  Tauri notifications
+  system notification permission
+  native system notification delivery
+  application icon
+  notification click behavior
+
+terminal interface
+  existing terminal UI
+  optional request to the installed/running Tauri application
 ```
 
-`noop.rs` is the fallback for unsupported or unavailable notification environments.
+The shared core must not depend on Tauri or any operating-system notification API. It produces notification candidates and passes them to the delivery layer.
+
+The application does not maintain separate first-party macOS, Windows, and Linux notification adapters in the current target architecture. If Tauri notifications later cannot provide required product behavior on a supported platform, platform-specific delivery adapters may be introduced behind the same delivery interface.
+
+The terminal interface does not send native operating-system notifications directly. When a terminal run needs a system notification, it requests delivery from the installed and available Tauri application.
+
+If the terminal interface cannot hand the notification request to Tauri, it silently skips the system notification. It must not print an additional terminal message, because the terminal UI already contains the relevant information and extra text would not attract attention.
+
+There is no separate macOS helper/notifier in the target architecture.
+
+---
+
+## Delivery Rules
+
+System notifications are delivered through the Tauri notifications adapter.
+
+Rules:
+
+- when the Tauri application is active or minimized, eligible notifications should be delivered as native system notifications through Tauri
+- when the terminal interface can reach the installed and available Tauri application, eligible notifications can be delivered through Tauri
+- when Tauri is unavailable, the notification is skipped without additional terminal output
+- the application does not use a separate notification helper process
+
+The user-facing notification setting controls whether notification checks are enabled.
+
+---
+
+## Click Behavior
+
+Clicking a system notification opens or focuses the Tauri application.
+
+Notification clicks do not need to navigate to a specific provider, limit, event, or screen in the current target behavior.
+
+---
+
+## Branding
+
+System notifications should appear as notifications from the application, not from a script runner, terminal, shell, or development tool.
+
+The notification should use the application identity configured in the Tauri bundle, including:
+
+- application name
+- bundle identifier
+- application icon
+
+The same application icon is used for notifications. Separate icons per notification type are not required.
 
 ---
 
 ## UX/UI
 
-Notifications are system notifications. They should use the native notification UI of the current operating system.
+Notifications are native system notifications. They should use the current operating system's standard notification UI through Tauri notifications.
 
-Initial notification types are hardcoded:
+The application does not provide an in-app notification center in the current target behavior.
+
+The application does not provide separate in-app toast notifications in the current target behavior.
+
+The application does not keep a notification history in the current target behavior.
+
+Notification actions and buttons are not required.
+
+---
+
+## Notification Types
+
+Notification types are based on remaining limit thresholds:
 
 - 75% remaining:
   - trigger when 25% or more of the limit is spent
-  - color, if supported by the operating system: green
+  - color, if supported by the notification transport: green
 - 50% remaining:
   - trigger when 50% or more of the limit is spent
-  - color, if supported by the operating system: yellow
+  - color, if supported by the notification transport: yellow
 - 25% remaining:
   - trigger when 75% or more of the limit is spent
-  - color, if supported by the operating system: orange
+  - color, if supported by the notification transport: orange
 - 10% remaining:
   - trigger when 90% or more of the limit is spent
-  - color, if supported by the operating system: red
+  - color, if supported by the notification transport: red
+
+Colors are optional because system notification customization is platform-dependent.
 
 Notification text template:
 
@@ -99,14 +163,18 @@ Claude 5h - 7% left
 reset 2026-07-07 22:22 UTC-6
 ```
 
+---
+
+## Deduplication
+
 Rules:
 
-- notifications do not replace each other; every notification is kept as a separate system notification
+- notifications do not replace each other; every delivered notification is kept as a separate system notification
 - the same running process should not repeatedly send the same notification
 - notifications are independent for each provider, for example Codex, Claude, and Cursor
-- notifications are also independent for each called data source
+- notifications are independent for each called data source
 - if different data sources return different limit data for the same provider, this is acceptable
-- each called and enabled source is evaluated separately and can produce its own notification
+- each called and enabled source is evaluated separately and can produce its own notification candidate
 
 ---
 
@@ -116,11 +184,13 @@ Notification triggers are calculated from structured data.
 
 Structured data is used because it is standardized and easier to process consistently across providers and sources.
 
+Notification calculation is independent from the delivery channel. The same candidate generation rules apply whether the request originates from the Tauri UI or from the terminal interface.
+
 ---
 
 ## Testing
 
-Manual testing can use a fake notification trigger without provider data:
+Manual testing can use fake notification triggers without provider data:
 
 ```text
 ai-limits --test-notification=75
@@ -129,7 +199,9 @@ ai-limits --test-notification=25
 ai-limits --test-notification=10
 ```
 
-This sends a real system notification through the current platform adapter.
+These commands should request delivery through the Tauri notifications adapter.
+
+When the Tauri application is unavailable, test notification commands should complete without sending a system notification and without printing an extra notification message.
 
 Trigger calculation is covered with unit tests using fake structured data.
 
@@ -143,6 +215,6 @@ Development targets:
 - Windows
 - Linux
 
-Initial development will be checked directly on macOS.
+The target delivery adapter for every supported desktop platform is Tauri notifications.
 
-Windows and Linux are developed theoretically for now. They must be tested later by external testers who have access to those systems.
+Initial development is checked directly on macOS. Windows and Linux behavior must be tested later by external testers who have access to those systems.
