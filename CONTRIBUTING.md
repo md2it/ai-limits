@@ -7,13 +7,36 @@
 
 ## QUICK RULES
 
-Use commit prefixes: `feat:`, `fix:`, `docs:`, `chore:`.
-
-Keep documentation up to date when behavior, setup, or release process changes.
+- Set up local contributor tooling with `npm run setup:contributor`.
+- Use commit prefixes: `feat:`, `fix:`, `docs:`, `chore:`.
+- Keep documentation up to date when behavior, setup, or release process changes.
 
 ---
 
 ## DETAILS
+
+### Contributor Setup
+
+Run the contributor setup after cloning the repository:
+
+```text
+npm run setup:contributor
+```
+
+Run it again when contributor tooling or contribution rules change.
+
+The setup configures Git hooks for this repository only:
+
+```text
+git config --local core.hooksPath scripts/git-hooks
+```
+
+This keeps hook scripts versioned in the repository and avoids copying files into
+`.git/hooks`. If hook scripts change, `git pull` gets the new version.
+
+The setup does not change global Git settings. If a different local
+`core.hooksPath` already exists, the setup stops and explains what to do instead
+of overwriting custom hooks silently.
 
 ### Commit Messages
 
@@ -56,8 +79,7 @@ Local commit hook setup:
 npm run setup:contributor
 ```
 
-The setup configures local Git hooks for this repository only. The commit hook
-warns about missing prefixes but does not block the commit.
+The commit hook warns about missing prefixes but does not block the commit.
 
 Release notes use commit prefixes:
 
