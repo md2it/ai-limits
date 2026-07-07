@@ -10,7 +10,7 @@ Detailed checks stay in the documents that own the relevant behavior. Keep this 
 - Notification trigger and delivery tests: [notifications](notifications.md#testing).
 - Local desktop dev run: [devops dev run](devops/dev.md).
 - Local macOS debug build: [devops local build](devops/local-build.md).
-- Release artifact verification: [temporary artifact verification](devops/artifact-verification-temp.md).
+- Release artifact verification: [temporary artifact verification](devops/artifact-verification-temp.md) and `scripts/verify-macos-app.sh`.
 - Analog research hands-on checks: [references flow](references/_flow.md).
 
 ## Placement Rule

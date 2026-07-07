@@ -100,23 +100,9 @@ jobs:
       - name: Verify macOS app signing and notarization
         run: |
           set -euo pipefail
-
-          APP_PATH="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
-          NOTARIZATION_MODE="${{ inputs.macos_notarization }}"
-
-          codesign --verify --deep --strict --verbose=4 "$APP_PATH"
-
-          if [[ "$NOTARIZATION_MODE" == "full" ]]; then
-            stapler validate "$APP_PATH"
-            echo "macOS app is signed, notarized, and stapled."
-          elif [[ "$NOTARIZATION_MODE" == "submit-only" ]]; then
-            echo "Notarization submitted without waiting. Check status with:"
-            echo "  xcrun notarytool history --key ... --key-id ... --issuer ..."
-            echo "After Accepted, staple locally or rerun workflow with macos_notarization=full:"
-            echo "  xcrun stapler staple \"$APP_PATH\""
-          else
-            echo "Signed only. Gatekeeper may warn until the app is notarized."
-          fi
+          scripts/verify-macos-app.sh \
+            --notarization "${{ inputs.macos_notarization }}" \
+            "target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
 
       - name: Archive macOS app bundle
         run: |
@@ -126,7 +112,14 @@ jobs:
           ZIP_PATH="target/release/bundle/macos/AI Limits.app.zip"
 
           mkdir -p "$(dirname "$ZIP_PATH")"
-          ditto -c -k --sequesterRsrc --keepParent "$APP_PATH" "$ZIP_PATH"
+          ditto -c -k --keepParent "$APP_PATH" "$ZIP_PATH"
+
+      - name: Verify macOS release artifact round-trip
+        run: |
+          set -euo pipefail
+          scripts/verify-macos-app.sh \
+            --notarization "${{ inputs.macos_notarization }}" \
+            "target/release/bundle/macos/AI Limits.app.zip"
 
       - name: Upload macOS app artifact
         uses: actions/upload-artifact@v4

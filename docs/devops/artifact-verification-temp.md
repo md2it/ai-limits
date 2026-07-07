@@ -11,11 +11,43 @@ Plan:
 - Do not change signing or notarization during artifact verification.
 - Do not create GitHub Releases during artifact verification.
 
-Minimum checks:
+## macOS release artifact checks
+
+Use `ditto` to extract the zip. Do not use `unzip`; it does not preserve macOS extended attributes and can break signed/stapled `.app` bundles.
+
+```sh
+mkdir -p /tmp/ai-limits-verify
+ditto -x -k "AI Limits.app.zip" /tmp/ai-limits-verify
+```
+
+Run the shared verification script on the downloaded zip or extracted `.app`:
+
+```sh
+scripts/verify-macos-app.sh --notarization full "AI Limits.app.zip"
+```
+
+Or on the extracted bundle:
+
+```sh
+scripts/verify-macos-app.sh --notarization full "/tmp/ai-limits-verify/AI Limits.app"
+```
+
+The script runs:
+
+```text
+codesign -dv
+codesign -d --entitlements -
+codesign --verify --deep --strict
+spctl --assess
+xcrun stapler validate   # only in full mode
+```
+
+Minimum manual checks:
 
 ```text
 macOS:
-  unzip AI Limits.app.zip
+  extract with ditto -x -k
+  run scripts/verify-macos-app.sh
   launch the .app
   record signing and notarization mode / Gatekeeper UX
 
@@ -44,7 +76,8 @@ Current verification results:
 ```text
 macOS:
   artifact file: AI Limits.app.zip
-  unzip result: passed
+  extract command: ditto -x -k
+  verification script: scripts/verify-macos-app.sh
   launch result: passed
   installer flow: not applicable; artifact is a zipped .app, not a DMG
   Gatekeeper UX:
