@@ -1,8 +1,8 @@
 # GitHub Builds
 
-## Build GitHub Artifacts
+## Desktop build workflow
 
-Status: done.
+Status: active.
 
 GitHub Actions workflow:
 
@@ -22,44 +22,36 @@ workflow_dispatch
 
 No automatic `push`, `pull_request`, or tag trigger is included.
 
-## GitHub Build Modes
+When starting the workflow, choose **macOS notarization mode**:
 
-There are two distribution-relevant GitHub build modes:
+| Mode | What happens | CI time | Release-ready macOS |
+|------|----------------|---------|---------------------|
+| `full` (default) | Sign, notarize, wait for Apple, staple | minutes to hours | yes |
+| `submit-only` | Sign, submit notarization, do not wait | ~5 min | no (check Apple later) |
+| `sign-only` | Developer ID sign only | ~3 min | no |
 
-### Unsigned
+Use `full` for pre-releases that users download from GitHub. Use `submit-only` or `sign-only` only when iterating on CI and you do not need a finished macOS artifact yet.
 
-Purpose:
+### macOS notarization notes
 
-- technical artifact check;
-- early internal testing;
-- platforms where signing is not configured yet.
+- First notarization for a new Apple Developer team can stay `In Progress` at Apple for hours or longer while the app is held for in-depth analysis.
+- After the first `Accepted` result, later `full` runs are usually much faster.
+- Check submission status locally:
 
-Current status:
+```sh
+xcrun notarytool history --key ... --key-id ... --issuer ...
+```
 
-- Windows GitHub artifacts are unsigned.
-- Linux GitHub artifacts are unsigned.
-- Unsigned macOS is not the current macOS GitHub workflow path.
+- If you used `submit-only` and Apple later reports `Accepted`, either rerun the workflow with `full` or staple the same `.app` locally with `xcrun stapler staple`.
 
-### Signed
+See [macOS signing](macos-signing.md) for secrets and signing details.
 
-Purpose:
-
-- realistic macOS distribution testing;
-- builds that should behave closer to a user-facing macOS download.
-
-Current status:
-
-- macOS GitHub artifacts are signed with Apple Developer ID.
-- Notarization is controlled by the workflow input: `sign-only`, `submit-only`, or `full`.
-
-The workflow file is the source of truth for the exact implementation:
-
-[Desktop build workflow](../../.github/workflows/desktop-build.yml)
+## Jobs
 
 Verified jobs:
 
 ```text
-build-macos:   passed, artifact uploaded
+build-macos:   signed macOS app, artifact uploaded
 build-windows: passed, artifact uploaded
 build-linux:   passed, artifact uploaded
 ```
@@ -70,11 +62,10 @@ Common GitHub job setup:
 - install Node.js 22;
 - install Rust stable through `dtolnay/rust-toolchain@stable`;
 - install npm dependencies with `npm ci`;
-- run a platform-specific Tauri production build;
 - upload artifacts with `actions/upload-artifact@v4`;
 - keep artifact retention at 14 days.
 
-macOS job:
+### macOS job
 
 ```text
 runner: macos-latest
@@ -83,43 +74,9 @@ artifact name: ai-limits-macos-app
 artifact path: target/release/bundle/macos/AI Limits.app.zip
 ```
 
-The macOS job builds a signed universal Apple app. It imports a Developer ID Application certificate from GitHub secrets before running Tauri.
+The workflow imports a Developer ID Application `.p12`, writes the App Store Connect API key, and lets Tauri sign the universal `.app` bundle. In `full` mode, Tauri also notarizes and staples before the zip is uploaded.
 
-Required signing secrets:
-
-```text
-APPLE_CERTIFICATE
-APPLE_CERTIFICATE_PASSWORD
-KEYCHAIN_PASSWORD
-```
-
-Optional notarization secrets:
-
-```text
-APPLE_API_KEY_CONTENT
-APPLE_API_KEY_ID
-APPLE_API_ISSUER
-```
-
-macOS notarization mode is selected when the workflow is started manually:
-
-```text
-sign-only
-submit-only
-full
-```
-
-Default mode:
-
-```text
-sign-only
-```
-
-Mode meaning:
-
-- `sign-only`: signed by Apple Developer ID, not notarized;
-- `submit-only`: signed and submitted to Apple notarization without waiting for stapling;
-- `full`: signed, notarized, and stapled.
+Entitlements: `src-tauri/Entitlements.plist` with hardened runtime enabled in `tauri.conf.json`.
 
 The workflow verifies the final `.app` before archive upload:
 
@@ -129,7 +86,7 @@ codesign --verify --deep --strict --verbose=4 "target/universal-apple-darwin/rel
 
 The `.app` bundle is archived with `ditto` after signing to preserve the bundle structure.
 
-Windows job:
+### Windows job
 
 ```text
 runner: windows-latest
@@ -142,7 +99,7 @@ artifact paths:
 
 Windows signing is not included.
 
-Linux job:
+### Linux job
 
 ```text
 runner: ubuntu-latest
@@ -163,53 +120,22 @@ librsvg2-dev
 patchelf
 ```
 
-GitHub build verification result:
+## Verification result
 
 - Workflow starts manually from GitHub Actions.
-- macOS, Windows, and Linux jobs passed.
-- Artifacts were created and uploaded for all three platforms.
-- Artifacts were downloaded locally and file paths were confirmed.
-- Release publishing now creates an unstable GitHub pre-release after all platform jobs pass.
+- macOS, Windows, and Linux jobs pass when secrets and runners are available.
+- Artifacts are created and uploaded for all three platforms.
+- Release publishing creates an unstable GitHub pre-release after all platform jobs pass.
 - macOS signing is used.
 - macOS notarization is controlled by workflow input.
 - Windows and Linux signing are not used.
 
-Confirmed artifacts:
-
-```text
-macOS:
-  artifact name: ai-limits-macos-app
-  artifact size: 4,988,236 bytes
-  file: AI Limits.app.zip
-
-Windows:
-  artifact name: ai-limits-windows-unsigned
-  artifact size: 5,365,018 bytes
-  files:
-    nsis/AI Limits_0.1.0_x64-setup.exe
-    msi/AI Limits_0.1.0_x64_en-US.msi
-
-Linux:
-  artifact name: ai-limits-linux-unsigned
-  artifact size: 80,837,949 bytes
-  files:
-    deb/AI Limits_0.1.0_amd64.deb
-    appimage/AI Limits_0.1.0_amd64.AppImage
-```
-
-Local download location used during verification:
-
-```text
-/private/tmp/ai-limits-run-28758826398
-```
-
-This temporary directory is not a release storage location and may be cleaned by the operating system.
-
-Implementation guardrails:
+## Implementation guardrails
 
 - Do not change Rust core code in `src/`.
 - Do not change Tauri command behavior in `src-tauri/src/`.
 - Do not change frontend UI behavior.
 - Do not change provider, limit, config, or notification logic.
 - Keep Windows and Linux signing out of the current workflow unless explicitly requested.
+- Keep macOS signing secrets in GitHub Actions only; do not commit them.
 - Keep unstable release publishing clear about the selected macOS notarization mode.

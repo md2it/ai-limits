@@ -4,9 +4,9 @@ on:
   workflow_dispatch:
     inputs:
       macos_notarization:
-        description: macOS notarization mode (sign-only is fastest)
+        description: macOS notarization mode (full is default for releases)
         required: true
-        default: sign-only
+        default: full
         type: choice
         options:
           - sign-only

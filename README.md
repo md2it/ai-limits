@@ -47,6 +47,7 @@ For terminal UI details, see [docs/terminal-ui.md](docs/terminal-ui.md).
 ## Current Limitations
 
 - No macOS DMG installer yet.
+- macOS releases are signed and notarized; Windows and Linux builds are unsigned.
 - Desktop notifications currently work on macOS only.
 - Windows and Linux desktop builds are still being tested.
 - Some local Codex and Claude data sources may not work on Windows and Linux yet.

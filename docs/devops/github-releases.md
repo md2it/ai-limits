@@ -32,6 +32,18 @@ Current GitHub behavior:
 desktop-unstable-<run-number>-<attempt>
 ```
 
+### macOS notarization mode
+
+The workflow input `macos_notarization` controls the macOS job:
+
+| Mode | Default | Use when |
+|------|---------|----------|
+| `full` | yes | Publishing a pre-release users should install |
+| `submit-only` | no | You want CI to finish quickly and will wait for Apple separately |
+| `sign-only` | no | Testing signing only; Gatekeeper may still warn |
+
+See [GitHub builds](github-builds.md) for secrets and timing notes.
+
 Release title:
 
 - Should stay short because GitHub release lists may wrap long titles on small screens.
@@ -65,9 +77,8 @@ User-facing meaning:
 
 - These are working desktop builds.
 - They are unstable and may contain bugs.
-- GitHub builds can be unsigned or signed depending on platform and workflow path.
-- macOS is signed with Apple Developer ID in GitHub Actions.
-- macOS notarization depends on the selected workflow input: `sign-only`, `submit-only`, or `full`.
+- macOS builds from `full` runs are signed, notarized, and stapled.
+- macOS notarization depends on the selected workflow input: `sign-only`, `submit-only`, or `full` (default).
 - Windows and Linux are unsigned.
 - Windows may show security warnings.
 - They are not stable releases or store-ready.

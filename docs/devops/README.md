@@ -19,11 +19,11 @@ Detailed Tauri integration rules remain in [architecture](../architecture.md) an
 
 Build and publish desktop artifacts for the Tauri app across supported platforms:
 
-- macOS
-- Windows
-- Linux
+- macOS — signed, notarized, stapled in CI (`full` mode by default)
+- Windows — unsigned installer bundles
+- Linux — unsigned `.deb` and `.AppImage`
 
-The current GitHub Actions workflow proves that every platform can produce a downloadable artifact. It also publishes those files as an unstable GitHub pre-release for easier downloading. macOS signing is now supported in GitHub Actions. Windows and Linux artifacts remain unsigned.
+The GitHub Actions workflow publishes those files as an unstable GitHub pre-release for easier downloading. macOS DMG and Windows signing remain future work.
 
 ## Current Status
 
@@ -77,14 +77,15 @@ The desktop build/release work covers:
 
 - GitHub Actions workflow design.
 - Native OS builds on GitHub-hosted runners.
+- macOS Developer ID signing and notarization in CI.
 - Uploading build artifacts from GitHub Actions.
 - Publishing unstable GitHub pre-releases from GitHub Actions.
 - Documentation of build commands, produced paths, and known platform-specific issues.
 
-Out of scope for the first stages:
+Out of scope for now:
 
-- Windows signing.
 - macOS DMG as a required artifact.
+- Windows code signing.
 - Store distribution.
 - Reworking Rust core logic.
 - Reworking Tauri commands.
@@ -127,7 +128,7 @@ Status: active.
 
 See [GitHub releases](github-releases.md).
 
-### 6. Add Installers and Signed Distribution
+### 6. Add Installers and Broader Signed Distribution
 
 Status: active for macOS, future for Windows and Linux.
 

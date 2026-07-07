@@ -25,7 +25,7 @@ Signing mode:
 Default mode:
 
 ```text
-sign-only
+full
 ```
 
 Modes:
@@ -33,6 +33,8 @@ Modes:
 - `sign-only`: Developer ID signed, not notarized;
 - `submit-only`: signed and submitted to Apple notarization without waiting for stapling;
 - `full`: signed, notarized, and stapled.
+
+First notarization for a new Apple Developer team can stay `In Progress` for hours or longer. After the first `Accepted` result, later `full` runs are usually much faster. See [GitHub builds](github-builds.md).
 
 ## Secrets
 
@@ -42,6 +44,7 @@ Required for signing:
 APPLE_CERTIFICATE
 APPLE_CERTIFICATE_PASSWORD
 KEYCHAIN_PASSWORD
+APPLE_TEAM_ID
 ```
 
 Required for `submit-only` and `full` notarization:
