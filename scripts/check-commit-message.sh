@@ -2,6 +2,7 @@
 set -euo pipefail
 
 allowed_pattern='^(feat|fix|docs|chore): .+'
+warn_only=0
 
 check_subject() {
   local subject="$1"
@@ -15,7 +16,17 @@ check_subject() {
 }
 
 if [[ "$#" -eq 0 ]]; then
-  echo "Usage: $0 <commit-message-file|commit-range>" >&2
+  echo "Usage: $0 [--warn-only] <commit-message-file|commit-range>" >&2
+  exit 2
+fi
+
+if [[ "${1:-}" == "--warn-only" ]]; then
+  warn_only=1
+  shift
+fi
+
+if [[ "$#" -eq 0 ]]; then
+  echo "Usage: $0 [--warn-only] <commit-message-file|commit-range>" >&2
   exit 2
 fi
 
@@ -30,6 +41,10 @@ else
     [[ -n "$subject" ]] || continue
     check_subject "$subject" || failed=1
   done < <(git log --format=%s "$target")
+fi
+
+if [[ "$warn_only" -eq 1 ]]; then
+  exit 0
 fi
 
 exit "$failed"

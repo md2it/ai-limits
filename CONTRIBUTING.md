@@ -79,7 +79,8 @@ Local commit hook setup:
 npm run setup:contributor
 ```
 
-The commit hook warns about missing prefixes but does not block the commit.
+The local commit hook blocks commits with missing prefixes. GitHub Actions only
+prints warnings and does not block builds or pull requests for this check.
 
 Release notes use commit prefixes:
 

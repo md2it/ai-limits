@@ -11,7 +11,6 @@ jobs:
   check-commit-messages:
     name: Check commit message prefixes
     runs-on: ubuntu-latest
-    continue-on-error: true
 
     steps:
       - name: Checkout
@@ -34,4 +33,4 @@ jobs:
             range="${{ github.sha }}~1..${{ github.sha }}"
           fi
 
-          scripts/check-commit-message.sh "$range"
+          scripts/check-commit-message.sh --warn-only "$range"
