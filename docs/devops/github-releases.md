@@ -32,6 +32,16 @@ Current GitHub behavior:
 desktop-unstable-<run-number>-<attempt>
 ```
 
+Release title:
+
+- Should stay short because GitHub release lists may wrap long titles on small screens.
+- Should not repeat the repository name or the full tag.
+- Should use this format:
+
+```text
+unstable desktop-<run-number>-<attempt>
+```
+
 Release description:
 
 - Should be generated automatically from commit messages between the previous release and the current release.

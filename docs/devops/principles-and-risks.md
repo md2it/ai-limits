@@ -23,6 +23,7 @@
 ## Release Principles
 
 - Use the term `unstable` for current desktop pre-releases.
+- Keep release titles short and avoid repeating the repository name or full tag.
 - A pre-release may be useful and downloadable while still being incomplete, unsigned, and bug-prone.
 - Publish separate release assets per operating system so users download only what they need.
 - Do not present unstable pre-releases as stable or store-ready.

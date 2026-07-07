@@ -245,9 +245,11 @@ jobs:
           cp "$linux_deb" "release-assets/upload/AI-Limits-${tag}-linux.deb"
           cp "$linux_appimage" "release-assets/upload/AI-Limits-${tag}-linux.AppImage"
 
+          release_id="${tag#desktop-unstable-}"
+
           {
             echo "tag=${tag}"
-            echo "title=AI Limits desktop unstable ${tag}"
+            echo "title=unstable desktop-${release_id}"
             echo "macos_notarization=${{ inputs.macos_notarization }}"
           } >> "$GITHUB_ENV"
 
