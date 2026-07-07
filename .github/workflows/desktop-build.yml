@@ -42,12 +42,6 @@ jobs:
             exit 1
           fi
 
-          app_version="$(jq -r '.version' src-tauri/tauri.conf.json)"
-          if [[ "$tag" != "v${app_version}" ]]; then
-            echo "Release version $tag must match src-tauri/tauri.conf.json version ${app_version}." >&2
-            exit 1
-          fi
-
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release already exists: $tag" >&2
             exit 1
@@ -278,12 +272,6 @@ jobs:
 
           if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             echo "Release already exists: $tag" >&2
-            exit 1
-          fi
-
-          app_version="$(jq -r '.version' src-tauri/tauri.conf.json)"
-          if [[ "$tag" != "v${app_version}" ]]; then
-            echo "Release version $tag must match src-tauri/tauri.conf.json version ${app_version}." >&2
             exit 1
           fi
 
