@@ -1,6 +1,4 @@
-use chrono::{
-    DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, Offset, TimeZone, Utc,
-};
+use chrono::{DateTime, Datelike, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use chrono_tz::Tz;
 
 use crate::types::StructuredSourceInfo;
@@ -28,31 +26,65 @@ impl TimeContext {
 
 pub fn format_user_timestamp(value: &str, context: &TimeContext) -> String {
     parse_to_local(value, context)
-        .map(format_local_datetime)
-        .unwrap_or_else(|| value.to_string())
+        .map(|parsed| format_local_datetime(parsed, context.reference))
+        .unwrap_or_else(|| strip_display_timezone_suffix(value))
 }
 
-pub fn format_local_datetime(dt: DateTime<Local>) -> String {
-    let month = MONTHS.get(dt.month0() as usize).copied().unwrap_or("???");
-    format!(
-        "{} {:2}, {} {}",
-        month,
-        dt.day(),
-        dt.format("%H:%M"),
-        format_utc_offset(dt.offset().fix().local_minus_utc())
-    )
-}
-
-fn format_utc_offset(offset_seconds: i32) -> String {
-    let sign = if offset_seconds >= 0 { '+' } else { '-' };
-    let absolute = offset_seconds.abs();
-    let hours = absolute / 3600;
-    let minutes = (absolute % 3600) / 60;
-    if minutes == 0 {
-        format!("UTC{sign}{hours}")
-    } else {
-        format!("UTC{sign}{hours}:{minutes:02}")
+pub fn format_local_datetime(dt: DateTime<Local>, reference: DateTime<Local>) -> String {
+    if dt.date_naive() == reference.date_naive() {
+        return dt.format("%H:%M").to_string();
     }
+
+    let month = MONTHS.get(dt.month0() as usize).copied().unwrap_or("???");
+    format!("{} {}, {}", month, dt.day(), dt.format("%H:%M"))
+}
+
+fn strip_display_timezone_suffix(value: &str) -> String {
+    let trimmed = value.trim();
+    let without_named_timezone = if let Some(open) = trimmed.rfind('(') {
+        if trimmed.ends_with(')') {
+            trimmed[..open].trim()
+        } else {
+            trimmed
+        }
+    } else {
+        trimmed
+    };
+
+    strip_utc_suffix(without_named_timezone).to_string()
+}
+
+fn strip_utc_suffix(value: &str) -> &str {
+    let Some((body, suffix)) = value.rsplit_once(' ') else {
+        return value;
+    };
+    if is_utc_suffix(suffix) {
+        body.trim_end()
+    } else {
+        value
+    }
+}
+
+fn is_utc_suffix(value: &str) -> bool {
+    if value.eq_ignore_ascii_case("UTC") {
+        return true;
+    }
+
+    let Some(offset) = value
+        .strip_prefix("UTC+")
+        .or_else(|| value.strip_prefix("UTC-"))
+        .or_else(|| value.strip_prefix("utc+"))
+        .or_else(|| value.strip_prefix("utc-"))
+    else {
+        return false;
+    };
+
+    let (hours, minutes) = offset.split_once(':').unwrap_or((offset, ""));
+    !hours.is_empty()
+        && hours.len() <= 2
+        && hours.chars().all(|character| character.is_ascii_digit())
+        && (minutes.is_empty()
+            || (minutes.len() == 2 && minutes.chars().all(|character| character.is_ascii_digit())))
 }
 
 fn parse_instant_reference(value: &str) -> Option<DateTime<Local>> {
@@ -306,12 +338,12 @@ mod tests {
     }
 
     #[test]
-    fn formats_iso_utc_in_local_style_with_offset_label() {
+    fn formats_iso_utc_in_local_style() {
         let context = fixed_context("2026-06-29T20:00:00Z");
-        let formatted = format_user_timestamp("2026-06-29T23:09:29Z", &context);
+        let formatted = format_user_timestamp("2026-06-29T20:09:29Z", &context);
 
-        assert!(formatted.contains("UTC"));
-        assert!(!formatted.contains("T23:"));
+        assert_eq!(formatted, "23:09");
+        assert!(!formatted.contains("T20:"));
         assert!(!formatted.ends_with('Z'));
     }
 
@@ -322,7 +354,7 @@ mod tests {
 
         assert!(formatted.starts_with("Jun 30, "));
         assert!(formatted.contains("02:20"));
-        assert!(formatted.contains("UTC"));
+        assert!(!formatted.contains("UTC"));
     }
 
     #[test]
@@ -332,7 +364,7 @@ mod tests {
 
         assert!(formatted.starts_with("Jun 30, "));
         assert!(formatted.contains("13:00"));
-        assert!(formatted.contains("UTC"));
+        assert!(!formatted.contains("UTC"));
     }
 
     #[test]
@@ -340,29 +372,39 @@ mod tests {
         let context = fixed_context("2026-06-29T20:00:00Z");
         let formatted = format_user_timestamp("02:59 on 6 Jul", &context);
 
-        assert!(formatted.starts_with("Jul  6, "));
+        assert!(formatted.starts_with("Jul 6, "));
         assert!(formatted.contains("02:59"));
-        assert!(formatted.contains("UTC"));
+        assert!(!formatted.contains("UTC"));
     }
 
     #[test]
-    fn format_utc_offset_renders_half_hour_offsets() {
-        assert_eq!(format_utc_offset(7200), "UTC+2");
-        assert_eq!(format_utc_offset(19_800), "UTC+5:30");
-        assert_eq!(format_utc_offset(-18_000), "UTC-5");
+    fn formats_today_as_time_only() {
+        let context = fixed_context("2026-06-30T20:00:00Z");
+        let formatted = format_user_timestamp("2026-06-30T20:41:00Z", &context);
+
+        assert_eq!(formatted, "23:41");
     }
 
     #[test]
-    fn formatted_timestamps_align_clock_time_after_comma() {
+    fn fallback_strips_timezone_suffixes() {
+        let context = fixed_context("2026-06-29T20:00:00Z");
+
+        assert_eq!(
+            format_user_timestamp("Jul 3, 21:41 UTC-2", &context),
+            "Jul 3, 21:41"
+        );
+        assert_eq!(
+            format_user_timestamp("unknown (Asia/Nicosia)", &context),
+            "unknown"
+        );
+    }
+
+    #[test]
+    fn formatted_timestamps_do_not_pad_single_digit_day() {
         let context = fixed_context("2026-06-29T20:00:00Z");
         let single_digit_day = format_user_timestamp("02:59 on 6 Jul", &context);
-        let double_digit_day = format_user_timestamp("Jun 30 at 1pm (Asia/Nicosia)", &context);
 
-        fn time_start(value: &str) -> usize {
-            value.find(", ").expect("comma") + 2
-        }
-
-        assert_eq!(time_start(&single_digit_day), time_start(&double_digit_day));
-        assert!(single_digit_day.contains("Jul  6, "));
+        assert!(single_digit_day.contains("Jul 6, "));
+        assert!(!single_digit_day.contains("Jul  6, "));
     }
 }

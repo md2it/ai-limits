@@ -168,10 +168,10 @@ Example:
 
 ```text
      --------- CODEX ---------
-5h   ■■□□□□□□□□□□□□□□□□□□□□□□□  8.0% left | reset Jun 30, 21:41 UTC-2
-7d   ■■■■■■■■■■■■■■□□□□□□□□□ 54.0% left | reset Jul  3, 21:41 UTC-2
+5h   ■■□□□□□□□□□□□□□□□□□□□□□□□  8.0% left | reset Jun 30, 21:41
+7d   ■■■■■■■■■■■■■■□□□□□□□□□ 54.0% left | reset Jul 3, 21:41
 344.2 credits available
-Source codex-cli: Jul 3, 21:41 UTC-2
+Source codex-cli: Jul 3, 21:41
 ```
 
 The bar width is `25` characters. Each filled bar character `■` represents `4%`. Remaining limit is rounded to the nearest number of filled characters. Empty bar characters use `□`. ANSI color codes in the bar do not affect column width.
@@ -180,7 +180,7 @@ Limit rows use fixed visible column widths: `{window}` is 4 characters, `{bar}` 
 
 The `{left}` percentage label is always shown with one decimal place (`8.0% left`, `54.0% left`, `62.5% left`). Structured source data may keep finer precision; presentation normalizes the displayed value and uses the same normalized value for the bar and color thresholds.
 
-User-facing timestamps use the local system timezone and are formatted as `{Mon} {day}, {HH:MM} UTC{±offset}` — for example `Jul 3, 22:15 UTC+2`. The day uses a fixed two-character field (`Jul  6, 02:59`, not `Jul 6, 02:59`) so clock times align after the comma across rows. Whole hours omit minutes in the offset (`UTC+2`, not `UTC+2:00`). If a source timestamp cannot be parsed reliably, presentation keeps the original source text.
+User-facing timestamps follow the shared rules in [time-display.md](time-display.md): local system timezone, `HH:MM` for today, `MMM D, HH:MM` for another date, and no timezone suffix. Terminal rows keep their own contextual labels, for example `reset {time}` for limit reset time and `Source {source}: {time}` for provider data time. If a source timestamp cannot be parsed reliably, presentation keeps the original source text.
 
 The filled bar characters show available remaining limit, not used limit. The whole filled part uses one color based on remaining limit. The empty bar characters are not colored.
 
@@ -204,7 +204,7 @@ If the source is available but has no supported limit data, print the provider b
      --------- CODEX ---------
 No usable limit records from this source
 Other sources may still provide limit data.
-Source codex-cli: Jul 3, 21:41 UTC-2
+Source codex-cli: Jul 3, 21:41
 ```
 
 ---
@@ -220,11 +220,11 @@ Example:
 ```text
      --------- CODEX ---------
 Tokens        input 120k | cached 80k | output 30k | total 230k
-Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2
+Activity      14 sessions | 128 turns | latest Jul 3, 21:41
 Models        top: gpt-5
 Money         $12.40 used
 
-Source codex-local: Jul 3, 21:41 UTC-2
+Source codex-local: Jul 3, 21:41
 ```
 
 Supported usage rows:

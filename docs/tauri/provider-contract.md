@@ -52,7 +52,7 @@ Timestamps are represented as strings:
 - `dataTimestamp` for the source data time.
 - `limits[].resetTime` for a limit reset time.
 
-The backend formats timestamps with `format_user_timestamp`; the frontend still runs display cleanup/local formatting where possible before rendering.
+User-facing timestamp rendering follows the shared rules in [../time-display.md](../time-display.md). The backend formats timestamps with `format_user_timestamp`; the frontend still runs display cleanup/local formatting where possible before rendering.
 
 Errors are represented in two layers:
 

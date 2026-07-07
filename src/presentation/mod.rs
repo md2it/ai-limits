@@ -154,10 +154,10 @@ mod tests {
 
         assert_eq!(block.provider_label, "CODEX");
         assert!(block.body.contains("5h   "));
-        assert!(block.body.contains("8.0% left | reset Jun 30, 21:41 UTC-2"));
-        assert!(block.body.contains("54.0% left | reset Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("8.0% left | reset Jun 30, 21:41"));
+        assert!(block.body.contains("54.0% left | reset Jul 3, 21:41"));
         assert!(block.body.contains("344.2 credits available"));
-        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41"));
     }
 
     #[test]
@@ -192,7 +192,7 @@ mod tests {
         assert!(block
             .body
             .contains("Other sources may still provide limit data."));
-        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-cli: Jul 3, 21:41"));
     }
 
     #[test]
@@ -205,12 +205,10 @@ mod tests {
         ));
         assert!(block
             .body
-            .contains("Activity      14 sessions | 128 turns | latest Jul 3, 21:41 UTC-2"));
+            .contains("Activity      14 sessions | 128 turns | latest Jul 3, 21:41"));
         assert!(block.body.contains("Models        top: gpt-5"));
         assert!(block.body.contains("Money         $12.40 used"));
-        assert!(block
-            .body
-            .contains("Source codex-local: Jul 3, 21:41 UTC-2"));
+        assert!(block.body.contains("Source codex-local: Jul 3, 21:41"));
     }
 
     #[test]
@@ -263,7 +261,7 @@ mod tests {
 
         assert!(!block.body.contains("2026-06-29T23:09:29Z"));
         assert!(block.body.contains("Source codex-cli:"));
-        assert!(block.body.contains(" | reset Jun 30, 02:20 UTC"));
+        assert!(block.body.contains(" | reset 02:20"));
     }
 
     #[test]

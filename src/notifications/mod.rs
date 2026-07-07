@@ -1,9 +1,9 @@
 use std::collections::HashSet;
 use std::io;
 
-use chrono::{DateTime, Local, TimeZone, Utc};
 use serde::{Deserialize, Serialize};
 
+use crate::presentation::{format_user_timestamp, TimeContext};
 use crate::types::{LimitInfo, SourceReport, StructuredSourceInfo};
 
 mod tauri_bridge;
@@ -89,6 +89,7 @@ impl Notification {
         kind: LimitNotificationKind,
         remaining_percent: f64,
         resets_at: Option<&str>,
+        time_context: &TimeContext,
     ) -> Self {
         let provider = provider_label(provider);
         let type_label = limit_type_label(limit_name);
@@ -103,7 +104,7 @@ impl Notification {
             ),
             title: format!("{} AI Limits", kind.emoji()),
             subtitle: format!("{provider} {type_label} - {remaining_percent}% left"),
-            message: format!("reset {}", reset_label(resets_at)),
+            message: format!("reset {}", reset_label(resets_at, time_context)),
             color: kind.color(),
         }
     }
@@ -157,6 +158,8 @@ pub fn notifications_for_structured(info: &StructuredSourceInfo) -> Vec<Notifica
         return Vec::new();
     }
 
+    let time_context = TimeContext::from_structured(info);
+
     info.limits
         .iter()
         .filter_map(|limit| {
@@ -169,6 +172,7 @@ pub fn notifications_for_structured(info: &StructuredSourceInfo) -> Vec<Notifica
                 kind,
                 remaining,
                 limit.resets_at.as_deref(),
+                &time_context,
             ))
         })
         .collect()
@@ -232,55 +236,11 @@ fn display_percent(remaining_percent: f64) -> u8 {
     remaining_percent.clamp(0.0, 100.0).round() as u8
 }
 
-fn reset_label(value: Option<&str>) -> String {
+fn reset_label(value: Option<&str>, time_context: &TimeContext) -> String {
     value
-        .and_then(parse_reset)
-        .map(format_reset)
+        .map(|value| format_user_timestamp(value, time_context))
+        .filter(|value| !value.trim().is_empty())
         .unwrap_or_else(|| "unknown".to_string())
-}
-
-fn parse_reset(value: &str) -> Option<DateTime<Local>> {
-    let trimmed = value.trim();
-    if trimmed.is_empty() {
-        return None;
-    }
-
-    if let Ok(parsed) = DateTime::parse_from_rfc3339(trimmed) {
-        return Some(parsed.with_timezone(&Local));
-    }
-
-    if trimmed.chars().all(|character| character.is_ascii_digit()) {
-        let seconds = trimmed.parse::<i64>().ok()?;
-        return Utc
-            .timestamp_opt(seconds, 0)
-            .single()
-            .map(|parsed| parsed.with_timezone(&Local));
-    }
-
-    None
-}
-
-fn format_reset(value: DateTime<Local>) -> String {
-    format!(
-        "{} {}",
-        value.format("%Y-%m-%d %H:%M"),
-        format_utc_offset(value.offset().local_minus_utc())
-    )
-}
-
-fn format_utc_offset(offset_seconds: i32) -> String {
-    let sign = if offset_seconds >= 0 { '+' } else { '-' };
-    let absolute = offset_seconds.abs();
-    let hours = absolute / 3600;
-    let minutes = (absolute % 3600) / 60;
-
-    if offset_seconds == 0 {
-        "UTC".to_string()
-    } else if minutes == 0 {
-        format!("UTC{sign}{hours}")
-    } else {
-        format!("UTC{sign}{hours}:{minutes:02}")
-    }
 }
 
 #[cfg(test)]
@@ -362,6 +322,21 @@ mod tests {
         assert_eq!(notifications[0].color, NotificationColor::Yellow);
         assert_eq!(notifications[0].title, "🟡 AI Limits");
         assert_eq!(notifications[0].subtitle, "Codex 5h - 50% left");
+    }
+
+    #[test]
+    fn formats_notification_reset_with_shared_time_display() {
+        let mut info = structured_with_limit(Some(50.0));
+        info.collected_at = Some("2026-06-30T20:00:00Z".to_string());
+        info.limits[0].resets_at = Some("2026-06-30T20:41:00Z".to_string());
+
+        let notifications = notifications_for_structured(&info);
+
+        assert!(notifications[0].message.starts_with("reset "));
+        assert_ne!(notifications[0].message, "reset unknown");
+        assert!(!notifications[0].message.contains("UTC"));
+        assert!(!notifications[0].message.contains('T'));
+        assert!(!notifications[0].message.ends_with('Z'));
     }
 
     #[test]

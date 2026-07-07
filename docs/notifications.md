@@ -128,7 +128,7 @@ Notification text template:
 ```text
 $EMOJI AI Limits
 $PROVIDER_NAME $TYPE - NN% limit remains
-reset yyyy-mm-dd hh:mm UTC(+/-N)
+reset $TIME
 ```
 
 On platforms that support notification title/subtitle/body, `$EMOJI AI Limits` is the title, the limit line is the subtitle, and the reset line is the body.
@@ -142,25 +142,26 @@ Fields:
   - `🔴` for less than 10% remaining
 - `PROVIDER_NAME`: `Codex`, `Claude`, or `Cursor`
 - `TYPE`: `5h`, `weekly`, `auto`, `plan`, or `api`
+- `TIME`: reset timestamp formatted according to [time-display.md](time-display.md). The notification body keeps the contextual `reset ` prefix; the shared time formatter only owns the date-time value.
 
 Examples:
 
 ```text
 🟡 AI Limits
 Codex weekly - 44% left
-reset 2026-07-07 22:22 UTC+3
+reset 22:22
 ```
 
 ```text
 🟢 AI Limits
 Cursor auto - 65% left
-reset 2026-07-07 22:22 UTC
+reset Jul 7, 22:22
 ```
 
 ```text
 🔴 AI Limits
 Claude 5h - 7% left
-reset 2026-07-07 22:22 UTC-6
+reset Jul 7, 22:22
 ```
 
 ---
