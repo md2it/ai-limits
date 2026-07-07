@@ -6,5 +6,6 @@ The documentation has two axes:
 
 - [methods](methods/README.md) — generic ways to retrieve information, independent of a specific source.
 - [providers](providers/) — source-specific application of those methods, including implemented, fallback, candidate, research-only, and unavailable options.
+- [structured-info](structured-info.md) — common contract for normalized output after source data is retrieved.
 
 Together these documents form a method-by-provider applicability matrix. The matrix is described through the method and provider documents rather than maintained as a separate table.

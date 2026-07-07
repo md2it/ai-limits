@@ -56,7 +56,7 @@ The product flow can be described as a business-readable technical process:
 
    The system works with a defined set of information sources. Each source can have its own request format, access method, data location, limitations, fallback paths, and reliability constraints.
 
-2. [docs/structured-info](structured-info.md)
+2. [docs/get-info/structured-info](get-info/structured-info.md)
 
    The system processes the raw information received from each source and extracts normalized, structured data from it. This structured data should represent business-relevant facts such as available limits, used volume, reset periods, account context, provider context, and access status.
 
