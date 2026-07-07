@@ -8,6 +8,7 @@ Detailed Tauri integration rules remain in [architecture](../architecture.md) an
 
 - [GitHub builds](github-builds.md)
 - [GitHub releases](github-releases.md)
+- [Versioning](versioning.md)
 - [Dev run](dev.md)
 - [Local build](local-build.md)
 - [Icons](icons.md)
@@ -23,7 +24,7 @@ Build and publish desktop artifacts for the Tauri app across supported platforms
 - Windows — unsigned installer bundles
 - Linux — unsigned `.deb` and `.AppImage`
 
-The GitHub Actions workflow publishes those files as an unstable GitHub pre-release for easier downloading. macOS DMG and Windows signing remain future work.
+The GitHub Actions workflow publishes those files through GitHub Releases for easier downloading. macOS DMG and Windows signing remain future work.
 
 ## Current Status
 

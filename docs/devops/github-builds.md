@@ -32,6 +32,9 @@ When starting the workflow, choose **macOS notarization mode**:
 
 Use `full` for pre-releases that users download from GitHub. Use `submit-only` or `sign-only` only when iterating on CI and you do not need a finished macOS artifact yet.
 
+When publishing a GitHub Release, also provide the release version. See
+[Versioning](versioning.md).
+
 ### macOS notarization notes
 
 - First notarization for a new Apple Developer team can stay `In Progress` at Apple for hours or longer while the app is held for in-depth analysis.

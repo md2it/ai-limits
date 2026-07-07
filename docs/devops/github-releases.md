@@ -26,11 +26,9 @@ Current GitHub behavior:
 - Upload GitHub Actions artifacts with 14-day retention.
 - After all platform build jobs pass, create an unstable GitHub pre-release.
 - Attach separate files for each platform to that pre-release.
-- Use an automatic tag based on the workflow run number and attempt:
+- Use the version provided when the workflow starts.
 
-```text
-desktop-unstable-<run-number>-<attempt>
-```
+See [Versioning](versioning.md).
 
 ### macOS notarization mode
 
@@ -44,16 +42,6 @@ The workflow input `macos_notarization` controls the macOS job:
 
 See [GitHub builds](github-builds.md) for secrets and timing notes.
 
-Release title:
-
-- Should stay short because GitHub release lists may wrap long titles on small screens.
-- Should not repeat the repository name or the full tag.
-- Should use this format:
-
-```text
-unstable desktop-<run-number>-<attempt>
-```
-
 Release description:
 
 - Should be generated automatically from commit messages between the previous release and the current release.
@@ -62,16 +50,6 @@ Release description:
 - Can be edited manually after release creation to remove noise or clarify wording.
 - Depends on the commit message rules in [Contributing](../../CONTRIBUTING.md).
 - Commit message checks are advisory and should warn without blocking commits or builds.
-
-Release asset naming:
-
-```text
-AI-Limits-desktop-unstable-<run-number>-<attempt>-macos-app.zip
-AI-Limits-desktop-unstable-<run-number>-<attempt>-windows-setup.exe
-AI-Limits-desktop-unstable-<run-number>-<attempt>-windows.msi
-AI-Limits-desktop-unstable-<run-number>-<attempt>-linux.deb
-AI-Limits-desktop-unstable-<run-number>-<attempt>-linux.AppImage
-```
 
 User-facing meaning:
 

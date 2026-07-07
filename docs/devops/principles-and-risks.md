@@ -22,7 +22,8 @@
 
 ## Release Principles
 
-- Use the term `unstable` for current desktop pre-releases.
+- Keep versioning rules in [Versioning](versioning.md).
+- Use GitHub's `pre-release` flag for current unstable desktop releases.
 - Keep release titles short and avoid repeating the repository name or full tag.
 - A pre-release may be useful and downloadable while still being incomplete and bug-prone.
 - Publish separate release assets per operating system so users download only what they need.
