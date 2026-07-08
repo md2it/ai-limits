@@ -132,21 +132,25 @@
           ></button>
         </div>
         <div class="modal-body">
-          <p>Fast uses quick local/provider-native sources only.</p>
-          <p>
-            Full checks quick sources first, then uses CLI fallback for Codex and Claude.
+          <dl class="modal-terms">
+            <div>
+              <dt>Fast</dt>
+              <dd>Quick sources only.</dd>
+            </div>
+            <div>
+              <dt>Full</dt>
+              <dd>Quick sources first, CLI as fallback.</dd>
+            </div>
+            <div>
+              <dt>Best</dt>
+              <dd>CLI first, quick sources as fallback.</dd>
+            </div>
+          </dl>
+          <p>Applies to <b>Codex</b> and <b>Claude</b> only. <b>Cursor</b> is not affected.</p>
+          <p class="modal-note">
+            CLI data is usually more accurate and current, but slower. Providers refresh
+            independently, so a slow one won't block the rest.
           </p>
-          <p>
-            Best checks CLI first for Codex and Claude, then falls back to quick sources.
-          </p>
-          <p>
-            CLI checks may take longer, but usually provide more accurate and current Codex and
-            Claude data.
-          </p>
-          <p>
-            This setting affects Codex and Claude. Cursor keeps its existing source behavior.
-          </p>
-          <p>Provider refreshes run asynchronously, so one slower provider should not block the others.</p>
           <div class="modal-links" aria-label="Setup guides">
             <button type="button" class="modal-link" data-open-external="claude">
               Claude&nbsp;guide&nbsp;on&nbsp;GitHub

@@ -40,7 +40,7 @@
 
   --app-min-width: 320px;
   --content-width: 1120px;
-  --modal-width: 480px;
+  --modal-width: 400px;
   --modal-max-height: 620px;
   --mobile-breakpoint: 860px;
   --settings-button-size: 36px;
@@ -878,6 +878,35 @@ select {
 
 .modal-body p {
   margin: 0;
+  text-wrap: pretty;
+}
+
+.modal-terms {
+  display: grid;
+  gap: var(--space-8);
+  margin: 0;
+}
+
+.modal-terms > div {
+  display: flex;
+  gap: var(--space-8);
+}
+
+.modal-terms dt {
+  flex: 0 0 auto;
+  min-width: 34px;
+  font-weight: var(--font-weight-bold);
+  color: var(--text);
+}
+
+.modal-terms dd {
+  margin: 0;
+  text-wrap: pretty;
+}
+
+.modal-note {
+  color: var(--text-muted);
+  font-size: 12px;
 }
 
 .modal-links {
