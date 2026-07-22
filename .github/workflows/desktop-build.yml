@@ -20,6 +20,10 @@ on:
 permissions:
   contents: write
 
+concurrency:
+  group: desktop-release
+  cancel-in-progress: false
+
 jobs:
   validate-release-version:
     name: Validate release version
@@ -31,21 +35,52 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate release version input
+      - name: Validate release input and changelog
+        env:
+          RELEASE_TAG: ${{ inputs.version }}
         shell: bash
         run: |
           set -euo pipefail
 
-          tag="${{ inputs.version }}"
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Releases must be started from the main branch." >&2
+            exit 1
+          fi
+
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             echo "Release version must match vMAJOR.MINOR.PATCH, for example v0.1.0." >&2
             exit 1
           fi
 
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release already exists: $tag" >&2
+          if gh release view "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            echo "Release already exists: $RELEASE_TAG" >&2
             exit 1
           fi
+
+          if git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+            echo "Tag already exists: $RELEASE_TAG" >&2
+            exit 1
+          fi
+
+          python3 - <<'PY'
+          from pathlib import Path
+          import os
+          import re
+
+          text = Path("CHANGELOG.md").read_text()
+          tag = os.environ["RELEASE_TAG"]
+          if re.search(rf"^## \[{re.escape(tag)}\]", text, re.MULTILINE):
+              raise SystemExit(f"CHANGELOG.md already contains a section for {tag}.")
+          matches = list(re.finditer(r"^## Unreleased\s*$", text, re.MULTILINE))
+          if len(matches) != 1:
+              raise SystemExit("CHANGELOG.md must contain exactly one '## Unreleased' section.")
+          next_section = re.search(r"^## ", text[matches[0].end():], re.MULTILINE)
+          if next_section is None:
+              raise SystemExit("CHANGELOG.md must contain a version section after '## Unreleased'.")
+          body = text[matches[0].end():matches[0].end() + next_section.start()].strip()
+          if not body:
+              raise SystemExit("The '## Unreleased' section in CHANGELOG.md is empty.")
+          PY
 
   build-macos:
     name: Build macOS signed app
@@ -258,23 +293,11 @@ jobs:
           path: release-assets/raw
 
       - name: Prepare release assets
-        env:
-          GH_TOKEN: ${{ github.token }}
         shell: bash
         run: |
           set -euo pipefail
 
           tag="${{ inputs.version }}"
-          if [[ ! "$tag" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release version must match vMAJOR.MINOR.PATCH, for example v0.1.0." >&2
-            exit 1
-          fi
-
-          if gh release view "$tag" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
-            echo "Release already exists: $tag" >&2
-            exit 1
-          fi
-
           mkdir -p release-assets/upload
 
           cp "release-assets/raw/ai-limits-macos-app/AI Limits.app.zip" \
@@ -296,32 +319,49 @@ jobs:
             echo "macos_notarization=${{ inputs.macos_notarization }}"
           } >> "$GITHUB_ENV"
 
-      - name: Prepare release notes
+      - name: Finalize changelog and create tag
         env:
-          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ inputs.version }}
         shell: bash
         run: |
           set -euo pipefail
 
-          previous_tag="$(gh release list \
-            --repo "$GITHUB_REPOSITORY" \
-            --limit 100 \
-            --json tagName \
-            --jq '[.[] | select(.tagName | test("^v[0-9]+\\\\.[0-9]+\\\\.[0-9]+$"))][0].tagName // ""')"
-
-          if [[ -n "$previous_tag" ]]; then
-            range="${previous_tag}..${GITHUB_SHA}"
-          else
-            range="${GITHUB_SHA}"
+          git fetch origin main:refs/remotes/origin/main --tags
+          remote_main="$(git rev-parse origin/main)"
+          if [[ "$remote_main" != "$GITHUB_SHA" ]]; then
+            echo "The main branch changed after this workflow started. Start a new release workflow from the current main branch." >&2
+            exit 1
           fi
 
-          notes="$(git log --format=%s "$range" \
-            | grep -E '^(feat|fix): ' \
-            | sed -E 's/^(feat|fix): /- /' || true)"
+          python3 - <<'PY'
+          from datetime import date
+          from pathlib import Path
+          import os
+          import re
 
-          if [[ -z "$notes" ]]; then
-            notes="- No user-facing feat/fix commits in this release."
-          fi
+          path = Path("CHANGELOG.md")
+          text = path.read_text()
+          tag = os.environ["RELEASE_TAG"]
+          repository = os.environ["GITHUB_REPOSITORY"]
+          if re.search(rf"^## \[{re.escape(tag)}\]", text, re.MULTILINE):
+              raise SystemExit(f"CHANGELOG.md already contains a section for {tag}.")
+          matches = list(re.finditer(r"^## Unreleased\s*$", text, re.MULTILINE))
+          if len(matches) != 1:
+              raise SystemExit("CHANGELOG.md must contain exactly one '## Unreleased' section.")
+          unreleased = matches[0]
+          next_section = re.search(r"^## ", text[unreleased.end():], re.MULTILINE)
+          if next_section is None:
+              raise SystemExit("CHANGELOG.md must contain a version section after '## Unreleased'.")
+          next_start = unreleased.end() + next_section.start()
+          changes = text[unreleased.end():next_start].strip()
+          if not changes:
+              raise SystemExit("The '## Unreleased' section in CHANGELOG.md is empty.")
+          release_heading = f"## [{tag}](https://github.com/{repository}/releases/tag/{tag}) — {date.today().isoformat()}"
+          updated = text[:unreleased.start()] + "## Unreleased\n\n" + release_heading + "\n\n" + changes + "\n\n" + text[next_start:]
+          path.write_text(updated)
+          Path("release-changes.md").write_text(changes + "\n")
+          Path("tag-notes.md").write_text(f"AI Limits {tag}\n\n{changes}\n")
+          PY
 
           case "$macos_notarization" in
             full)
@@ -336,14 +376,19 @@ jobs:
           esac
 
           {
-            echo "## Changes"
-            echo
-            echo "$notes"
+            cat release-changes.md
             echo
             echo "## Build"
             echo
             echo "Unstable desktop build. ${macos_note} Windows and Linux are unsigned."
           } > release-notes.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add CHANGELOG.md
+          git commit -m "Release $RELEASE_TAG"
+          git tag -a "$RELEASE_TAG" -F tag-notes.md
+          git push --atomic origin HEAD:refs/heads/main "refs/tags/$RELEASE_TAG"
 
       - name: Publish GitHub pre-release
         env:
@@ -354,7 +399,7 @@ jobs:
 
           gh release create "$tag" release-assets/upload/* \
             --repo "$GITHUB_REPOSITORY" \
-            --target "$GITHUB_SHA" \
+            --verify-tag \
             --title "$title" \
             --notes-file release-notes.md \
             --prerelease

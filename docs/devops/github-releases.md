@@ -42,14 +42,13 @@ The workflow input `macos_notarization` controls the macOS job:
 
 See [GitHub builds](github-builds.md) for secrets and timing notes.
 
-Release description:
+Release description and tag annotation:
 
-- Should be generated automatically from commit messages between the previous release and the current release.
-- Should include only user-relevant commit types: `feat:` and `fix:`.
-- Should exclude `docs:` and `chore:` by default.
-- Can be edited manually after release creation to remove noise or clarify wording.
-- Depends on the commit message rules in [Contributing](../../CONTRIBUTING.md).
-- Commit message checks are advisory and should warn without blocking commits or builds.
+- The source of product-change text is the `Unreleased` section of [CHANGELOG.md](../../CHANGELOG.md).
+- After all platform builds succeed, the workflow changes that section into the selected SemVer release, adds the date and release link, and creates a new empty `Unreleased` section.
+- The workflow creates an annotated Git tag and GitHub pre-release from the resulting version section.
+- The GitHub Release may add a separate technical build-status block; it must not derive product changes from commit messages.
+- If `Unreleased` is empty or `main` changed after the workflow started, publishing stops without creating a release.
 
 User-facing meaning:
 

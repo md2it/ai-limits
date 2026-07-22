@@ -32,7 +32,7 @@ When starting the workflow, choose **macOS notarization mode**:
 
 Use `full` for pre-releases that users download from GitHub. Use `submit-only` or `sign-only` only when iterating on CI and you do not need a finished macOS artifact yet.
 
-When publishing a GitHub Release, also provide the release version. See [Versioning](versioning.md).
+When publishing a GitHub Release, provide the release version. The workflow validates it, finalizes the current `Unreleased` section in `CHANGELOG.md`, and publishes the matching tag and release. See [Versioning](versioning.md).
 
 ### macOS notarization notes
 
@@ -147,7 +147,7 @@ patchelf
 - Workflow starts manually from GitHub Actions.
 - macOS, Windows, and Linux jobs pass when secrets and runners are available.
 - Artifacts are created and uploaded for all three platforms.
-- Release publishing creates an unstable GitHub pre-release after all platform jobs pass.
+- Release publishing creates an annotated SemVer tag and unstable GitHub pre-release after all platform jobs pass.
 - macOS signing is used.
 - macOS notarization is controlled by workflow input.
 - Windows and Linux signing are not used.
