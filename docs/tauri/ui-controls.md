@@ -41,7 +41,7 @@ It has a source priority three-option segmented control:
 
 Default value:
 
-- Fast
+- Full
 
 Source priority behavior:
 

@@ -105,8 +105,8 @@ pub fn cli_first_source_plan() -> Vec<SourcePlan> {
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Default, serde::Deserialize)]
 #[serde(rename_all = "lowercase")]
 pub enum SourcePriority {
-    #[default]
     Fast,
+    #[default]
     Full,
     Best,
 }
@@ -125,7 +125,7 @@ impl Default for UiSourcePlanOptions {
             enabled_codex: true,
             enabled_claude: true,
             enabled_cursor: true,
-            source_priority: SourcePriority::Fast,
+            source_priority: SourcePriority::Full,
         }
     }
 }
@@ -318,6 +318,18 @@ mod tests {
                     sources: CLI_FIRST_CURSOR_CHAIN
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn ui_source_plan_defaults_to_full_priority() {
+        assert_eq!(
+            UiSourcePlanOptions::default().source_priority,
+            SourcePriority::Full
+        );
+        assert_eq!(
+            ui_source_plan(UiSourcePlanOptions::default()),
+            cli_fallback_source_plan()
         );
     }
 

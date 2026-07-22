@@ -18,7 +18,7 @@ Input:
     "enabledCodex": true,
     "enabledClaude": true,
     "enabledCursor": true,
-    "sourcePriority": "fast",
+    "sourcePriority": "full",
     "notificationsEnabled": true
   }
 }
@@ -65,7 +65,7 @@ Input:
     "enabledCodex": true,
     "enabledClaude": true,
     "enabledCursor": true,
-    "sourcePriority": "fast",
+    "sourcePriority": "full",
     "notificationsEnabled": true
   }
 }
