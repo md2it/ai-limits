@@ -18,6 +18,12 @@ The desktop app is currently in beta.
 
 Download: https://github.com/md2it/ai-limits/releases
 
+Run the desktop app locally in development mode:
+
+```sh
+npm run tauri:dev
+```
+
 ### Terminal UI
 
 The terminal interface remains available.
