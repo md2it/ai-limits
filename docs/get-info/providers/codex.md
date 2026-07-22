@@ -7,6 +7,8 @@ PoC uses two Codex sources:
 - `codex_cli_usage`: launches `codex`, sends `/status`, parses TUI limit lines.
 - `codex_local_usage`: scans local JSONL history in `${CODEX_HOME:-~/.codex}`, aggregates token usage, and reads local rate-limit snapshots.
 
+Codex CLI also exposes manually redeemable limit resets through `/usage`. `/usage` is Codex terminology; in ai-limits these records are part of limits, not token usage. They are separate from the automatic `resets_at` time shown for a rate-limit window.
+
 ---
 
 ## Provider Method: `codex_cli_usage`
@@ -29,6 +31,13 @@ Verified PoC details:
 - a second `/status` call returns the actual breakdown
 - the parser waits for response indicators: startup screen, `refresh requested`, limit lines, or `Credits`
 - user-facing output shows only the found summary: `5h limit`, `Weekly limit`, and `Credits`
+
+### Manual Limit Resets
+
+Verified CLI behavior:
+
+- `/usage` reports the number of available manual resets, for example `You have 1 usage limit reset available`;
+The collector reads `/usage` after `/status` in the same PTY session, then interrupts the CLI. It never confirms or redeems a reset. The source is the rendered `/usage` TUI stream; no local JSON object or array for these records has been verified. The implementation extracts only `available_limit_resets`; it never enters the redemption path. The normalized field is defined in [structured-info.md](../structured-info.md).
 
 ---
 
@@ -61,6 +70,7 @@ Behavior:
 - if no token events are found, returns `token events: not found`
 - local Codex JSONL can provide current local snapshot for limit percent and reset time (5h/weekly windows when present)
 - local Codex JSONL usually does not provide absolute quota size (`used_tokens`/`max_tokens`), only percent and reset window
+- local Codex JSONL and the local Codex state database did not expose manual reset count, type, or expiry during verification; they must not be used as a source for `available_limit_resets`
 
 ---
 

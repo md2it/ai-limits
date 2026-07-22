@@ -90,6 +90,7 @@ pub struct StructuredSourceInfo {
     pub data_as_of: Option<String>,
     pub account: AccountInfo,
     pub limits: Vec<LimitInfo>,
+    pub available_limit_resets: Option<u64>,
     pub usage: UsageInfo,
     pub diagnostics: Vec<String>,
 }
@@ -166,4 +167,34 @@ pub struct ActivityUsage {
 #[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
 pub struct ModelUsage {
     pub top_model: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn serializes_available_limit_resets_in_structured_source_info() {
+        let info = StructuredSourceInfo {
+            provider: "codex".to_string(),
+            source: "codex_cli".to_string(),
+            source_link: String::new(),
+            status: SourceStatus {
+                data_available: true,
+                access_available: true,
+                message: None,
+            },
+            raw_data_available: true,
+            collected_at: None,
+            data_as_of: None,
+            account: AccountInfo::default(),
+            limits: Vec::new(),
+            available_limit_resets: Some(2),
+            usage: UsageInfo::default(),
+            diagnostics: Vec::new(),
+        };
+
+        let value = serde_json::to_value(info).expect("structured data serializes");
+        assert_eq!(value["available_limit_resets"], 2);
+    }
 }

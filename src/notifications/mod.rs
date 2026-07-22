@@ -268,6 +268,7 @@ mod tests {
                 remaining_percent,
                 ..Default::default()
             }],
+            available_limit_resets: None,
             usage: UsageInfo::default(),
             diagnostics: Vec::new(),
         }

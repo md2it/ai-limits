@@ -45,6 +45,7 @@ pub struct ProviderLimits {
     selected_update_frequency: String,
     limits: Vec<ProviderLimitRow>,
     credits_remaining: Option<f64>,
+    available_limit_resets: Option<u64>,
     error_message: Option<String>,
     no_fresh_data: bool,
 }
@@ -192,7 +193,8 @@ fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> Pro
         })
         .collect();
 
-    let no_fresh_data = info.status.access_available && limits.is_empty();
+    let no_fresh_data =
+        info.status.access_available && limits.is_empty() && info.available_limit_resets.is_none();
 
     let error_message = if info.status.access_available && info.status.data_available {
         None
@@ -216,6 +218,7 @@ fn provider_limits_from_structured(id: &str, info: &StructuredSourceInfo) -> Pro
         selected_update_frequency: "5 min".to_string(),
         limits,
         credits_remaining: info.account.credits_remaining,
+        available_limit_resets: info.available_limit_resets,
         error_message,
         no_fresh_data,
     }
@@ -230,8 +233,62 @@ fn provider_error(id: &str, message: String) -> ProviderLimits {
         selected_update_frequency: "5 min".to_string(),
         limits: Vec::new(),
         credits_remaining: None,
+        available_limit_resets: None,
         error_message: Some(message),
         no_fresh_data: false,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use ai_limits::types::{
+        AccountInfo, SourceStatus, UsageInfo,
+    };
+
+    fn structured_with_resets(available_limit_resets: Option<u64>) -> StructuredSourceInfo {
+        StructuredSourceInfo {
+            provider: "codex".to_string(),
+            source: "codex_cli".to_string(),
+            source_link: String::new(),
+            status: SourceStatus {
+                data_available: true,
+                access_available: true,
+                message: None,
+            },
+            raw_data_available: true,
+            collected_at: Some("2026-07-01T12:00:00Z".to_string()),
+            data_as_of: None,
+            account: AccountInfo::default(),
+            limits: Vec::new(),
+            available_limit_resets,
+            usage: UsageInfo::default(),
+            diagnostics: Vec::new(),
+        }
+    }
+
+    #[test]
+    fn projects_null_available_limit_resets_and_marks_no_fresh_data() {
+        let response = provider_limits_from_structured("codex", &structured_with_resets(None));
+
+        assert!(response.available_limit_resets.is_none());
+        assert!(response.no_fresh_data);
+    }
+
+    #[test]
+    fn projects_zero_available_limit_resets_as_known_limit_data() {
+        let response = provider_limits_from_structured("codex", &structured_with_resets(Some(0)));
+
+        assert_eq!(response.available_limit_resets, Some(0));
+        assert!(!response.no_fresh_data);
+    }
+
+    #[test]
+    fn projects_known_positive_available_limit_resets() {
+        let response = provider_limits_from_structured("codex", &structured_with_resets(Some(1)));
+
+        assert_eq!(response.available_limit_resets, Some(1));
+        assert!(!response.no_fresh_data);
     }
 }
 

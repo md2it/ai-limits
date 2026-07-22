@@ -241,6 +241,7 @@ mod tests {
                     data_as_of: None,
                     account: Default::default(),
                     limits: vec![Default::default(); limits],
+                    available_limit_resets: None,
                     usage: Default::default(),
                     diagnostics: Vec::new(),
                 },

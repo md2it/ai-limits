@@ -178,6 +178,7 @@ fn build_structured(
         data_as_of,
         account,
         limits,
+        available_limit_resets: None,
         usage,
         diagnostics,
     }

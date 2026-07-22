@@ -85,9 +85,16 @@ usage:
     latest_activity_at: string | null
   models:
     top_model: string | null
+available_limit_resets: number | null
 diagnostics:
   - string
 ```
+
+`available_limit_resets` is the count of manually redeemable resets of provider limits. It is separate from `limits[].resets_at`, which is the automatic reset time of a rate-limit window, and from `usage`, which records consumed tokens, money, and activity.
+
+For Codex CLI, the intended source is the interactive `/usage` view. `usage` is Codex's command and UI terminology; `available_limit_resets` is the ai-limits product field. The raw source is the rendered CLI TUI stream, not a documented local JSON object or array. Sources that do not expose a manual reset count must return `available_limit_resets: null`.
+
+The Rust structured model serializes `available_limit_resets`. Codex CLI populates it from the read-only `/usage` view.
 
 ## Limit rules
 

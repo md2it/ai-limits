@@ -7,6 +7,7 @@ Each provider square contains:
 - provider name
 - limit rows
 - credits line, when available
+- manual limit-reset availability, when available
 - source line with data origin label and timestamp on one line by default
 - update frequency dropdown near the bottom
 - provider-specific manual update button at the bottom
@@ -43,7 +44,7 @@ reset 20:48
 7d | 35.0% left
 ■■■■■■■■■□□□□□□□□□□□□□□□□
 reset Jul 10, 03:55
-344.2 credits available
+Credits: 344.2
 Local files, as of Jul 5, 19:28
 
      --------- CLAUDE --------
@@ -88,10 +89,22 @@ The bar must not use a left-to-right rainbow gradient inside the filled segment.
 When the provider has remaining credits, show one text line directly below the limit rows:
 
 ```text
-344.2 credits available
+Credits: 344.2
 ```
 
 The line is hidden when credits are unavailable.
+
+---
+
+## Manual Limit Resets
+
+When `availableLimitResets` is greater than zero, show an informational section after credits and before the source line:
+
+```text
+Resets: 1
+```
+
+This section shows availability only; it must not contain a control that redeems a reset.
 
 ---
 

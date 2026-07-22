@@ -507,6 +507,7 @@ body {
 .provider-block .limit-row,
 .provider-block .limit-reset,
 .provider-block .credits-info,
+.provider-block .limit-resets-info,
 .provider-block .source-info,
 .provider-block .no-fresh-data,
 .provider-block .provider-status {
@@ -656,7 +657,18 @@ body {
 }
 
 .credits-info[hidden] {
-  display: none;
+    display: none;
+}
+
+.limit-resets-info {
+  margin: var(--space-12) var(--space-0) var(--space-0);
+  color: var(--provider-text-muted);
+  font-size: var(--font-size-xs);
+  line-height: var(--line-height-compact);
+}
+
+.limit-resets-title {
+  color: var(--provider-text);
 }
 
 .source-info {

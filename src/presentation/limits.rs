@@ -32,6 +32,7 @@ fn format_limits_body(info: &StructuredSourceInfo, color: &ColorConfig) -> Strin
             "No usable limit records from this source\n\
 Other sources may still provide limit data.\n",
         );
+        body.push_str(&format_limit_resets(info));
         body.push_str(&format_data_as_of(info));
         return body;
     }
@@ -40,11 +41,21 @@ Other sources may still provide limit data.\n",
     body.push('\n');
 
     if let Some(credits) = info.account.credits_remaining {
-        body.push_str(&format!("{} credits available\n", format_decimal(credits)));
+        body.push_str(&format!("{:<9}{}\n", "Credits:", format_decimal(credits)));
     }
 
+    body.push_str(&format_limit_resets(info));
     body.push_str(&format_data_as_of(info));
     body
+}
+
+fn format_limit_resets(info: &StructuredSourceInfo) -> String {
+    let Some(count) = info.available_limit_resets.filter(|count| *count > 0)
+    else {
+        return String::new();
+    };
+
+    format!("{:<9}{count}\n", "Resets:")
 }
 
 fn format_limit_row(

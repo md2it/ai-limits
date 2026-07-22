@@ -79,6 +79,7 @@ mod tests {
                     ..Default::default()
                 },
             ],
+            available_limit_resets: None,
             usage: UsageInfo::default(),
             diagnostics: Vec::new(),
         }
@@ -99,6 +100,7 @@ mod tests {
             data_as_of: Some("Jul 3, 21:41 UTC-2".to_string()),
             account: AccountInfo::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: UsageInfo {
                 tokens: TokenUsage {
                     input: Some(120_000),
@@ -156,8 +158,44 @@ mod tests {
         assert!(block.body.contains("5h   "));
         assert!(block.body.contains("8.0% left | reset Jun 30, 21:41"));
         assert!(block.body.contains("54.0% left | reset Jul 3, 21:41"));
-        assert!(block.body.contains("344.2 credits available"));
+        assert!(block.body.contains("Credits: 344.2"));
         assert!(block.body.contains("Source codex-cli: Jul 3, 21:41"));
+    }
+
+    #[test]
+    fn limits_block_renders_available_reset_count_without_details() {
+        let mut info = sample_limits_info();
+        info.available_limit_resets = Some(2);
+
+        let block = limits_block(&info, &ColorConfig { enabled: false });
+
+        assert!(block.body.contains("Resets:  2"));
+    }
+
+    #[test]
+    fn limits_block_hides_null_and_zero_reset_counts() {
+        for available_limit_resets in [None, Some(0)] {
+            let mut info = sample_limits_info();
+            info.available_limit_resets = available_limit_resets;
+
+            let block = limits_block(&info, &ColorConfig { enabled: false });
+
+            assert!(!block.body.contains("Resets:"));
+        }
+    }
+
+    #[test]
+    fn limits_block_places_resets_after_credits_and_before_source() {
+        let mut info = sample_limits_info();
+        info.available_limit_resets = Some(1);
+
+        let block = limits_block(&info, &ColorConfig { enabled: false });
+        let credits = block.body.find("Credits: 344.2").expect("credits row");
+        let resets = block.body.find("Resets:  1").expect("reset row");
+        let source = block.body.find("Source codex-cli:").expect("source row");
+
+        assert!(credits < resets);
+        assert!(resets < source);
     }
 
     #[test]

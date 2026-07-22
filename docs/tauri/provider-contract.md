@@ -35,8 +35,9 @@ Source chain order is defined in [../get-info/source-chains.md](../get-info/sour
 | `dataTimestamp` | string or null | formatted `data_as_of`, `"unknown"` when source timestamp is absent, or null on provider error | `as of {timestamp}`; null displays `unknown` |
 | `selectedUpdateFrequency` | string | currently always `"5 min"` | used only as fallback when frontend has no saved interval |
 | `limits` | array | displayable limit rows | rendered as rows and meters |
+| `availableLimitResets` | number or null | manual reset count from structured data | renders informational reset availability |
 | `errorMessage` | string or null | unavailable/no-data message or provider error | controls failed status and message rendering |
-| `noFreshData` | boolean | true when access is available but no displayable limit rows exist | selects the no-fresh-data empty state |
+| `noFreshData` | boolean | true when access is available but neither displayable limit rows nor a known manual-reset count exist | selects the no-fresh-data empty state |
 
 `ProviderLimitRow` fields:
 
@@ -46,12 +47,14 @@ Source chain order is defined in [../get-info/source-chains.md](../get-info/sour
 | `remainingPercentage` | number | normalized remaining percentage | percentage text, meter width, meter color |
 | `resetTime` | string or null | formatted reset timestamp | optional `reset {time}` text |
 
+`availableLimitResets` is the camelCase projection of `available_limit_resets`. It is returned by both `get_provider_limits` and `get_single_provider_limits` when the count is known. When it is unknown, the value is `null`.
+
 ## Status, Source, Time, And Errors
 
 Provider availability is represented through the combination of `limits`, `errorMessage`, and `noFreshData`:
 
-- available with limits: `limits` is non-empty, `errorMessage` is null, `noFreshData` is false.
-- no fresh usable data: `limits` is empty, `errorMessage` may contain a backend message, `noFreshData` is true.
+- available with limit data: `limits` is non-empty or `availableLimitResets` is non-null, `errorMessage` is null, `noFreshData` is false.
+- no fresh usable data: `limits` is empty, `availableLimitResets` is null, `errorMessage` may contain a backend message, `noFreshData` is true.
 - provider/core error: `limits` is empty, `errorMessage` contains the error, `noFreshData` is false.
 
 The source line shows where provider data came from and when it was collected. `sourceId` supplies the origin label; `dataTimestamp` supplies the timestamp text.

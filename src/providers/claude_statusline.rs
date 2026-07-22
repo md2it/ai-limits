@@ -149,6 +149,7 @@ fn build_structured_from_payload(payload: &str, origin: PayloadOrigin) -> Struct
             data_as_of,
             account,
             limits,
+            available_limit_resets: None,
             usage,
             diagnostics,
         }
@@ -299,6 +300,7 @@ fn unavailable_source_data(message: &str) -> SourceData {
             data_as_of: None,
             account: AccountInfo::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: Default::default(),
             diagnostics: Vec::new(),
         },
@@ -326,6 +328,7 @@ fn configured_without_rate_limits_source_data(
             data_as_of: modified_at.and_then(system_time_to_rfc3339),
             account: AccountInfo::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: Default::default(),
             diagnostics: vec![format!(
                 "statusline cache is present: ~/.config/ai-limits/{CACHE_FILE_NAME}"

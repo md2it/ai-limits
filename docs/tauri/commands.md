@@ -43,6 +43,7 @@ Response on success:
         "resetTime": "20:48"
       }
     ],
+    "availableLimitResets": 1,
     "errorMessage": null,
     "noFreshData": false
   }
@@ -91,6 +92,7 @@ Response on success:
       "resetTime": "20:48"
     }
   ],
+  "availableLimitResets": 1,
   "errorMessage": null,
   "noFreshData": false
 }

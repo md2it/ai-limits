@@ -43,6 +43,7 @@ pub fn collect_usage() -> io::Result<SourceData> {
 pub fn build_structured(raw: &str) -> StructuredSourceInfo {
     let mut limits = Vec::new();
     let mut account = AccountInfo::default();
+    let mut available_limit_resets = None;
     let mut diagnostics = Vec::new();
     let mut found_data = false;
 
@@ -71,6 +72,9 @@ pub fn build_structured(raw: &str) -> StructuredSourceInfo {
                 }
                 None => diagnostics.push("could not parse credits line".to_string()),
             }
+        } else if let Some(count) = parse_available_reset_count(&normalized) {
+            available_limit_resets = Some(count);
+            found_data = true;
         }
     }
 
@@ -117,6 +121,7 @@ pub fn build_structured(raw: &str) -> StructuredSourceInfo {
         data_as_of,
         account,
         limits,
+        available_limit_resets,
         usage: UsageInfo::default(),
         diagnostics,
     }
@@ -141,6 +146,7 @@ fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
             data_as_of: None,
             account: AccountInfo::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: UsageInfo::default(),
             diagnostics: Vec::new(),
         },
@@ -214,6 +220,17 @@ fn parse_credits_line(line: &str) -> Option<f64> {
     after_prefix.split_whitespace().next()?.parse().ok()
 }
 
+fn parse_available_reset_count(line: &str) -> Option<u64> {
+    let normalized = line.to_ascii_lowercase();
+    if !normalized.contains("usage limit reset") || !normalized.contains("available") {
+        return None;
+    }
+
+    normalized
+        .split_whitespace()
+        .find_map(|word| word.parse::<u64>().ok())
+}
+
 fn upsert_limit(limits: &mut Vec<LimitInfo>, limit: LimitInfo) {
     if let Some(index) = limits
         .iter()
@@ -266,6 +283,13 @@ if {{$have_usage == 0}} {{
         -re {{Credits:}} {{}}
         timeout {{}}
     }}
+}}
+after 1000
+set timeout 3
+send "\033\[200~/usage\033\[201~\r"
+expect {{
+    -re {{usage limit reset}} {{}}
+    timeout {{}}
 }}
 after 1000
 send "\003"
@@ -326,6 +350,7 @@ Credits: 335 credits
         assert_eq!(info.data_as_of.as_deref(), info.collected_at.as_deref());
         assert_eq!(info.limits.len(), 2);
         assert_eq!(info.account.credits_remaining, Some(335.0));
+        assert_eq!(info.available_limit_resets, None);
 
         let five_hour = &info.limits[0];
         assert_eq!(five_hour.name, "5h limit");
@@ -443,5 +468,37 @@ Credits: 301 credits
             .diagnostics
             .iter()
             .any(|entry| entry.contains("5h limit")));
+    }
+
+    #[test]
+    fn build_structured_parses_available_manual_resets_from_usage_view() {
+        let info = build_structured(
+            "5h limit: 35% left (resets 03:48)\nYou have 2 usage limit resets available\n",
+        );
+
+        assert_eq!(info.available_limit_resets, Some(2));
+    }
+
+    #[test]
+    fn build_structured_parses_zero_available_manual_resets() {
+        let info = build_structured("You have 0 usage limit resets available\n");
+
+        assert_eq!(info.available_limit_resets, Some(0));
+    }
+
+    #[test]
+    fn build_structured_ignores_unparseable_manual_reset_count() {
+        let info = build_structured("You have several usage limit resets available\n");
+
+        assert_eq!(info.available_limit_resets, None);
+    }
+
+    #[test]
+    fn usage_script_never_sends_redemption_input() {
+        let script = expect_script();
+
+        assert!(script.contains("/usage"));
+        assert!(!script.contains("redeem"));
+        assert!(!script.contains("confirm"));
     }
 }

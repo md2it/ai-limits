@@ -106,6 +106,7 @@ pub fn structured_from_output(stdout: &str) -> StructuredSourceInfo {
         data_as_of,
         account: Default::default(),
         limits,
+        available_limit_resets: None,
         usage,
         diagnostics,
     }
@@ -130,6 +131,7 @@ fn unavailable_source_data(raw: Option<String>, message: &str) -> SourceData {
             data_as_of: None,
             account: Default::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: UsageInfo::default(),
             diagnostics: Vec::new(),
         },

@@ -414,6 +414,7 @@ fn structured_base(
         data_as_of,
         account: AccountInfo::default(),
         limits: Vec::new(),
+        available_limit_resets: None,
         usage: UsageInfo::default(),
         diagnostics: Vec::new(),
     }
@@ -496,6 +497,7 @@ fn structured_from_usage(usage: &ClaudeLocalUsage) -> StructuredSourceInfo {
             .map(limit_info_from_active_session)
             .into_iter()
             .collect(),
+        available_limit_resets: None,
         usage: UsageInfo {
             tokens: TokenUsage {
                 input: Some(usage.input_tokens),

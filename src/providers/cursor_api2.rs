@@ -138,6 +138,7 @@ pub fn build_source_data(response: &str) -> SourceData {
                 data_as_of: None,
                 account: Default::default(),
                 limits: Vec::new(),
+                available_limit_resets: None,
                 usage: UsageInfo::default(),
                 diagnostics: Vec::new(),
             },
@@ -216,6 +217,7 @@ pub fn build_source_data(response: &str) -> SourceData {
             data_as_of: Some(collected_at),
             account: Default::default(),
             limits,
+            available_limit_resets: None,
             usage: UsageInfo {
                 money: MoneyUsage {
                     used_amount: cents_to_usd(money_used),
@@ -304,6 +306,7 @@ fn access_denied(message: String, raw: Option<String>) -> SourceData {
             data_as_of: None,
             account: Default::default(),
             limits: Vec::new(),
+            available_limit_resets: None,
             usage: UsageInfo::default(),
             diagnostics: Vec::new(),
         },

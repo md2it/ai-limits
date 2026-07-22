@@ -142,6 +142,7 @@ Each provider block contains:
 
 - zero or more limit rows;
 - credits or balance, when available;
+- manual limit-reset rows, when available;
 - `Source {source}`, using structured `source` and `data_as_of`.
 
 Limit row format:
@@ -158,7 +159,7 @@ Example:
      --------- CODEX ---------
 5h   ■■□□□□□□□□□□□□□□□□□□□□□□□  8.0% left | reset Jun 30, 21:41
 7d   ■■■■■■■■■■■■■■□□□□□□□□□ 54.0% left | reset Jul 3, 21:41
-344.2 credits available
+Credits: 344.2
 Source codex-cli: Jul 3, 21:41
 ```
 
@@ -194,6 +195,16 @@ No usable limit records from this source
 Other sources may still provide limit data.
 Source codex-cli: Jul 3, 21:41
 ```
+
+### Manual Limit Resets
+
+When `available_limit_resets` is available, print it after the credits line and before `Source`:
+
+```text
+Resets:  1
+```
+
+Do not show this section when `available_limit_resets` is `null` or zero. This row is informational only: the terminal interface must not offer reset redemption.
 
 ---
 

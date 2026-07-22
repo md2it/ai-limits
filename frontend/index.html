@@ -561,6 +561,7 @@
           id: providerId,
           label: providerLabel(providerId),
           limits: [],
+          availableLimitResets: null,
           sourceId: null,
           dataTimestamp: null,
           selectedUpdateFrequency: getProviderInterval(providerId),
@@ -817,12 +818,28 @@
           return "";
         }
 
-        return `${formatDecimal(provider.creditsRemaining)} credits available`;
+        return `Credits: ${formatDecimal(provider.creditsRemaining)}`;
+      }
+
+      function buildLimitResetsHtml(provider) {
+        if (Number(provider.availableLimitResets) <= 0) {
+          return "";
+        }
+
+        return `
+          <section class="limit-resets-info" aria-label="Resets">
+            <div class="limit-resets-title">Resets: ${escapeHtml(provider.availableLimitResets)}</div>
+          </section>
+        `;
       }
 
       function buildLimitRowsHtml(provider) {
         if (!provider.limits.length) {
           if (provider.pending) {
+            return "";
+          }
+
+          if (provider.availableLimitResets != null) {
             return "";
           }
 
@@ -894,6 +911,7 @@
             <p class="credits-info" ${provider.creditsRemaining == null ? "hidden" : ""}>
               ${escapeHtml(formatCreditsLine(provider))}
             </p>
+            <div class="limit-resets-slot">${buildLimitResetsHtml(provider)}</div>
             <p class="source-info">
               <span class="source-id">${escapeHtml(formatSourceIdLine(provider))}</span>
               <span class="source-timestamp">${escapeHtml(formatSourceTimestampLine(provider))}</span>
@@ -982,6 +1000,7 @@
           creditsInfo.textContent = "";
         }
 
+        block.querySelector(".limit-resets-slot").innerHTML = buildLimitResetsHtml(provider);
         block.querySelector(".source-id").textContent = formatSourceIdLine(provider);
         block.querySelector(".source-timestamp").textContent = formatSourceTimestampLine(provider);
         attachSourcePriorityBlockHandlers(block);
