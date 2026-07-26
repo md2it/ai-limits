@@ -11,7 +11,7 @@ The CLI is stateless:
 - built-in defaults apply when no explicit source flags are provided
 - command-line arguments affect only the current single query
 
-A shared desktop/CLI settings contract is not part of the current architecture.
+A shared desktop/CLI settings contract is not part of the architecture.
 
 ---
 

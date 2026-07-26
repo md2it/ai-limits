@@ -5,6 +5,7 @@ Keep changes focused and update the relevant documentation when behaviour or set
 ## Entry points
 
 - Start documentation navigation with [Documentation](docs/documentation.md); use [Architecture](docs/architecture.md) for code boundaries.
+- Use [Runtime Architecture](docs/runtime-architecture.md) to understand runtime components, shared state, and information flows.
 - Start code navigation with `src/lib.rs` for the shared core, `src/main.rs` for the CLI, and `src-tauri/src/main.rs` for the desktop app.
 - [Testing](docs/testing/testing.md) as the entry point for applicable test guidance.
 

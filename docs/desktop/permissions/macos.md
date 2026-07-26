@@ -9,6 +9,7 @@ Allowed:
 - Local write: application-managed WebView storage for desktop settings.
 - External browser open: documented setup links only.
 - CLI execution: `claude` and `codex` only when Full or Best source priority is selected.
+- Background service registration: the bundled user LaunchAgent through `SMAppService`, subject to user approval.
 
 Not allowed without a new documented reason:
 
@@ -17,6 +18,14 @@ Not allowed without a new documented reason:
 - Browser cookies or web session tokens.
 - Cursor refresh token.
 - Arbitrary shell commands or arbitrary external URLs.
+
+## User Guidance
+
+`Help → Permissions` is the application entry point for permission diagnostics and recovery.
+
+It reports the Background Agent registration or approval state and provides links to the relevant macOS System Settings pages. These macOS-specific controls are not shown on Windows or Linux.
+
+The application may register a service that is not registered, but it must not silently override a background item that the user disabled or that macOS denied.
 
 Check release artifacts with:
 

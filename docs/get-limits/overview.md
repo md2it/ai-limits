@@ -6,6 +6,7 @@ Purpose:
 
 - select enabled provider methods
 - call provider methods in the right order
+- apply the shared usable-limit decision from [data-validation.md](data-validation.md)
 - apply provider fallback-chain logic for default and best-source runs
 - apply desktop source priority logic for Fast, Full, and Best modes
 - assemble a shared result for the desktop and CLI

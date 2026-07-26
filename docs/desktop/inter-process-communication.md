@@ -30,8 +30,6 @@ Related:
 - external URL opening is allowlisted in code
 - opening the CLI in a terminal is supported on macOS only; other platforms must fail as unsupported
 
----
-
 ## Rules
 
 ### Provider limits
