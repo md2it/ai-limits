@@ -31,7 +31,7 @@ src/
   infra/
   notifications/
   providers/
-  snapshots/        # planned
+  snapshots/
   bin/
     ai-limits-agent.rs  # planned
   get_limits.rs
@@ -47,7 +47,7 @@ Purpose:
 - `infra/` — technical primitives for processes, HTTP, and timeouts
 - `notifications/` — shared notification service with platform adapters
 - `providers/` — ways to fetch usage/limits from providers
-- `snapshots/` — planned shared snapshot contract and storage service
+- `snapshots/` — shared snapshot contract and storage service
 - `bin/ai-limits-agent.rs` — planned headless background entry point
 - `get_limits.rs` — limits-fetching scenario and provider method integration
 - `lib.rs` — shared core available to different interfaces

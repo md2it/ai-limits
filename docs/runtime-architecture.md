@@ -38,7 +38,7 @@ flowchart LR
     Store -->|"read"| Widgets
 
     classDef planned stroke-dasharray: 6 4
-    class Agent,Store,Widgets planned
+    class Agent,Widgets planned
 ```
 
 ---

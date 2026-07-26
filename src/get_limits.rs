@@ -1,7 +1,7 @@
 use std::io;
 
 use crate::providers::{claude_cli, claude_local, codex_cli, codex_local, cursor_api2};
-use crate::types::{Source, SourceData, SourceReport};
+use crate::types::{Source, SourceData, SourceReport, StructuredSourceInfo};
 use chrono::{DateTime, Duration, Utc};
 
 const LOCAL_RESET_EXPIRY_GRACE_MINUTES: i64 = 2;
@@ -167,7 +167,7 @@ fn get_fallback_chain_limits(sources: &[Source]) -> io::Result<SourceReport> {
 
     for source in sources {
         match get_source_limits(*source) {
-            Ok(report) if has_usable_limit_data(&report) => return Ok(report),
+            Ok(report) if report_has_usable_limit_data(&report) => return Ok(report),
             Ok(report) => {
                 if is_stale_local_report(&report) {
                     stale_local_report = Some(report);
@@ -202,10 +202,12 @@ fn is_stale_local_report(report: &SourceReport) -> bool {
         && report.data.structured.status.message.as_deref() == Some(STALE_LOCAL_DATA_MESSAGE)
 }
 
-fn has_usable_limit_data(report: &SourceReport) -> bool {
-    report.data.structured.status.access_available
-        && report.data.structured.status.data_available
-        && !report.data.structured.limits.is_empty()
+pub fn has_usable_limit_data(info: &StructuredSourceInfo) -> bool {
+    info.status.access_available && info.status.data_available && !info.limits.is_empty()
+}
+
+fn report_has_usable_limit_data(report: &SourceReport) -> bool {
+    has_usable_limit_data(&report.data.structured)
 }
 
 pub fn get_source_limits(source: Source) -> io::Result<SourceReport> {
@@ -300,25 +302,25 @@ mod tests {
 
     #[test]
     fn usable_limit_data_requires_access_data_and_limit_records() {
-        assert!(has_usable_limit_data(&report_for(
+        assert!(report_has_usable_limit_data(&report_for(
             Source::CodexLocal,
             true,
             true,
             vec![Default::default()]
         )));
-        assert!(!has_usable_limit_data(&report_for(
+        assert!(!report_has_usable_limit_data(&report_for(
             Source::CodexLocal,
             false,
             true,
             vec![Default::default()]
         )));
-        assert!(!has_usable_limit_data(&report_for(
+        assert!(!report_has_usable_limit_data(&report_for(
             Source::CodexLocal,
             true,
             false,
             vec![Default::default()]
         )));
-        assert!(!has_usable_limit_data(&report_for(
+        assert!(!report_has_usable_limit_data(&report_for(
             Source::CodexLocal,
             true,
             true,
@@ -355,7 +357,7 @@ mod tests {
             Some(STALE_LOCAL_DATA_MESSAGE)
         );
         assert!(result.data.structured.limits.is_empty());
-        assert!(!has_usable_limit_data(&result));
+        assert!(!report_has_usable_limit_data(&result));
     }
 
     #[test]
@@ -400,7 +402,7 @@ mod tests {
             "2026-07-26T09:01:59Z".parse().expect("valid timestamp"),
         );
 
-        assert!(has_usable_limit_data(&result));
+        assert!(report_has_usable_limit_data(&result));
     }
 
     #[test]
@@ -420,7 +422,7 @@ mod tests {
             "2026-07-26T10:00:00Z".parse().expect("valid timestamp"),
         );
 
-        assert!(has_usable_limit_data(&result));
+        assert!(report_has_usable_limit_data(&result));
     }
 
     #[test]

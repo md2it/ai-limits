@@ -4,6 +4,7 @@ This file records user-visible changes. Its version sections are used automatica
 
 ## Unreleased
 
+- Added a shared Snapshot Store that atomically preserves the latest usable structured limit data for each provider.
 - Rejects outdated local Codex and Claude limit snapshots after their expected reset time and uses the configured fallback source when available.
 - Added the exact local CLI command to Help → CLI mode, with Copy and Run in Terminal actions.
 - Disabled automatic desktop app rebuilds after code changes; development builds now run only on explicit command.

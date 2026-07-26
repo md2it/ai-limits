@@ -69,7 +69,7 @@ pub struct SourceData {
     pub stderr: String,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct StructuredSourceInfo {
     pub provider: String,
     pub source: String,
@@ -85,14 +85,14 @@ pub struct StructuredSourceInfo {
     pub diagnostics: Vec<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, serde::Deserialize, serde::Serialize)]
 pub struct SourceStatus {
     pub data_available: bool,
     pub access_available: bool,
     pub message: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct AccountInfo {
     pub plan: Option<String>,
     pub credits_total: Option<f64>,
@@ -102,7 +102,7 @@ pub struct AccountInfo {
 
 pub type StructuredAccount = AccountInfo;
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct LimitInfo {
     pub name: String,
     pub window_label: Option<String>,
@@ -118,7 +118,7 @@ pub struct LimitInfo {
 
 pub type StructuredLimit = LimitInfo;
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct UsageInfo {
     pub tokens: TokenUsage,
     pub money: MoneyUsage,
@@ -126,7 +126,7 @@ pub struct UsageInfo {
     pub models: ModelUsage,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct TokenUsage {
     pub input: Option<u64>,
     pub cached_input: Option<u64>,
@@ -137,7 +137,7 @@ pub struct TokenUsage {
     pub total: Option<u64>,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct MoneyUsage {
     pub used_amount: Option<f64>,
     pub remaining_amount: Option<f64>,
@@ -145,7 +145,7 @@ pub struct MoneyUsage {
     pub currency: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct ActivityUsage {
     pub events_count: Option<u64>,
     pub files_count: Option<u64>,
@@ -154,7 +154,7 @@ pub struct ActivityUsage {
     pub latest_activity_at: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Default, serde::Serialize)]
+#[derive(Clone, Debug, PartialEq, Default, serde::Deserialize, serde::Serialize)]
 pub struct ModelUsage {
     pub top_model: Option<String>,
 }
@@ -186,5 +186,39 @@ mod tests {
 
         let value = serde_json::to_value(info).expect("structured data serializes");
         assert_eq!(value["available_limit_resets"], 2);
+    }
+
+    #[test]
+    fn deserializes_optional_fields_when_absent_and_ignores_unknown_fields() {
+        let value = serde_json::json!({
+            "provider": "codex",
+            "source": "codex_cli",
+            "source_link": "docs/get-limits",
+            "status": {
+                "data_available": true,
+                "access_available": true
+            },
+            "raw_data_available": false,
+            "account": {},
+            "limits": [{
+                "name": "five_hour"
+            }],
+            "usage": {
+                "tokens": {},
+                "money": {},
+                "activity": {},
+                "models": {}
+            },
+            "diagnostics": [],
+            "future_field": "ignored"
+        });
+
+        let info: StructuredSourceInfo =
+            serde_json::from_value(value).expect("structured data deserializes");
+
+        assert_eq!(info.status.message, None);
+        assert_eq!(info.collected_at, None);
+        assert_eq!(info.limits[0].remaining_percent, None);
+        assert_eq!(info.available_limit_resets, None);
     }
 }
