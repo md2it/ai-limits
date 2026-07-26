@@ -17,3 +17,11 @@ The current implementation is [GitHub Actions](../../.github/workflows/desktop-b
 - Signing credentials must be held only by the protected build environment and never committed to the repository.
 
 See [macOS signing](macos-signing.md) and [versioning](versioning.md).
+
+## macOS Widget Validation
+
+Run `scripts/build-macos-app-with-widgets.sh` on macOS to build the universal Tauri app, build the Widget Extension with code signing disabled, and embed it in the app bundle. This path requires Xcode but no certificate or provisioning profile.
+
+The existing `Desktop build` workflow has a `macos_widget_validation` mode for a current branch. This mode does not publish a release or change the changelog. It builds the host app and Widget Extension with Developer ID signing, verifies the nested signatures and App Group entitlements before and after zip packaging, launches the host app, and checks Widget Extension registration through `pluginkit`.
+
+Start the workflow with `macos_widget_validation=true`; the required release `version` input is ignored in this mode.

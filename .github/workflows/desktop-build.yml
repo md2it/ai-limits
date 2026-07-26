@@ -16,6 +16,11 @@ on:
           - sign-only
           - submit-only
           - full
+      macos_widget_validation:
+        description: Build and launch-check the signed macOS app with its Widget Extension without publishing a release
+        required: true
+        default: false
+        type: boolean
 
 permissions:
   contents: write
@@ -27,6 +32,7 @@ concurrency:
 jobs:
   validate-release-version:
     name: Validate release version
+    if: ${{ !inputs.macos_widget_validation }}
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
@@ -420,3 +426,108 @@ jobs:
             --title "$title" \
             --notes-file release-notes.md \
             --prerelease
+
+  validate-macos-widget:
+    name: Validate signed macOS Widget Extension
+    if: ${{ inputs.macos_widget_validation }}
+    runs-on: macos-latest
+    env:
+      KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+      APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+      APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      APPLE_APP_PROVISIONING_PROFILE: ${{ secrets.APPLE_APP_PROVISIONING_PROFILE }}
+      APPLE_WIDGET_PROVISIONING_PROFILE: ${{ secrets.APPLE_WIDGET_PROVISIONING_PROFILE }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Setup Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+          targets: aarch64-apple-darwin,x86_64-apple-darwin
+
+      - name: Check Rust formatting
+        run: cargo fmt --all -- --check
+
+      - name: Import signing certificate and provisioning profiles
+        run: |
+          set -euo pipefail
+          for variable in APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD KEYCHAIN_PASSWORD APPLE_TEAM_ID APPLE_APP_PROVISIONING_PROFILE APPLE_WIDGET_PROVISIONING_PROFILE; do
+            if [[ -z "${!variable:-}" ]]; then
+              echo "Missing secret: $variable" >&2
+              exit 1
+            fi
+          done
+          echo "$APPLE_CERTIFICATE" | base64 --decode > "$RUNNER_TEMP/certificate.p12"
+          echo "$APPLE_APP_PROVISIONING_PROFILE" | base64 --decode > "$RUNNER_TEMP/app.provisionprofile"
+          echo "$APPLE_WIDGET_PROVISIONING_PROFILE" | base64 --decode > "$RUNNER_TEMP/widget.provisionprofile"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security default-keychain -s build.keychain
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" build.keychain
+          security set-keychain-settings -t 3600 -u build.keychain
+          security import "$RUNNER_TEMP/certificate.p12" -k build.keychain -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -T /usr/bin/security
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KEYCHAIN_PASSWORD" build.keychain
+          security list-keychain -d user -s build.keychain login.keychain
+          signing_identity="$(security find-identity -v -p codesigning build.keychain | sed -n 's/.*"\\(Developer ID Application:.*\\)"/\\1/p' | head -n 1)"
+          widget_profile_uuid="$(security cms -D -i "$RUNNER_TEMP/widget.provisionprofile" | plutil -extract UUID raw -)"
+          if [[ -z "$signing_identity" || -z "$widget_profile_uuid" ]]; then
+            echo "Could not resolve the Developer ID signing identity or Widget Extension provisioning profile." >&2
+            exit 1
+          fi
+          mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+          cp "$RUNNER_TEMP/app.provisionprofile" "$HOME/Library/MobileDevice/Provisioning Profiles/app.provisionprofile"
+          cp "$RUNNER_TEMP/widget.provisionprofile" "$HOME/Library/MobileDevice/Provisioning Profiles/$widget_profile_uuid.provisionprofile"
+          echo "MACOS_SIGNING_IDENTITY=$signing_identity" >> "$GITHUB_ENV"
+          echo "WIDGET_PROVISIONING_PROFILE_SPECIFIER=$widget_profile_uuid" >> "$GITHUB_ENV"
+
+      - name: Install npm dependencies
+        run: npm ci
+
+      - name: Build signed app and embed signed Widget Extension
+        run: |
+          set -euo pipefail
+          unset APPLE_API_KEY APPLE_API_KEY_PATH APPLE_API_ISSUER
+          npm exec tauri -- build --bundles app --target universal-apple-darwin
+          app_path="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+          cp "$RUNNER_TEMP/app.provisionprofile" "$app_path/Contents/embedded.provisionprofile"
+          WIDGET_ARCHS="arm64 x86_64" scripts/embed-macos-widget.sh signed "$app_path" "$MACOS_SIGNING_IDENTITY"
+
+      - name: Verify signed bundle and Widget Extension launch registration
+        run: |
+          set -euo pipefail
+          app_path="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+          scripts/verify-macos-app.sh --notarization sign-only --require-widget "$app_path"
+          pluginkit -a "$app_path"
+          open "$app_path"
+          found_widget="$(pluginkit -m -v -i com.ai-limits.desktop.widgets)"
+          if [[ "$found_widget" != *"com.ai-limits.desktop.widgets"* ]]; then
+            echo "Widget Extension was not registered after launching the host app." >&2
+            exit 1
+          fi
+          echo "$found_widget"
+
+      - name: Archive and verify signed artifact round-trip
+        run: |
+          set -euo pipefail
+          app_path="target/universal-apple-darwin/release/bundle/macos/AI Limits.app"
+          zip_path="target/release/bundle/macos/AI Limits.app.zip"
+          mkdir -p "$(dirname "$zip_path")"
+          ditto -c -k --keepParent "$app_path" "$zip_path"
+          scripts/verify-macos-app.sh --notarization sign-only --require-widget "$zip_path"
+
+      - name: Upload signed macOS validation artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ai-limits-macos-widget-validation
+          path: target/release/bundle/macos/AI Limits.app.zip
+          if-no-files-found: error
+          retention-days: 14

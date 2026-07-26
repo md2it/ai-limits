@@ -174,8 +174,12 @@ mod tests {
             "https://developers.openai.com/codex/cli"
         ));
         assert!(!is_allowed_external_url("https://example.com"));
-        assert!(is_allowed_external_url("https://github.com/md2it/ai-limits"));
-        assert!(is_allowed_external_url("https://github.com/md2it/ai-limits/blob/main/LICENSE"));
+        assert!(is_allowed_external_url(
+            "https://github.com/md2it/ai-limits"
+        ));
+        assert!(is_allowed_external_url(
+            "https://github.com/md2it/ai-limits/blob/main/LICENSE"
+        ));
     }
 
     #[test]

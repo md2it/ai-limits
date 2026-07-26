@@ -6,7 +6,7 @@ usage() {
 Verify a signed macOS app bundle or release zip.
 
 Usage:
-  scripts/verify-macos-app.sh [--notarization MODE] <path-to.app-or.zip>
+  scripts/verify-macos-app.sh [--notarization MODE] [--require-widget] <path-to.app-or.zip>
 
 Modes:
   full         (default) expect stapled notarization ticket
@@ -20,6 +20,7 @@ EOF
 }
 
 NOTARIZATION_MODE="full"
+REQUIRE_WIDGET="false"
 TARGET=""
 
 while [[ $# -gt 0 ]]; do
@@ -32,6 +33,10 @@ while [[ $# -gt 0 ]]; do
       fi
       NOTARIZATION_MODE="$2"
       shift 2
+      ;;
+    --require-widget)
+      REQUIRE_WIDGET="true"
+      shift
       ;;
     -h|--help)
       usage
@@ -92,9 +97,30 @@ fi
 
 echo "Verifying macOS app: $APP_PATH"
 
+WIDGET_PATH="$APP_PATH/Contents/PlugIns/AI Limits Widgets.appex"
+if [[ "$REQUIRE_WIDGET" == "true" && ! -d "$WIDGET_PATH" ]]; then
+  echo "Widget Extension is missing: $WIDGET_PATH" >&2
+  exit 1
+fi
+
 codesign -dv "$APP_PATH"
 codesign -d --entitlements - "$APP_PATH"
 codesign --verify --deep --strict --verbose=4 "$APP_PATH"
+
+if [[ "$REQUIRE_WIDGET" == "true" ]]; then
+  if [[ "$(defaults read "$WIDGET_PATH/Contents/Info" CFBundleIdentifier)" != "com.ai-limits.desktop.widgets" ]]; then
+    echo "Unexpected Widget Extension bundle identifier." >&2
+    exit 1
+  fi
+  codesign -dv "$WIDGET_PATH"
+  codesign -d --entitlements - "$WIDGET_PATH"
+  APP_ENTITLEMENTS="$(codesign -d --entitlements - "$APP_PATH" 2>/dev/null)"
+  WIDGET_ENTITLEMENTS="$(codesign -d --entitlements - "$WIDGET_PATH" 2>/dev/null)"
+  if [[ "$APP_ENTITLEMENTS" != *"group.md2it.ai-limits.shared"* || "$WIDGET_ENTITLEMENTS" != *"group.md2it.ai-limits.shared"* ]]; then
+    echo "App Group entitlement is missing from the app or Widget Extension." >&2
+    exit 1
+  fi
+fi
 
 case "$NOTARIZATION_MODE" in
   full)

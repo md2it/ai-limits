@@ -14,7 +14,7 @@ Related:
 
 The macOS Widget Extension displays the latest acceptable provider limits without running provider collection.
 
-It is implemented with SwiftUI and WidgetKit under `src-macos-widgets/`.
+The native scaffold is implemented with SwiftUI and WidgetKit under `src-macos-widgets/`. It currently renders placeholder content and establishes only the extension, App Group, timeline, and native bridge boundaries.
 
 ---
 
@@ -86,3 +86,13 @@ Timeline policy remains the fallback when an explicit reload request is unavaila
 - request at most one affected-timeline reload after a completed collection batch
 - request immediate reload only for changes visible to the user
 - retain the normal WidgetKit timeline as the fallback update mechanism
+
+## Current Scaffold
+
+The Xcode project builds `AI Limits Widgets.appex` with bundle identifier `com.ai-limits.desktop.widgets` and embeds it under `AI Limits.app/Contents/PlugIns/`.
+
+`AILimitsWidgetBridge` is the native bridge placeholder. It exposes the shared App Group container lookup and the affected WidgetKit timeline reload call; it is not connected to Tauri or the planned Background Agent yet.
+
+The placeholder timeline does not read snapshots, configure providers, or implement the final presentation. Those remain future work under the responsibilities and contracts above.
+
+Run `scripts/build-macos-app-with-widgets.sh` on macOS for an unsigned local universal app build. The signed CI validation procedure is documented in [../devops/builds.md](../devops/builds.md).
