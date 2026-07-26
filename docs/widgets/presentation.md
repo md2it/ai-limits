@@ -4,7 +4,7 @@
 
 Each provider card follows the informational content of the [Tauri provider block](../desktop/ui/provider-blocks.md), including the provider name, limit bars, credits, and reset times.
 
-Widgets have no manual refresh or other controls.
+Widgets have no controls in their normal state. When automatic background updates are unavailable and stored data is missing or stale, the widget may show `Enable automatic updates`; this recovery action opens Tauri at `Help → Permissions` and does not start the Background Agent directly.
 
 Shared presentation and unavailable-data rules are not redefined for widgets.
 
