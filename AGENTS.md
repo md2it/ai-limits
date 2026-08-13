@@ -1,3 +1,6 @@
 - Agents are considered as contributors too, and must follow [CONTRIBUTING.md](CONTRIBUTING.md),
-- Every commit containing agent work must include a `Co-authored-by` trailer that identifies the contributing agent,
+- Commits and push:
+   - By human request only,
+   - Push should be requested by human additionally,
+   - Every commit containing agent work must include a `Co-authored-by` trailer that identifies the contributing agent,
 - Do not wrap a logical line across multiple physical lines.
