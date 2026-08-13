@@ -30,17 +30,6 @@ impl LimitNotificationKind {
         Self::Replenished,
     ];
 
-    pub fn parse(value: &str) -> Result<Self, String> {
-        match value {
-            "75" => Ok(Self::Remaining75),
-            "50" => Ok(Self::Remaining50),
-            "25" => Ok(Self::Remaining25),
-            "10" => Ok(Self::Remaining10),
-            "100" => Ok(Self::Replenished),
-            _ => Err("expected one of: 75, 50, 25, 10, 100".to_string()),
-        }
-    }
-
     pub fn remaining_percent(self) -> u8 {
         match self {
             Self::Remaining75 => 75,

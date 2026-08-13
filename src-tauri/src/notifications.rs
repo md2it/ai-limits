@@ -1,7 +1,4 @@
-use std::io::{BufRead, BufReader};
-use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
-use std::thread;
 
 use ai_limits::notifications::{Notification, NotificationDelivery};
 use tauri::{AppHandle, Manager};
@@ -17,34 +14,6 @@ pub fn previous_remaining_store_path(app: &AppHandle) -> tauri::Result<PathBuf> 
         .path()
         .app_data_dir()?
         .join(PREVIOUS_REMAINING_STORE_FILE))
-}
-
-pub fn start_notification_bridge(app: AppHandle) {
-    thread::spawn(move || {
-        let Ok(listener) =
-            TcpListener::bind(ai_limits::notifications::TAURI_NOTIFICATION_BRIDGE_ADDR)
-        else {
-            return;
-        };
-
-        for stream in listener.incoming().flatten() {
-            handle_bridge_request(stream, &app);
-        }
-    });
-}
-
-fn handle_bridge_request(stream: TcpStream, app: &AppHandle) {
-    let mut line = String::new();
-    let mut reader = BufReader::new(stream);
-    if reader.read_line(&mut line).is_err() {
-        return;
-    }
-
-    let Ok(notification) = serde_json::from_str::<Notification>(&line) else {
-        return;
-    };
-
-    let _ = TauriNotificationDelivery { app: app.clone() }.deliver(&notification);
 }
 
 pub struct TauriNotificationDelivery {

@@ -1,7 +1,6 @@
 use std::io;
 
 use crate::get_limits::SourcePlan;
-use crate::notifications::LimitNotificationKind;
 use crate::types::Source;
 
 pub(super) struct CliArgs {
@@ -10,7 +9,6 @@ pub(super) struct CliArgs {
     pub best: bool,
     pub output_mode: OutputMode,
     pub sources: Vec<Source>,
-    pub test_notification: Option<LimitNotificationKind>,
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -28,7 +26,6 @@ pub(super) fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliAr
         best: false,
         output_mode: OutputMode::Limits,
         sources: Vec::new(),
-        test_notification: None,
     };
     let mut output_mode = None;
 
@@ -92,17 +89,6 @@ pub(super) fn parse_args(args: impl Iterator<Item = String>) -> io::Result<CliAr
                 parsed.sources.push(Source::CursorApi2);
             }
             _ => {
-                if let Some(value) = arg.strip_prefix("--test-notification=") {
-                    parsed.test_notification =
-                        Some(LimitNotificationKind::parse(value).map_err(|error| {
-                            io::Error::new(
-                                io::ErrorKind::InvalidInput,
-                                format!("invalid --test-notification value: {error}"),
-                            )
-                        })?);
-                    continue;
-                }
-
                 return Err(io::Error::new(
                     io::ErrorKind::InvalidInput,
                     format!("unknown argument `{arg}`"),
@@ -234,19 +220,6 @@ mod tests {
         assert_eq!(parse(&["-r"]).output_mode, OutputMode::Raw);
         assert_eq!(parse(&["--structured"]).output_mode, OutputMode::Structured);
         assert_eq!(parse(&["-s"]).output_mode, OutputMode::Structured);
-    }
-
-    #[test]
-    fn supports_test_notification_flag() {
-        assert_eq!(
-            parse(&["--test-notification=75"]).test_notification,
-            Some(LimitNotificationKind::Remaining75)
-        );
-        assert_eq!(
-            parse(&["--test-notification=100"]).test_notification,
-            Some(LimitNotificationKind::Replenished)
-        );
-        assert!(parse_args(["--test-notification=30"].into_iter().map(String::from)).is_err());
     }
 
     #[test]

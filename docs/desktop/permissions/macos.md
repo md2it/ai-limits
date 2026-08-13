@@ -3,7 +3,7 @@
 Allowed:
 
 - Notifications: native limit alerts.
-- Network client: Cursor usage API and local notification bridge.
+- Network client: Cursor usage API.
 - Keychain read: `cursor-access-token` only.
 - Local read: provider data under `~/.codex`, `~/.claude`, `~/.config/claude`, and Xcode Claude agent project data.
 - Local write: application-managed WebView storage for desktop settings.

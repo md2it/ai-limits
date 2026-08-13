@@ -6,6 +6,9 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Updated:
+- The desktop app no longer opens a local notification server
+
 ## [v0.5.0](https://github.com/md2it/ai-limits/releases/tag/v0.5.0) — 2026-08-06
 
 New feature:

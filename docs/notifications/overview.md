@@ -10,7 +10,7 @@ Notification content, branding, and UI presentation are documented in [content.m
 
 The application notifies the user when an important limit event requires attention.
 
-Notifications are a shared product capability. They are used by the desktop interface and can be requested from the terminal interface.
+Notifications are a desktop product capability. The terminal interface does not request or deliver system notifications.
 
 ---
 
@@ -22,7 +22,6 @@ Code layout (`src/notifications/`):
 - `kinds.rs` — notification kinds, colors, and remaining-percent matching
 - `content.rs` — notification DTO and title/subtitle/body/label projection
 - `store.rs` — previous-remaining store trait and its file-backed implementation
-- `tauri_bridge.rs` — TCP bridge adapter that requests delivery from the desktop app
 
 The application uses one common notification domain model.
 
@@ -40,27 +39,19 @@ shared core
   notification text
   dedupe keys
 
-delivery adapter
+desktop delivery adapter
   Tauri notifications
   system notification permission
   native system notification delivery
   application icon
   notification click behavior
-
-terminal interface
-  existing terminal UI
-  optional request to the installed/running Tauri application
 ```
 
 The shared core must not depend on Tauri or any operating-system notification API. It produces notification candidates and passes them to the delivery layer.
 
 The application does not maintain separate first-party macOS, Windows, and Linux notification adapters in the current target architecture. If Tauri notifications later cannot provide required product behavior on a supported platform, platform-specific delivery adapters may be introduced behind the same delivery interface.
 
-The terminal interface does not send native operating-system notifications directly. When a terminal run needs a system notification, it requests delivery from the installed and available Tauri application.
-
-If the terminal interface cannot hand the notification request to Tauri, it silently skips the system notification. It must not print an additional terminal message, because the terminal UI already contains the relevant information and extra text would not attract attention.
-
-There is no separate macOS helper/notifier in the target architecture.
+The terminal interface does not send native operating-system notifications and does not communicate with the desktop application for notification delivery. There is no separate macOS helper, notification service, or local network listener in the target architecture.
 
 ---
 
@@ -71,9 +62,8 @@ System notifications are delivered through the Tauri notifications adapter.
 Rules:
 
 - when the Tauri application is active or minimized, eligible notifications should be delivered as native system notifications through Tauri
-- when the terminal interface can reach the installed and available Tauri application, eligible notifications can be delivered through Tauri
-- when Tauri is unavailable, the notification is skipped without additional terminal output
 - the application does not use a separate notification helper process
+- the application does not open a local network listener for notification delivery
 
 The user-facing notification setting controls whether notification checks are enabled. One setting covers every notification type in [content.md](content.md).
 
@@ -123,7 +113,7 @@ Notification triggers are calculated from structured data.
 
 Structured data is used because it is standardized and easier to process consistently across providers and sources.
 
-Notification calculation is independent from the delivery channel. The same candidate generation rules apply whether the request originates from the Tauri UI or from the terminal interface.
+Notification calculation is independent from the desktop delivery mechanism.
 
 ### Low remaining
 

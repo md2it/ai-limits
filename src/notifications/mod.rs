@@ -7,32 +7,13 @@ use crate::types::{LimitInfo, SourceReport, StructuredSourceInfo};
 mod content;
 mod kinds;
 mod store;
-mod tauri_bridge;
 
 pub use content::Notification;
 pub use kinds::{LimitNotificationKind, NotificationColor};
 pub use store::{FileRemainingStore, PreviousRemainingStore};
 
-pub const TAURI_NOTIFICATION_BRIDGE_ADDR: &str = tauri_bridge::NOTIFICATION_BRIDGE_ADDR;
-
-pub fn notify(notification: &Notification) -> io::Result<()> {
-    tauri_bridge::TauriNotificationBridge.deliver(notification)
-}
-
-pub fn notify_test(kind: LimitNotificationKind) -> io::Result<()> {
-    notify(&Notification::test(kind))
-}
-
 pub trait NotificationDelivery {
     fn deliver(&self, notification: &Notification) -> io::Result<()>;
-}
-
-pub fn send_for_report(
-    report: &SourceReport,
-    sent: &mut HashSet<String>,
-    store: &dyn PreviousRemainingStore,
-) {
-    send_for_report_with_delivery(report, sent, store, &tauri_bridge::TauriNotificationBridge);
 }
 
 pub fn send_for_report_with_delivery(

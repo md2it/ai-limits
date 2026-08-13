@@ -54,7 +54,7 @@ Purpose:
   - `mod.rs` — thin `#[tauri::command]` wrappers exposed to the frontend
   - `collect.rs` — provider-limits collection orchestration and notification trigger
   - `provider_limits.rs` — camelCase DTO/projection for the frontend provider-limits contract
-- `notifications.rs` — desktop notification bridge that delivers core notifications through Tauri
+- `notifications.rs` — desktop notification delivery through Tauri
 - `platform/` — desktop OS adapters (for example terminal launch helpers)
 
 Boundaries:
@@ -62,7 +62,7 @@ Boundaries:
 - `src-tauri/` does not fetch provider data directly
 - `src-tauri/` does not decide limit semantics
 - `src-tauri/` does not own notification rules
-- `src-tauri/` may provide desktop-specific notification transport when needed
+- `src-tauri/` delivers desktop notifications directly through Tauri and does not expose a local notification listener
 - `src-tauri/` may provide desktop-specific window, tray, menu, and permission integration
 
 IPC goals, constraints, and command rules are documented in [inter-process-communication.md](inter-process-communication.md).

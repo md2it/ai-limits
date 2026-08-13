@@ -39,13 +39,11 @@ Purpose:
 - `cli/` — terminal interface, arguments, retrieval scenario flags, output, exit codes
 - `get_limits/` — limits-fetching scenario and provider method integration; package layout is documented in [get-limits/overview.md](get-limits/overview.md)
 - `infra/` — technical primitives for processes, HTTP, and timeouts
-- `notifications/` — shared notification service with platform adapters; package layout is documented in [notifications/overview.md](notifications/overview.md)
+- `notifications/` — shared notification rules and content model; package layout is documented in [notifications/overview.md](notifications/overview.md)
 - `presentation/` — shared display projection (limits, usage, time); time rules are also documented in [presentation/time-display.md](presentation/time-display.md)
 - `providers/` — ways to fetch usage/limits from providers
 - `lib.rs` — shared core available to different interfaces
 - `types.rs` — shared types and the application's internal language
-
-Terminal block formatting is documented under [terminal/](terminal/). Desktop-only adapters (`commands/`, `platform/`, Tauri notification bridge) live under `src-tauri/` and are documented in [desktop/architecture.md](desktop/architecture.md).
 
 ---
 

@@ -54,7 +54,6 @@ fn main() {
         .manage(commands::new_structured_info_cache())
         .manage(commands::CollectionCoordinator::new())
         .setup(|app| {
-            notifications::start_notification_bridge(app.handle().clone());
             let store_path = notifications::previous_remaining_store_path(app.handle())?;
             let remaining_store: Arc<dyn ai_limits::notifications::PreviousRemainingStore> =
                 Arc::new(ai_limits::notifications::FileRemainingStore::new(

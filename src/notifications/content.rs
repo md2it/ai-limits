@@ -69,22 +69,6 @@ impl Notification {
             always_deliver: true,
         }
     }
-
-    pub fn test(kind: LimitNotificationKind) -> Self {
-        let remaining_percent = kind.remaining_percent();
-        let subtitle = match kind {
-            LimitNotificationKind::Replenished => "AI Limits test - 100% again".to_string(),
-            _ => format!("AI Limits test - {remaining_percent}% left"),
-        };
-        Self {
-            dedupe_key: format!("test|{remaining_percent}"),
-            title: format!("{} AI Limits", kind.emoji()),
-            subtitle,
-            message: "reset unknown".to_string(),
-            color: kind.color(),
-            always_deliver: kind == LimitNotificationKind::Replenished,
-        }
-    }
 }
 
 fn provider_label(provider: &str) -> String {

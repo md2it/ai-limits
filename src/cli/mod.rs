@@ -43,18 +43,6 @@ fn run_cli(raw_args: impl Iterator<Item = String>) -> io::Result<TerminalStatus>
         return Ok(TerminalStatus::Done);
     }
 
-    if let Some(kind) = args.test_notification {
-        if args.all || args.best || !args.sources.is_empty() {
-            return Err(io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "--test-notification cannot be combined with source flags, --all, or --best",
-            ));
-        }
-
-        crate::notifications::notify_test(kind)?;
-        return Ok(TerminalStatus::Done);
-    }
-
     let output_mode = args.output_mode;
     let plan = resolve_source_plan(args)?;
 
