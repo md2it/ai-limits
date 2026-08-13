@@ -41,10 +41,10 @@ Purpose:
 
 - preview the disk image window (background, icon layout) on a developer machine, unsigned;
 - this is the same script GitHub Actions runs, so a local preview matches what a release will look like;
-- avoids Tauri's own dmg bundler, whose Finder-styling step needs the Automation permission and is unreliable outside a fresh grant — see [macOS signing](../devops/macos-signing.md).
+- avoids Tauri's own dmg bundler, whose Finder-styling step needs the Automation permission and is unreliable outside a fresh grant — see [macOS signing](../../devops/macos-signing.md).
 
 Related documents:
 
 - [Dev run](dev-run.md)
-- [Desktop builds](../devops/builds.md)
-- [macOS signing](../devops/macos-signing.md)
+- [Desktop builds](../../devops/builds.md)
+- [macOS signing](../../devops/macos-signing.md)

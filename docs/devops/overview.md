@@ -2,7 +2,7 @@
 
 This directory defines the goals, constraints, and release policy for desktop distribution.
 
-Detailed Tauri integration rules remain in [architecture](../architecture.md) and [desktop docs](../desktop/).
+Detailed Tauri integration rules remain in [architecture](../spec/architecture.md) and [desktop docs](../spec/desktop/).
 
 ## Goal
 

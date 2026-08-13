@@ -68,7 +68,7 @@ The year is mandatory in this form. A subscription can have started years ago, a
 | `account.subscription_started_at` | date |
 | `account.renewal_at` | date |
 
-The subscription fields back the Plan output kind; see [../product/output-kinds.md](../product/output-kinds.md).
+The subscription fields back the Plan output kind; see [output-kinds.md](output-kinds.md).
 
 The formatted value is only the date-time value. Surrounding text is owned by the surface that renders it:
 

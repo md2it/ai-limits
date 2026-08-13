@@ -16,7 +16,7 @@ This document is a recommended guide for maintaining project documentation. It s
 - Directories represent encapsulated and isolated system components or clear development processes. Nested directories represent nested logic, processes, or code components.
 - Keep documents within the boundary of their directory. Do not expose internal component details outside that boundary unless another area needs the fact.
 - Prefer a flat structure. Add a subdirectory only when it makes a meaningful boundary clearer.
-- Keep the most cross-cutting system documents at the `docs/` root.
+- Keep cross-cutting application specifications at the `docs/spec/` root. Keep only documentation-wide guidance and non-specification materials at the `docs/` root.
 - Avoid index documents. Use links only when they prevent duplication or lead to an entry point.
 - Split a document when it covers more than one purpose or becomes difficult to use. Keep the split flat unless the parts form a clear group.
 

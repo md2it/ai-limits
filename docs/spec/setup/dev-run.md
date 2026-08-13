@@ -16,11 +16,11 @@ npm run tauri
 
 ### Runtime
 
-- [Tauri dev asset cleanup](../../scripts/tauri-clean-dev-assets.sh) removes stale generated Tauri codegen assets from `target/debug/build` and `target/release/build`;
+- [Tauri dev asset cleanup](../../../scripts/tauri-clean-dev-assets.sh) removes stale generated Tauri codegen assets from `target/debug/build` and `target/release/build`;
 - Tauri starts in development mode with its file watcher disabled;
-- [Tauri dev server](../../scripts/tauri-dev-server.sh) serves `frontend/` for the desktop WebView.
+- [Tauri dev server](../../../scripts/tauri-dev-server.sh) serves `frontend/` for the desktop WebView.
 - Dev server: http://127.0.0.1:1420
-- Config: [Tauri config](../../src-tauri/tauri.conf.json)
+- Config: [Tauri config](../../../src-tauri/tauri.conf.json)
 
 Code changes do not rebuild or restart the running app. Stop and run the command again when a fresh build is required.
 

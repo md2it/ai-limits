@@ -119,7 +119,7 @@ The `utilization` payload parser lives in `claude_local/parse.rs`, but the shape
 Provider documentation is grouped by provider; large providers split method details into separate files:
 
 ```text
-docs/get-limits/providers/
+docs/spec/get-limits/providers/
   code-structure.md
   contract.md
   claude.md

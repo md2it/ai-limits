@@ -48,7 +48,7 @@ All three activity counts come from the same JSONL scan and are counts of distin
 
 - `usage.activity.sessions_count` — the number of unique `session_id` values found in `session_meta` records
 - `usage.activity.turns_count` — the number of unique `turn_id` values found in `event_msg` records of type `task_started` and `task_complete`. A turn seen in both records counts once.
-- `usage.activity.files_count` — the number of unique file paths found in `event_msg` / `patch_apply_end` `changes`. This is the count of **changed user files**, which is what the Usage output kind in [product/output-kinds.md](../../product/output-kinds.md) means by "files".
+- `usage.activity.files_count` — the number of unique file paths found in `event_msg` / `patch_apply_end` `changes`. This is the count of **changed user files**, which is what the Usage output kind in [output-kinds.md](../../presentation/output-kinds.md) means by "files".
 
 The number of scanned JSONL files is **not** `files_count`. It is an internal scan metric about the source itself, it says nothing about the user's work, and it must not reach `usage.activity.files_count`. If it is exposed at all, it belongs in raw data or diagnostics.
 

@@ -10,7 +10,7 @@ Interactive controls that act (buttons, links) carry an accent color that signal
 | Red | `--accent-danger` | Dangerous or risky: destructive or high-consequence | Destructive actions |
 | Yellow | `--accent-warning` | Neutral: navigation and other actions that neither help nor endanger | Help page menu, back button, and links |
 
-- Variables are defined in [../../../frontend/styles/tokens.css](../../../frontend/styles/tokens.css).
+- Variables are defined in [../../../../frontend/styles/tokens.css](../../../../frontend/styles/tokens.css).
 - Hover and active states are tinted from these variables (see the settings and help icon buttons for the yellow/neutral pattern).
 
 ## Other

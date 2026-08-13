@@ -9,7 +9,7 @@ Each provider square contains, top to bottom:
 - **Subscription section**
 - source line with data origin label, timestamp, and next scheduled update
 
-The two sections are the desktop rendering of two of the product's three output kinds, defined independent of any interface in [product/output-kinds.md](../../product/output-kinds.md). The third kind, Usage, is deliberately not rendered on the card — see [provider-block-content.md](provider-block-content.md#usage-is-not-shown). Each rendered section can be hidden independently through the [display toggles](settings.md#display). A display toggle turns the matching section slot on or off for every provider card at once. Heading and lines appear only when that card has data for the section; when the toggle is on and the card has no data, the slot stays as reserved empty space (see [Section Slot Alignment](#section-slot-alignment)).
+The two sections are the desktop rendering of two of the product's three output kinds, defined independent of any interface in [output-kinds.md](../../presentation/output-kinds.md). The third kind, Usage, is deliberately not rendered on the card — see [provider-block-content.md](provider-block-content.md#usage-is-not-shown). Each rendered section can be hidden independently through the [display toggles](settings.md#display). A display toggle turns the matching section slot on or off for every provider card at once. Heading and lines appear only when that card has data for the section; when the toggle is on and the card has no data, the slot stays as reserved empty space (see [Section Slot Alignment](#section-slot-alignment)).
 
 Provider names follow the shared [provider naming rules](../../presentation/provider-names.md).
 

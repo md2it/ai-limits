@@ -6,13 +6,9 @@ This file is the current working backlog for the project.
 
 ## Planned
 
-- Subscription details (spec: [output-kinds.md](output-kinds.md), [get-limits/structured-info-schema.md](../get-limits/structured-info-schema.md), [desktop/ui/provider-blocks.md](../desktop/ui/provider-blocks.md))
-- Authorization state for Claude: find a verified read-only signal for "is the CLI signed in", which the `get_usage` payload does not carry, so that an unauthorized run says what to do instead of reporting no data (spec: [get-limits/providers/claude-rpc-usage.md](../get-limits/providers/claude-rpc-usage.md#no-authorization-signal))
-- macOS widgets
-- macOS menu bar
-
 ## Ideas
 
+- macOS widgets
 - Hard stop on spending when limits are reached
 - Multiple subscriptions for one provider
 - Get data from another device

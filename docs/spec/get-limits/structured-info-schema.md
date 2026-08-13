@@ -9,7 +9,7 @@ The current minimum structure is described below in a YAML-like schema. The fiel
 ```yaml
 provider: string
 source: string
-source_link: docs/get-limits
+source_link: docs/spec/get-limits
 status:
   data_available: boolean
   access_available: boolean
@@ -74,6 +74,6 @@ For Codex, the source is `rateLimitResetCredits.availableCount` from the read-on
 
 The Rust structured model serializes `available_limit_resets`. Reading the count never redeems a reset; the redeeming RPC method is forbidden.
 
-`account.subscription_started_at`, `account.renewal_at`, `account.price_amount`, `account.price_currency`, `account.price_period`, `account.price_note`, `account.plan_management_url`, and `account.billing_management_url` are the subscription fields that back the product's **Plan** output kind, defined in [product/output-kinds.md](../product/output-kinds.md). Population and disclaimer rules for these fields are documented in [structured-info-rules.md](structured-info-rules.md).
+`account.subscription_started_at`, `account.renewal_at`, `account.price_amount`, `account.price_currency`, `account.price_period`, `account.price_note`, `account.plan_management_url`, and `account.billing_management_url` are the subscription fields that back the product's **Plan** output kind, defined in [output-kinds.md](../presentation/output-kinds.md). Population and disclaimer rules for these fields are documented in [structured-info-rules.md](structured-info-rules.md).
 
 `account.price_period` is the billing period the price applies to, as a short lowercase token: `mo`, `yr`, or another period the source states explicitly. It exists so that a price can be displayed as a rate rather than a bare amount; without it, `20.00` is ambiguous between a monthly and an annual charge. It must never be assumed — a source that reports a price without stating its period leaves this `null`.

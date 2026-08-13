@@ -112,7 +112,7 @@ Rules for this read:
 - `usage.activity.files_count` — **always `null`** for this source
 - `usage.activity.events_count` — `null`; no local Claude record is an event count
 
-`files_count` means the number of **changed user files**, the same as it does for `codex_local` and in the Usage output kind ([product/output-kinds.md](../../product/output-kinds.md)). No local Claude file records changed files, so the field has no source and stays `null`.
+`files_count` means the number of **changed user files**, the same as it does for `codex_local` and in the Usage output kind ([output-kinds.md](../../presentation/output-kinds.md)). No local Claude file records changed files, so the field has no source and stays `null`.
 
 The number of scanned transcript files is not that number and must never be projected into it. It counts JSONL files the collector happened to open — it changes when transcripts are pruned or a new root appears, and it says nothing about the user's work. It stays in raw data as a scan metric. This is the identical defect that was found and removed in `codex_local`, where the scanned-file count had likewise been standing in for a changed-file count.
 

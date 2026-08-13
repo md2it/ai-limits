@@ -1,6 +1,6 @@
 # Browser Screenshot Showcase
 
-The browser showcase renders the production desktop frontend with fixed demonstration data and a decorative macOS Tahoe, Windows, or Linux window frame — or, for `popover`, the [macOS Menu Bar Popover](../desktop/mac-popover.md) static layout. It is for creating screenshots and previewing layout only; it does not connect to Tauri, Rust, provider APIs, or local accounts.
+The browser showcase renders the production desktop frontend with fixed demonstration data and a decorative macOS Tahoe, Windows, or Linux window frame — or, for `popover`, the [macOS Menu Bar Popover](../spec/desktop/mac-popover.md) static layout. It is for creating screenshots and previewing layout only; it does not connect to Tauri, Rust, provider APIs, or local accounts.
 
 From the project root, run `python3 -m http.server 1420 --bind 127.0.0.1 --directory frontend`, then open `http://127.0.0.1:1420/?showcase=macos`. Replace `macos` with `windows`, `linux`, or `popover`, or use the platform controls beside the frame.
 
@@ -25,11 +25,11 @@ The `macos`, `windows`, and `linux` frames start at a compact size and can be re
 
 ## Popover Variant
 
-`?showcase=popover` previews the [macOS Menu Bar Popover](../desktop/mac-popover.md), per [mac-popover.md#static-layout](../desktop/mac-popover.md#static-layout). Unlike the other three, it is not a decorative OS window with traffic lights or a resize handle — it is not an OS window at all, so that chrome does not apply. It relocates the same live, real provider cards used by the other platforms (same `SHOWCASE_PROVIDERS` mock data, same interactivity) into a `.popover-root` panel: the top bar (app name plus `[update all]`, and the segmented `[All] [Codex] [Claude] [Cursor]` view control), the scrolling card area, and a footer row (`Open AI Limits` plus `[info]` and `[gear]`) — no Help entry point. Markup and styles both come from the files the real Popover window uses (`frontend/modules/popover-toolbar.js`, `frontend/styles/popover.css`), so the preview and the shipped panel cannot drift.
+`?showcase=popover` previews the [macOS Menu Bar Popover](../spec/desktop/mac-popover.md), per [mac-popover.md#static-layout](../spec/desktop/mac-popover.md#static-layout). Unlike the other three, it is not a decorative OS window with traffic lights or a resize handle — it is not an OS window at all, so that chrome does not apply. It relocates the same live, real provider cards used by the other platforms (same `SHOWCASE_PROVIDERS` mock data, same interactivity) into a `.popover-root` panel: the top bar (app name plus `[update all]`, and the segmented `[All] [Codex] [Claude] [Cursor]` view control), the scrolling card area, and a footer row (`Open AI Limits` plus `[info]` and `[gear]`) — no Help entry point. Markup and styles both come from the files the real Popover window uses (`frontend/modules/popover-toolbar.js`, `frontend/styles/popover.css`), so the preview and the shipped panel cannot drift.
 
 The panel itself gets no showcase-specific styling. What the stage around it adds is only what the real window gets from macOS and CSS cannot: a neutral backdrop to be translucent against, a stand-in for the native window shadow, and the panel width the native window would otherwise fix (`.showcase-capture-area--popover` in `frontend/styles/showcase.css`).
 
-Native tray/popover/window logic now backs the real Popover window (see [mac-popover.md](../desktop/mac-popover.md)); this variant remains the browser-side preview of the same surface. The fixed screenshot set includes dark and light Popover shots.
+Native tray/popover/window logic now backs the real Popover window (see [mac-popover.md](../spec/desktop/mac-popover.md)); this variant remains the browser-side preview of the same surface. The fixed screenshot set includes dark and light Popover shots.
 
 ## Screenshot Requirements
 
