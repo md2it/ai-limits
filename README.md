@@ -54,14 +54,15 @@
 - Native system notifications when limits reach configured thresholds,
 - Manual refresh of all data and one shared automatic refresh frequency.
 
-## Alternatives
+## Selected alternatives
 
-| | **ai-limits** | [CodexBar](https://github.com/steipete/CodexBar) | [caut](https://github.com/Dicklesworthstone/coding_agent_usage_tracker) |
-| --- | :---: | :---: | :---: |
-| Desktop app and CLI | ✅ | ✅ | ❌ |
-| Codex, Claude, and Cursor | ✅ | ✅ | ✅ |
-| macOS, Windows, and Linux | ✅ | ❌ | ❌ |
-| No intermediary service | ✅ | ✅ | ✅ |
+This selected comparison covers capabilities available in ai-limits; it is not a complete feature comparison of every alternative.
+
+| | **ai-limits** | [CodexBar](https://github.com/steipete/CodexBar) | [caut](https://github.com/Dicklesworthstone/coding_agent_usage_tracker) | [OpenUsage](https://github.com/janekbaraniewski/openusage) | [ClaudeBar](https://github.com/tddworks/ClaudeBar) | [ccusage](https://github.com/ccusage/ccusage) |
+| --- | :---: | :---: | :---: | :---: | :---: | :---: |
+| Desktop app and CLI | ✅ | ✅ | ❌ | ❌ | ❌ | ❌ |
+| Codex, Claude, and Cursor | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ |
+| macOS, Windows, and Linux | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
 
 The full comparison covers 18 alternatives and 16 criteria: [alternatives catalog](docs/product/analogues.tsv).
 

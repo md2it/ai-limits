@@ -61,7 +61,6 @@
 | Desktop-App und CLI | ✅ | ✅ | ❌ |
 | Codex, Claude und Cursor | ✅ | ✅ | ✅ |
 | macOS, Windows und Linux | ✅ | ❌ | ❌ |
-| Ohne Zwischendienst | ✅ | ✅ | ✅ |
 
 Der vollständige Vergleich über 18 Alternativen und 16 Kriterien steht im [Alternativenkatalog](../product/analogues.tsv).
 

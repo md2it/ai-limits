@@ -61,7 +61,6 @@
 | Aplicação de ambiente de trabalho e CLI | ✅ | ✅ | ❌ |
 | Codex, Claude e Cursor | ✅ | ✅ | ✅ |
 | macOS, Windows e Linux | ✅ | ❌ | ❌ |
-| Sem serviço intermediário | ✅ | ✅ | ✅ |
 
 A comparação completa com 18 alternativas e 16 critérios está no [catálogo de alternativas](../product/analogues.tsv).
 

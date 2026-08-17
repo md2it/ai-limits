@@ -61,7 +61,6 @@
 | 桌面应用与 CLI | ✅ | ✅ | ❌ |
 | Codex、Claude 与 Cursor | ✅ | ✅ | ✅ |
 | macOS、Windows 与 Linux | ✅ | ❌ | ❌ |
-| 无中间服务 | ✅ | ✅ | ✅ |
 
 完整对比涵盖 18 款同类产品与 16 项标准，见[同类产品目录](../product/analogues.tsv)。
 
