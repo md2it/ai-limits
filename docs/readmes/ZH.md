@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-popover-dark.png" alt="深色模式下的 ai-limits macOS 浮窗" width="32%">
-  <img src="screenshots/macos-popover-light.png" alt="浅色模式下的 ai-limits macOS 浮窗" width="32%">
+  <img src="screenshots/macos-popover-dark.png" alt="深色模式下的 ai-limits macOS 浮窗" width="24%">
+  <img src="screenshots/macos-popover-light.png" alt="浅色模式下的 ai-limits macOS 浮窗" width="24%">
+  <img src="screenshots/macos-notification-center-dark.png" alt="ai-limits 在 macOS 通知中心的通知" width="24%">
+  <img src="screenshots/macos-notification-center-light.png" alt="ai-limits 在 macOS 通知中心的浅色通知" width="24%">
 </p>
 
 ## 优势

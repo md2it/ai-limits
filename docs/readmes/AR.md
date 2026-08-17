@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-popover-dark.png" alt="نافذة ai-limits المنبثقة على macOS بالمظهر الداكن" width="32%">
-  <img src="screenshots/macos-popover-light.png" alt="نافذة ai-limits المنبثقة على macOS بالمظهر الفاتح" width="32%">
+  <img src="screenshots/macos-popover-dark.png" alt="نافذة ai-limits المنبثقة على macOS بالمظهر الداكن" width="24%">
+  <img src="screenshots/macos-popover-light.png" alt="نافذة ai-limits المنبثقة على macOS بالمظهر الفاتح" width="24%">
+  <img src="screenshots/macos-notification-center-dark.png" alt="إشعارات ai-limits في مركز إشعارات macOS" width="24%">
+  <img src="screenshots/macos-notification-center-light.png" alt="إشعارات ai-limits الفاتحة في مركز إشعارات macOS" width="24%">
 </p>
 
 <div dir="rtl">

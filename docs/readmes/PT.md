@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-popover-dark.png" alt="popover do ai-limits para macOS no modo escuro" width="32%">
-  <img src="screenshots/macos-popover-light.png" alt="popover do ai-limits para macOS no modo claro" width="32%">
+  <img src="screenshots/macos-popover-dark.png" alt="popover do ai-limits para macOS no modo escuro" width="24%">
+  <img src="screenshots/macos-popover-light.png" alt="popover do ai-limits para macOS no modo claro" width="24%">
+  <img src="screenshots/macos-notification-center-dark.png" alt="notificações do ai-limits na Central de Notificações do macOS" width="24%">
+  <img src="screenshots/macos-notification-center-light.png" alt="notificações claras do ai-limits na Central de Notificações do macOS" width="24%">
 </p>
 
 ## Vantagens

@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-popover-dark.png" alt="Popover ai-limits для macOS в тёмном оформлении" width="32%">
-  <img src="screenshots/macos-popover-light.png" alt="Popover ai-limits для macOS в светлом оформлении" width="32%">
+  <img src="screenshots/macos-popover-dark.png" alt="Popover ai-limits для macOS в тёмном оформлении" width="24%">
+  <img src="screenshots/macos-popover-light.png" alt="Popover ai-limits для macOS в светлом оформлении" width="24%">
+  <img src="screenshots/macos-notification-center-dark.png" alt="Уведомления ai-limits в Центре уведомлений macOS" width="24%">
+  <img src="screenshots/macos-notification-center-light.png" alt="Светлые уведомления ai-limits в Центре уведомлений macOS" width="24%">
 </p>
 
 ## Преимущества

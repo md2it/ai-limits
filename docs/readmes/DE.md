@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="screenshots/macos-popover-dark.png" alt="ai-limits macOS-Popover im dunklen Design" width="32%">
-  <img src="screenshots/macos-popover-light.png" alt="ai-limits macOS-Popover im hellen Design" width="32%">
+  <img src="screenshots/macos-popover-dark.png" alt="ai-limits macOS-Popover im dunklen Design" width="24%">
+  <img src="screenshots/macos-popover-light.png" alt="ai-limits macOS-Popover im hellen Design" width="24%">
+  <img src="screenshots/macos-notification-center-dark.png" alt="ai-limits-Benachrichtigungen in der macOS-Mitteilungszentrale" width="24%">
+  <img src="screenshots/macos-notification-center-light.png" alt="helle ai-limits-Benachrichtigungen in der macOS-Mitteilungszentrale" width="24%">
 </p>
 
 ## Vorteile

@@ -26,8 +26,10 @@
 </p>
 
 <p align="center">
-  <img src="docs/readmes/screenshots/macos-popover-dark.png" alt="ai-limits macOS popover in dark appearance" width="32%">
-  <img src="docs/readmes/screenshots/macos-popover-light.png" alt="ai-limits macOS popover in light appearance" width="32%">
+  <img src="docs/readmes/screenshots/macos-popover-dark.png" alt="ai-limits macOS popover in dark appearance" width="24%">
+  <img src="docs/readmes/screenshots/macos-popover-light.png" alt="ai-limits macOS popover in light appearance" width="24%">
+  <img src="docs/readmes/screenshots/macos-notification-center-dark.png" alt="ai-limits notifications in macOS Notification Center" width="24%">
+  <img src="docs/readmes/screenshots/macos-notification-center-light.png" alt="ai-limits light notifications in macOS Notification Center" width="24%">
 </p>
 
 ## Benefits
