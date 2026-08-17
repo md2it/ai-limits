@@ -70,6 +70,7 @@ fn main() {
                 install_tray_icon(app)?;
             }
             launch::show_initial_window(app.handle());
+            sync_dock_icon_with_main_window(app.handle());
             Ok(())
         })
         .on_menu_event(|app, event| {
@@ -94,19 +95,7 @@ fn main() {
         .build(tauri::generate_context!())
         .expect("failed to build Tauri application");
 
-    app.run(|_app_handle, _event| {
-        // Dock icon "reopen" gesture (clicking the Dock icon, or the standard
-        // app-reactivation event, when the app has no visible windows or is
-        // simply not frontmost) — opens/activates the Main Window only, never
-        // the Popover. See docs/desktop/mac-popover.md#entry-points.
-        #[cfg(target_os = "macos")]
-        if let tauri::RunEvent::Reopen { .. } = _event {
-            if let Some(main) = _app_handle.get_webview_window(MAIN_WINDOW_LABEL) {
-                let _ = main.show();
-                let _ = main.set_focus();
-            }
-        }
-    });
+    app.run(|_app_handle, _event| {});
 }
 
 /// Builds the macOS menu bar. Starts from the app/Edit/Window/Help submenus
@@ -221,6 +210,7 @@ fn install_main_window_close_guard(app: &tauri::App) {
 
     install_main_window_hide_after_fullscreen_exit_observer(&main_window);
 
+    let app_handle = app.handle().clone();
     let window_to_hide = main_window.clone();
     main_window.on_window_event(move |event| {
         if let tauri::WindowEvent::CloseRequested { api, .. } = event {
@@ -230,9 +220,26 @@ fn install_main_window_close_guard(app: &tauri::App) {
                 let _ = window_to_hide.set_fullscreen(false);
             } else {
                 let _ = window_to_hide.hide();
+                hide_dock_icon(&app_handle);
             }
         }
     });
+}
+
+/// Shows the Dock icon while the Main Window is visible and hides it once
+/// that window is closed — see docs/spec/desktop/mac-popover.md#closing.
+#[cfg(target_os = "macos")]
+fn sync_dock_icon_with_main_window(app: &tauri::AppHandle) {
+    let visible = app
+        .get_webview_window(MAIN_WINDOW_LABEL)
+        .and_then(|window| window.is_visible().ok())
+        .unwrap_or(false);
+    crate::platform::dock::set_visible(app, visible);
+}
+
+#[cfg(target_os = "macos")]
+fn hide_dock_icon(app: &tauri::AppHandle) {
+    crate::platform::dock::set_visible(app, false);
 }
 
 /// Set by `install_main_window_close_guard` when Cmd+W arrives while the
@@ -263,10 +270,12 @@ fn install_main_window_hide_after_fullscreen_exit_observer(main_window: &tauri::
     // is removed only when the process exits, after AppKit has stopped
     // sending window notifications.
     let ns_window = unsafe { &*main_window_ptr.cast::<NSWindow>() };
+    let app_handle = main_window.app_handle().clone();
     let window_to_hide = main_window.clone();
     let block = block2::RcBlock::new(move |_notification: NonNull<NSNotification>| {
         if HIDE_MAIN_WINDOW_AFTER_FULLSCREEN_EXIT.swap(false, Ordering::SeqCst) {
             let _ = window_to_hide.hide();
+            hide_dock_icon(&app_handle);
         }
     });
     // SAFETY: the observer is scoped to the live Main Window; `queue: None`

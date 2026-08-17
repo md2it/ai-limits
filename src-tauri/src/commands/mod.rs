@@ -215,6 +215,9 @@ fn show_and_focus_main_window(app: &tauri::AppHandle) {
         return;
     };
 
+    #[cfg(target_os = "macos")]
+    crate::platform::dock::set_visible(app, true);
+
     let _ = window.show();
     let _ = window.set_focus();
 
