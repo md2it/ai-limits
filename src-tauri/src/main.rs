@@ -8,11 +8,13 @@ mod windows;
 
 use std::collections::HashSet;
 use std::process::ExitCode;
+#[cfg(target_os = "macos")]
 use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 
 use tauri::Manager;
 
+#[cfg(target_os = "macos")]
 use crate::windows::MAIN_WINDOW_LABEL;
 
 /// Menu item id opening (showing + focusing) the Main Window.
@@ -68,9 +70,9 @@ fn main() {
                 popover_panel::finish_install(app.handle());
                 popover_panel::install_main_window_fullscreen_observer(app);
                 install_tray_icon(app)?;
+                sync_dock_icon_with_main_window(app.handle());
             }
             launch::show_initial_window(app.handle());
-            sync_dock_icon_with_main_window(app.handle());
             Ok(())
         })
         .on_menu_event(|app, event| {

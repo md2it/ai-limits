@@ -18,6 +18,7 @@ use ai_limits::types::CliAuthorization;
 
 use crate::windows::MAIN_WINDOW_LABEL;
 
+#[cfg(target_os = "macos")]
 pub use collect::{
     PROVIDER_REFRESH_FAILED_EVENT, PROVIDER_REFRESH_STARTED_EVENT, PROVIDER_UPDATED_EVENT,
 };
