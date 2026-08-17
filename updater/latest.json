@@ -1,15 +1,15 @@
 {
-  "version": "0.5.0",
-  "notes": "New feature:\n- The macOS menu bar Popover\n- Shared live cache and refresh schedule between Main Window and Popover\n- One shared Update frequency dropdown in Settings \u2192 Other for all provider cards (default 10 min)\n\nUpdated:\n- macOS opens the Main Window only on the first launch; later launches start from the menu bar\n- Main Window reworked into Overview, Settings, and Help\n- Provider cards no longer have their own refresh-frequency or per-card UPDATE NOW controls\n- Redesign:\n  - Main Window navigation and Help share quiet grouped controls in both themes\n  - Main Window actions now share one glass state pattern for rest, hover and press\n\nFixed:\n- Cmd+W closes the Main Window from fullscreen\n- Popover no longer flickers when switching Spaces",
-  "pub_date": "2026-08-06T19:44:00.658701Z",
+  "version": "0.5.1",
+  "notes": "Updated:\n- The desktop app no longer opens a local notification server\n- macOS hides the Dock icon when the Main Window is closed; reopen it from the menu bar or Popover",
+  "pub_date": "2026-08-17T12:09:09.922054Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q3Q2ZUtLWVk4WHBXb25FNmNYblBiTU50YnlaTnhpOTdyQ3JncHNNTTNzek9iNFQ0K0ZxMjF1SERSeGV6ZE5DVjJFWHM5RDRxMXZsdGt2cVpFS3AyNkFVPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDQ1Mjc5CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKOGFHOTNKZi9RUjFxK0FyL1ZmK2hoTVUrZmJ6OVYrN3Fkb21DSFpFaHE5Z2lSMlZBb2tlUGZrdzhEOWlONWpnZmc1RnFTcDNTT0hZS0s4U1V4QnZoQ3c9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.0/AI-Limits-v0.5.0-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2liamsyYm5pVUlWOFNWb294UGczSE1HTSt2MEdXTkJrTmFzdG85QjU2Uk9XTm5tZXJjL2ZSRVdMbTU1bzRXdjBIOXZsTU9ZMUdycUY5YTkzZk9Md0FzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2OTY4MzU3CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKU2NLN2tNRXZ3SFZLYTZvSTQwcGtEYjI3SjZlRkhEeDg5Q2VjSjB6cVRTQVZmUTNPNlBjY0dQdWtkQmVhejVvVjFGYWxvV3BiaEV3eEExRXRZVWo2RGc9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.1/AI-Limits-v0.5.1-macos-arm64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q3VYSEQ3TEI4d1Uvazh4czdQNFRpVUhxREErT1BxcjRaeFpYODlLZTY1ODZiZUhaRHhCdzcyVVJxTndXcnFEQWZvOXZod0x1NU9hTDZjNTdmcVp0ZXdRPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2MDQ1MzQzCWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKSEZadjNOdlFWbVh1NWFnbkJSK2poTCtPWXlmTGpjS2FwQkpHaHlYbzNteE5OeUl4akxyWmhlSkFNQk9nemVFQmhUdkVMTkVDcTVSY2hiSThIZVhIREE9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.0/AI-Limits-v0.5.0-macos-intel.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q3JtajhCNnIvdTJRcVN4R1lySjNjVU01WUprY2tZdUJnSUhSMGozeTU0MlFxd1VOMGRLSG42cUZ3bldOV1YwR1hhcWZuYnN1aTNIaTdTeWk4a3NLTGdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg2OTY4MzE0CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKWDNQUUsyOTdpU2RCeDMza2t1MnpuOWZFOUp1aXd2SUNualV2L0lnZW9BZGEvMDFVL1B4OG9za1hBSHdYQ3FYOHdoZllFcFBpV3RDUmhGOGFTbG5EQmc9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.1/AI-Limits-v0.5.1-macos-intel.app.tar.gz"
     }
   }
 }
