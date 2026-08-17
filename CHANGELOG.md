@@ -8,6 +8,7 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 Updated:
 - The desktop app no longer opens a local notification server
+- macOS hides the Dock icon when the Main Window is closed; reopen it from the menu bar or Popover
 
 ## [v0.5.0](https://github.com/md2it/ai-limits/releases/tag/v0.5.0) — 2026-08-06
 
