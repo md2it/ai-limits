@@ -7,12 +7,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.1/AI-Limits-v0.5.1-macos-arm64.dmg"><img src="https://shieldcn.dev/badge/macOS-v0.5.1-grey.svg?logo=apple" alt="Download for macOS"></a>
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.1/AI-Limits-v0.5.1-windows-setup.exe"><img src="https://shieldcn.dev/badge/Windows-v0.5.1-blue.svg?logo=ri:FaWindows" alt="Download for Windows"></a>
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.1/AI-Limits-v0.5.1-linux.AppImage"><img src="https://shieldcn.dev/badge/Linux-v0.5.1-yellow.svg?logo=linux" alt="Download for Linux"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-macos-arm64.dmg"><img src="https://shieldcn.dev/badge/macOS-v0.5.2-grey.svg?logo=apple" alt="Download for macOS"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-windows-setup.exe"><img src="https://shieldcn.dev/badge/Windows-v0.5.2-blue.svg?logo=ri:FaWindows" alt="Download for Windows"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-linux.AppImage"><img src="https://shieldcn.dev/badge/Linux-v0.5.2-yellow.svg?logo=linux" alt="Download for Linux"></a>
 </p>
 
-<p align="center"><a href="https://github.com/md2it/ai-limits/releases/tag/v0.5.1">All downloads</a></p>
+<p align="center"><a href="https://github.com/md2it/ai-limits/releases/tag/v0.5.2">All downloads</a></p>
 
 ---
 
