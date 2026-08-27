@@ -47,7 +47,7 @@ For Cursor, the terminal shows only the two usage pools as `Curs` and `Oth` (des
 
 The `{left}` percentage label follows the shared [limit display rules](../presentation/limit-display.md). Structured source data may keep finer precision; terminal rendering uses the displayed value for bar and color thresholds.
 
-User-facing timestamps follow the shared rules in [time-display.md](../presentation/time-display.md): local system timezone, `HH:MM` for today, `MMM D, HH:MM` for another date, and no timezone suffix. Terminal rows keep their own contextual labels, for example `reset {time}` for limit reset time and `Source {source}: {time}` for provider data time. If a source timestamp cannot be parsed reliably, keep the original source text.
+User-facing timestamps follow the shared rules in [time-display.md](../presentation/time-display.md): local system timezone, `today HH:MM` for today, `MMM D, HH:MM` for another date, and no timezone suffix. Terminal rows keep their own contextual labels, for example `reset {time}` for limit reset time and `Source {source}: {time}` for provider data time. If a source timestamp cannot be parsed reliably, keep the original source text.
 
 The filled bar characters show available remaining limit, not used limit. The whole filled part uses one color based on remaining limit. The empty bar characters are not colored.
 

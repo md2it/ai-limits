@@ -80,7 +80,7 @@ export const HELP_CHAPTERS = [
         <p>
           The <b>Source</b> toggle in Display settings adds a line under each
           provider's card showing exactly where its data came from, for
-          example <code>RPC, as of 10:10.</code> or <code>Local files, as of Aug 3, 10:10.</code>
+          example <code>RPC, as of today 10:10.</code> or <code>Local files, as of Aug 3, 10:10.</code>
         </p>
         <p>
           It's off by default; turn it on when you want to see, at a glance,

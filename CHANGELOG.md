@@ -6,6 +6,9 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Updated:
+- Today's timestamps now include the explicit `today` label in the CLI, Main Window, and Popover
+
 ## [v0.5.1](https://github.com/md2it/ai-limits/releases/tag/v0.5.1) — 2026-08-17
 
 Updated:

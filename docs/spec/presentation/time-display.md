@@ -31,10 +31,10 @@ There are two user-facing forms. Which one applies is decided by the field class
 
 Used for **moments** — values whose time of day matters and which are always near the present.
 
-For today, show only time:
+For today, show an explicit `today` label followed by the time:
 
 ```text
-20:48
+today 20:48
 ```
 
 For another date, show date and time:
@@ -81,7 +81,7 @@ The formatted value is only the date-time value. Surrounding text is owned by th
 Timestamp handling:
 
 - parse supported timestamp-like strings, numbers, and `Date` values where possible.
-- render today's timestamps as `HH:MM`.
+- render today's timestamps as `today HH:MM`.
 - render other days as `MMM D, HH:MM`.
 - render subscription dates as `MMM D, YYYY`.
 - strip timezone suffixes if a value cannot be parsed as an instant; both forms degrade the same way.

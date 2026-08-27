@@ -75,7 +75,7 @@ Examples:
 ```text
 🟡 AI Limits
 Codex weekly - 44% left
-reset 22:22
+reset today 22:22
 ```
 
 ```text

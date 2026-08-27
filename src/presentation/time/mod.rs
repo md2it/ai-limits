@@ -160,7 +160,7 @@ mod tests {
     }
 
     #[test]
-    fn formats_today_as_time_only() {
+    fn formats_today_with_explicit_label() {
         let context = fixed_context("2026-06-30T20:00:00Z");
         let formatted = format_user_timestamp("2026-06-30T20:41:00Z", &context);
 
@@ -168,6 +168,7 @@ mod tests {
             formatted,
             expected_local_label("2026-06-30T20:41:00Z", &context)
         );
+        assert!(formatted.starts_with("today "));
     }
 
     #[test]

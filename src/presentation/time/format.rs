@@ -6,7 +6,7 @@ const MONTHS: [&str; 12] = [
 
 pub fn format_local_datetime(dt: DateTime<Local>, reference: DateTime<Local>) -> String {
     if dt.date_naive() == reference.date_naive() {
-        return dt.format("%H:%M").to_string();
+        return format!("today {}", dt.format("%H:%M"));
     }
 
     let month = MONTHS.get(dt.month0() as usize).copied().unwrap_or("???");

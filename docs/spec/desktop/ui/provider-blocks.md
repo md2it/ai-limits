@@ -88,7 +88,7 @@ Claude                          Codex
 ──────── LIMITS ────────        ──────── LIMITS ────────
 5h | 100.0% left                5h | 92.0% left
 ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇         ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇░░
-reset Jul 6, 00:20              reset 20:48
+reset Jul 6, 00:20              reset today 20:48
 7d | 84.0% left                 Available credits: 344.2
 ▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇▇░░░░
                                 ───── SUBSCRIPTION ─────

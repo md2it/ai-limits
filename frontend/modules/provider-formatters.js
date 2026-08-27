@@ -78,7 +78,7 @@ export function formatTimestampForDisplay(value) {
   const date = toDate(value);
   if (!date) return stripTimezoneSuffix(value);
   const time = `${pad2(date.getHours())}:${pad2(date.getMinutes())}`;
-  if (isSameLocalDay(date, new Date())) return time;
+  if (isSameLocalDay(date, new Date())) return `today ${time}`;
   return `${MONTH_NAMES[date.getMonth()]} ${date.getDate()}, ${time}`;
 }
 
