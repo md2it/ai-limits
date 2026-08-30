@@ -1,15 +1,15 @@
 {
-  "version": "0.5.2",
-  "notes": "Updated:\n- Today's timestamps now include the explicit `today` label in the CLI, Main Window, and Popover",
-  "pub_date": "2026-08-27T20:22:35.630450Z",
+  "version": "0.6.0",
+  "notes": "Fixed:\n- Provider data now keeps refreshing while every application window is hidden\n- Menu Bar Popover now displays the shared cached snapshot instead of collecting again when it initializes\n\nInfra:\n- Application version now has one source of truth shared by the CLI, desktop app, About screens, and release workflow",
+  "pub_date": "2026-08-30T19:39:22.813960Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2pZSS9zaFBkZVJkbWkrbm5mMmFTRE10b1dPZkdNSnJTMDZuc1pmbE5NRUxnWXlHV2NIYlFKcG9qUVF0RnY3SDBrUzZsYnF5SVN2UTZMTjUzY0ZiSkFjPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3ODYyMDE2CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKdy85RU13UVlSK3pOTEU2VldnQkVsdWM3ZnNmSUMzM1lGWFhacUgzQm5za2tlcXdNQ2RNM0h6ams1ai9DblRJSHM3eExodGVqRW0wQk4yUUI3R0lRQnc9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q3JhN2ZMYzFWYzNJaXZLV2NmTEdtZ3ZqWkI5cDVWMXdEeW93OS80akx0dTY4U05kTnJtaCt3S3dYUFRaTEdUUzFVd01YajEyVDNGWjBUM2pGWXpGdWd3PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MTE4Njc4CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKcmV2NTMzQ2p3OEdJa0pqN2sydTh0MTFCZ2N4MEdEdVk4MUV0RmozSE9NdjZ2MjNFbHhheVdaRFMvRGhwUFdhRS9lNlFTMGs5cklkV3o3bU9XMG1wRGc9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.0/AI-Limits-v0.6.0-macos-arm64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2o3L3MzTlg2VjdEdElDTWcvT0VHWlNyVWJrYjhjY2NVUkRKS2VVQUIvRjhxOHFsRnNPR0xZUXozVGVGQjV1emJTcnErZXJpMVZFT1RlQy9nOTIyL2c4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg3ODYyMDcxCWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKaHM1dXdmR2Y3bEpPSjZqeDNna3g4cytQZ3JETE9ONHFiN01XL29nT1E0RjFVcklvb1kzUk9tcFpyUC9OUWtoclg1RjgyY283SG9EY05ZTlJUb1F4QlE9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-macos-intel.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2hpTDJyclVDV0xGK1pRamczR2Rmb3AwdzlQd1VQMmdmbVBOaDJWS3d2ZmI4RzhzRWlpbGZYc0cvTUdqaExxUmp5S3hndFVuNVdoZCtZdzdTQnB3K0FJPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg4MTE4NjMzCWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKOWUrNm1MSWxUdG1wL2VZaTFLTm9lQ0RPeXFKNDBkQ2VDVU1lZHJYMlBmdXdEdGJpQ1pOVWE3c1JEZzFYVER5MUxpQTJmWG9FbWZiQVgxb0RuaDg4Qnc9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.0/AI-Limits-v0.6.0-macos-intel.app.tar.gz"
     }
   }
 }

@@ -6,6 +6,8 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+## [v0.6.0](https://github.com/md2it/ai-limits/releases/tag/v0.6.0) — 2026-08-30
+
 Fixed:
 - Provider data now keeps refreshing while every application window is hidden
 - Menu Bar Popover now displays the shared cached snapshot instead of collecting again when it initializes
