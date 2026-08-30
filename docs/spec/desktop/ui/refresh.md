@@ -15,7 +15,9 @@ The preferred integration model is one Tauri request per provider. The frontend 
 
 ## Shared Refresh Schedule
 
-Main Window and Menu Bar Popover each run their own refresh timers, but both use the same user-selected update interval for every enabled provider. The next-refresh target for a provider is its last actual collection instant (`ProviderLimits.collectedAt`, the backend's `collected_at`) plus that shared interval — never a per-window "when did I last observe a fetch resolve" clock. A collection started by either surface or by `UPDATE ALL DATA NOW` updates both surfaces' schedules once its result is applied.
+The application process runs one background refresh scheduler shared by every surface. The frontend remains the owner of the saved update-frequency and provider settings and sends the current configuration through `configure_background_refresh`; the scheduler owns all periodic wakeups so collection continues when Main Window and Menu Bar Popover are both hidden. The next-refresh target for a provider is its last actual collection instant plus the shared interval, never a per-window "when did I last observe a fetch resolve" clock. A collection started by the scheduler, either surface, or `UPDATE ALL DATA NOW` resets that provider's schedule, and `CollectionCoordinator` merges concurrent requests for the same provider into one actual collection.
+
+Frontend surfaces keep no periodic refresh timers. They project the next-refresh target for display from `ProviderLimits.collectedAt` and the shared interval, then update that projection whenever an own response or a cross-surface event reports another attempt.
 
 A surface applies `collectedAt` to its schedule from four places:
 
@@ -25,6 +27,8 @@ A surface applies `collectedAt` to its schedule from four places:
 - the `provider-refresh-failed` event, emitted after any surface's failed collection — a surface that did not itself request the collection anchors its retry the same way a failed request of its own would, rather than leaving its schedule stale — see [frontend-state.md](frontend-state.md#shared-structured-data-cache).
 
 The card animation that accompanies a refresh (the "is-refreshing" glare) follows its own cross-window lifecycle on top of this schedule — see [refresh-animation.md](refresh-animation.md).
+
+Selecting `Manual only` clears all native scheduler deadlines but does not suppress the normal initial collection when the application starts or a provider is newly enabled.
 
 ## Boundaries
 

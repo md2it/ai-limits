@@ -597,6 +597,38 @@ fn handle_ipc(app: &tauri::AppHandle, body: &str) {
                 resolve_on_main_thread(id, payload);
             });
         }
+        "get_cached_provider_limits" => {
+            let provider_id = request
+                .payload
+                .get("providerId")
+                .and_then(JsonValue::as_str)
+                .unwrap_or_default()
+                .to_string();
+            let structured_cache = app.state::<crate::commands::StructuredInfoCache>();
+            let payload =
+                crate::commands::get_cached_provider_limits(provider_id, structured_cache);
+            resolve(
+                request.id,
+                serde_json::to_value(payload).map_err(|error| json!(error.to_string())),
+            );
+        }
+        "configure_background_refresh" => {
+            let config =
+                serde_json::from_value(request.payload.get("config").cloned().unwrap_or_default());
+            match config {
+                Ok(config) => {
+                    let scheduler = app.state::<crate::commands::BackgroundRefreshScheduler>();
+                    resolve(
+                        request.id,
+                        scheduler
+                            .configure(config)
+                            .map(|_| JsonValue::Null)
+                            .map_err(|error| json!(error)),
+                    );
+                }
+                Err(error) => resolve(request.id, Err(json!(error.to_string()))),
+            }
+        }
         other => {
             eprintln!("Popover: unknown IPC command {other:?}");
             resolve(request.id, Err(json!(format!("unknown command {other}"))));

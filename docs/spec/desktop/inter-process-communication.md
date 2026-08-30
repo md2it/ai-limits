@@ -26,7 +26,7 @@ Related:
 - frontend settings travel as command request parameters; they are not read from a shared backend config file
 - provider response fields are display-oriented and camelCase for the frontend
 - provider source, data timestamp, reset time, error state, and no-fresh-data state come from the backend response
-- shared update frequency, pending state, and saved UI settings are frontend state
+- shared update frequency, pending state, and saved UI settings are frontend state; the frontend sends the current collection configuration to the native background scheduler
 - external URL opening is allowlisted in code
 - opening the CLI in a terminal is supported on macOS only; other platforms must fail as unsupported
 
@@ -44,6 +44,7 @@ Related:
 6. A disabled or unknown provider for the passed query fails the command
 7. Concurrent fetches for the same provider, from either surface, share one actual collection; a `get_cached_provider_limits` read never itself triggers a collection
 8. A successful collection is announced to every open surface via the `provider-updated` app event, so a surface does not need to fetch again to see a result another surface just collected — see [frontend-state.md](ui/frontend-state.md#shared-structured-data-cache)
+9. `configure_background_refresh` accepts only the supported update intervals or `Manual only`; the application process owns periodic wakeups so hidden webviews are not responsible for background collection
 
 ### Utility commands
 

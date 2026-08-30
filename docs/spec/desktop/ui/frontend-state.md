@@ -39,7 +39,7 @@ User-facing problem and recovery rules are documented in [problems.md](problems.
 
 | Backend field | Frontend usage |
 | --- | --- |
-| `id` | provider block identity, DOM `data-provider-id`, timer maps |
+| `id` | provider block identity, DOM `data-provider-id`, next-refresh maps |
 | `label` | provider heading, accessibility labels |
 | `limits` | rendered limit rows; empty array selects empty/error state |
 | `limits[].label` | row label before `% left` |
@@ -66,7 +66,7 @@ These values are not returned by the backend:
 - `appSettings.showPlan`.
 - `appTheme`, persisted separately from app settings.
 - the shared update-frequency setting.
-- provider refresh timers.
+- provider last-update and next-refresh display projections.
 - provider refresh in-flight markers.
 - which top-level page (Overview/Settings/Help) is current, tracked by `switchView()` in `main.js`.
 - the selected help chapter.

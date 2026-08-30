@@ -1,4 +1,5 @@
 pub mod app_update;
+mod background_refresh;
 mod collect;
 mod provider_limits;
 mod structured_cache;
@@ -18,6 +19,7 @@ use ai_limits::types::CliAuthorization;
 
 use crate::windows::MAIN_WINDOW_LABEL;
 
+pub use background_refresh::BackgroundRefreshScheduler;
 #[cfg(target_os = "macos")]
 pub use collect::{
     PROVIDER_REFRESH_FAILED_EVENT, PROVIDER_REFRESH_STARTED_EVENT, PROVIDER_UPDATED_EVENT,
@@ -74,6 +76,14 @@ pub fn get_cached_provider_limits(
 ) -> Option<ProviderLimits> {
     let structured = read_cached_structured_info(structured_cache.inner(), &provider_id)?;
     Some(provider_limits_from_structured(&provider_id, &structured))
+}
+
+#[tauri::command]
+pub fn configure_background_refresh(
+    config: background_refresh::BackgroundRefreshConfig,
+    scheduler: tauri::State<'_, BackgroundRefreshScheduler>,
+) -> Result<(), String> {
+    scheduler.configure(config)
 }
 
 #[tauri::command]

@@ -4,12 +4,12 @@ import {
   PROVIDER_REFRESH_STARTED_EVENT,
   PROVIDER_UPDATED_EVENT,
 } from "./constants.js";
-import { isProviderEnabled, settingsToQuery } from "./settings.js";
+import { getUpdateFrequency, isProviderEnabled, settingsToQuery } from "./settings.js";
 import { syncSystemTheme } from "./theme.js";
 import { openHelp } from "./help.js";
 import { openExternalUrl } from "./links.js";
 import { isScreenshotShowcase, SHOWCASE_PROVIDERS } from "./showcase.js";
-import { getProviderNextRefreshAt, recordProviderUpdateNow, restartProviderRefreshTimer, stopProviderRefreshTimer } from "./provider-refresh-intervals.js";
+import { clearProviderRefreshProjection, getProviderNextRefreshAt, recalculateProviderNextRefreshAt, recordProviderUpdateNow, updateFrequencyToSeconds } from "./provider-refresh-intervals.js";
 import { initSectionSlotAlignment, scheduleSectionSlotAlignment } from "./provider-section-alignment.js";
 import { createEmptyProvider, renderProvider, updateProviderBlockData, updateProviderUpdateTimeText } from "./provider-rendering.js";
 
@@ -75,6 +75,26 @@ export function initProviders(elements, { surface = "main" } = {}) {
   // sitting on stale data with no explanation.
   window.__TAURI__?.event?.listen?.(PROVIDER_REFRESH_FAILED_EVENT, (event) => {
     applyRemoteProviderFailure(event.payload);
+  });
+}
+
+// The frontend remains the owner of saved settings, while the application
+// process owns periodic wakeups so refresh continues reliably with every
+// window hidden. Re-sending an unchanged configuration is harmless and lets
+// either surface initialize the single scheduler.
+export function syncBackgroundRefreshSchedule() {
+  const invoke = window.__TAURI__?.core?.invoke;
+  if (!invoke) {
+    return Promise.resolve();
+  }
+
+  return invoke("configure_background_refresh", {
+    config: {
+      query: settingsToQuery(),
+      intervalSeconds: updateFrequencyToSeconds(getUpdateFrequency()),
+    },
+  }).catch((error) => {
+    console.error("Could not configure background refresh", error);
   });
 }
 
@@ -151,7 +171,7 @@ function applyRemoteProviderUpdate(provider) {
     return;
   }
 
-  restartProviderRefreshTimer(provider.id, refreshSingleProvider);
+  recalculateProviderNextRefreshAt(provider.id);
   updateProviderBlockData(block, provider, getProviderNextRefreshAt(provider.id));
   attachSectionHandlers(block, provider.id);
   scheduleSectionSlotAlignment();
@@ -194,7 +214,7 @@ function applyRemoteProviderFailure(provider) {
     return;
   }
 
-  restartProviderRefreshTimer(provider.id, refreshSingleProvider);
+  recalculateProviderNextRefreshAt(provider.id);
   updateProviderBlockData(block, provider, getProviderNextRefreshAt(provider.id));
   attachSectionHandlers(block, provider.id);
   scheduleSectionSlotAlignment();
@@ -266,15 +286,15 @@ function attachRetryHandlers(block, providerId) {
 
 // Recomputes every enabled provider's next-refresh target from the shared
 // update-frequency setting and last collection instant, and refreshes the
-// update-time line text. Does not itself start a fetch unless the recomputed
-// schedule says one is already due (see controls.md).
+// update-time line text. Native schedule synchronization is a separate call
+// so this presentation-only function never starts a fetch.
 export function applySharedUpdateFrequency() {
   for (const providerId of PROVIDER_IDS) {
     if (!isProviderEnabled(providerId)) {
       continue;
     }
 
-    restartProviderRefreshTimer(providerId, refreshSingleProvider);
+    recalculateProviderNextRefreshAt(providerId);
     const block = getProviderBlock(providerId);
     if (!block) {
       continue;
@@ -348,7 +368,7 @@ async function startProviderCliLogin(provider) {
 }
 
 function mountProviderBlock(provider) {
-  restartProviderRefreshTimer(provider.id, refreshSingleProvider);
+  recalculateProviderNextRefreshAt(provider.id);
   const block = renderProvider(provider, getProviderNextRefreshAt(provider.id), providerSurface);
   attachProviderBlockHandlers(block, provider.id);
   return block;
@@ -397,7 +417,7 @@ export function removeDisabledProviderBlocks() {
       continue;
     }
 
-    stopProviderRefreshTimer(providerId);
+    clearProviderRefreshProjection(providerId);
     getProviderBlock(providerId)?.remove();
   }
 
@@ -498,7 +518,7 @@ async function refreshSingleProvider(providerId) {
       block = mountProviderBlock(provider);
       insertProviderBlockInOrder(block, providerId);
     } else {
-      restartProviderRefreshTimer(providerId, refreshSingleProvider);
+      recalculateProviderNextRefreshAt(providerId);
       updateProviderBlockData(block, provider, getProviderNextRefreshAt(providerId));
       attachSectionHandlers(block, providerId);
     }
@@ -509,7 +529,7 @@ async function refreshSingleProvider(providerId) {
     // it as an unknown last update, which would trigger another immediate
     // retry and hammer a persistently failing source.
     recordProviderUpdateNow(providerId);
-    restartProviderRefreshTimer(providerId, refreshSingleProvider);
+    recalculateProviderNextRefreshAt(providerId);
   } finally {
     providerRefreshInFlight.delete(providerId);
     updateRefreshVisual(providerId);
@@ -533,11 +553,10 @@ export async function refreshEnabledProviders({ initial = false } = {}) {
   if (initial) {
     // A provider the other open surface already collected this session
     // renders from that shared snapshot immediately; mountProviderBlock's
-    // own restartProviderRefreshTimer call (fed that snapshot's collectedAt
-    // below) then decides whether it's due for another collection right
-    // now or can wait — the same schedule-based logic used everywhere else,
-    // rather than this window unconditionally forcing a fresh collection
-    // just because it is the one initializing.
+    // own recalculateProviderNextRefreshAt call (fed that snapshot's collectedAt
+    // below) projects its next update for display. The native scheduler
+    // independently decides whether another collection is due, so this
+    // surface collects only when no shared snapshot exists yet.
     const cachedSnapshots = await Promise.all(enabledProviders.map(loadCachedProviderLimits));
     const providersNeedingCollection = [];
 

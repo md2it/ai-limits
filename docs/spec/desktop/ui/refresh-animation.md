@@ -22,7 +22,7 @@ On initial load, a provider with no cached snapshot (`get_cached_provider_limits
 
 ## Refresh started in this window
 
-`refreshSingleProvider(providerId)` — called by `UPDATE ALL DATA NOW`/`[update all]` or a scheduled timer firing — adds the id to `providerRefreshInFlight` before the `get_single_provider_limits` call and removes it in `finally`, calling `updateRefreshVisual` both times. This is enough to animate the card in the window that started the refresh; no event is needed for a window to see its own action.
+`refreshSingleProvider(providerId)` — called by `UPDATE ALL DATA NOW`/`[update all]` or initial frontend collection — adds the id to `providerRefreshInFlight` before the `get_single_provider_limits` call and removes it in `finally`, calling `updateRefreshVisual` both times. This is enough to animate the card in the window that started the refresh; no event is needed for a window to see its own action. A scheduled background collection has no owning surface and reaches every surface through the event lifecycle below.
 
 ## Refresh started in another surface
 
@@ -36,7 +36,7 @@ Because the event is broadcast app-wide, the surface that started the collection
 
 1. Delete the provider id from `providerRemoteRefreshInFlight` (recording whether it was actually present) and call `updateRefreshVisual`, so the in-flight animation always clears when the collection ends, in every surface.
 2. If `providerRefreshInFlight` still has the id, return — this window's own request is the one that will render the result (its own `try`/`catch` path in `refreshSingleProvider` already does), so rendering here too would race.
-3. Otherwise, render the new data/error onto the card (`updateProviderBlockData`, schedule alignment, restart the refresh timer) exactly as before.
+3. Otherwise, render the new data/error onto the card (`updateProviderBlockData`, schedule alignment, next-refresh display projection) exactly as before.
 
 ## The flash
 

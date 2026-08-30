@@ -23,6 +23,7 @@ import {
   refreshEnabledProviders,
   refreshProviderSectionsFromCache,
   applySharedUpdateFrequency,
+  syncBackgroundRefreshSchedule,
 } from "./providers.js";
 import {
   buildPopoverHeaderHtml,
@@ -121,6 +122,7 @@ if (window.__TAURI__?.event?.listen) {
     reloadAppSettings();
     refreshProviderSectionsFromCache();
     applySharedUpdateFrequency();
+    syncBackgroundRefreshSchedule();
   });
 
   // Same mechanism for the manual "Dark theme" toggle, which lives in
@@ -204,4 +206,5 @@ listenForSystemThemeMeterRefresh();
 
 initProviderIntervals();
 applyAppTheme();
+syncBackgroundRefreshSchedule();
 refreshEnabledProviders({ initial: true });

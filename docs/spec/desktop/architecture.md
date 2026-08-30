@@ -38,6 +38,7 @@ src-tauri/
   src/
     main.rs
     commands/
+      background_refresh.rs
       mod.rs
       collect.rs
       provider_limits.rs
@@ -52,6 +53,7 @@ Purpose:
 - `main.rs` — Tauri application bootstrap, window setup, plugins, and command registration
 - `commands/` — desktop IPC facade and desktop-only orchestration/projection onto the shared core
   - `mod.rs` — thin `#[tauri::command]` wrappers exposed to the frontend
+  - `background_refresh.rs` — process-level provider refresh scheduling from frontend-owned settings
   - `collect.rs` — provider-limits collection orchestration and notification trigger
   - `provider_limits.rs` — camelCase DTO/projection for the frontend provider-limits contract
 - `notifications.rs` — desktop notification delivery through Tauri
@@ -84,7 +86,7 @@ IPC goals, constraints, and command rules are documented in [inter-process-commu
 | `providers.js` | provider refresh orchestration |
 | `provider-section-alignment.js` | equal Limits/Plan section slot heights across provider cards |
 | `provider-rendering.js` | provider card markup and data projection into the DOM |
-| `provider-refresh-intervals.js` | shared update-frequency setting and refresh timers |
+| `provider-refresh-intervals.js` | shared update-frequency conversion and next-refresh display projection |
 | `provider-formatters.js` | display formatting helpers |
 | `showcase.js` | browser screenshot showcase |
 | `links.js` | allowlisted external links |

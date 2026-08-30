@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-limits"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -29,7 +29,7 @@ dependencies = [
 
 [[package]]
 name = "ai-limits-desktop"
-version = "0.5.2"
+version = "0.6.0"
 dependencies = [
  "ai-limits",
  "block2",
@@ -43,6 +43,7 @@ dependencies = [
  "tauri-build",
  "tauri-plugin-notification",
  "tauri-plugin-updater",
+ "tokio",
  "wry",
 ]
 

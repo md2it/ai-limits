@@ -21,6 +21,7 @@ import {
   scheduleSectionSlotAlignment,
   restoreNewlyEnabledProviders,
   applySharedUpdateFrequency,
+  syncBackgroundRefreshSchedule,
 } from "./providers.js";
 
 const providerList = document.querySelector("#provider-list");
@@ -81,6 +82,7 @@ initSettings(settingInputs, {
   onChanged({ newlyEnabled }) {
     removeDisabledProviderBlocks();
     restoreNewlyEnabledProviders(newlyEnabled);
+    syncBackgroundRefreshSchedule();
     syncAppUpdateSchedule();
   },
   onDisplayChanged() {
@@ -88,6 +90,7 @@ initSettings(settingInputs, {
   },
   onUpdateFrequencyChanged() {
     applySharedUpdateFrequency();
+    syncBackgroundRefreshSchedule();
   },
 });
 for (const option of updateFrequencyOptions) {
@@ -163,6 +166,7 @@ setupScreenshotShowcase();
 initProviderIntervals();
 applyAppTheme();
 syncSettingsInputs();
+syncBackgroundRefreshSchedule();
 refreshButton.addEventListener("click", () => {
   refreshEnabledProviders();
 });

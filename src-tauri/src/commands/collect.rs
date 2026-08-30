@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-use tauri::Emitter;
+use tauri::{Emitter, Manager};
 
 use ai_limits::get_limits::{
     get_source_plan_limits, ui_source_plan, SourcePlan, UiSourcePlanOptions,
@@ -93,34 +93,43 @@ async fn run_collection(
     structured_cache: StructuredInfoCache,
 ) -> Result<StructuredSourceInfo, String> {
     let id = source_plan.label().to_string();
+    let scheduler_app = app.clone();
+    let scheduler_provider_id = id.clone();
+    let collection_started_at = tokio::time::Instant::now();
 
     let _ = app.emit(
         PROVIDER_REFRESH_STARTED_EVENT,
         &StartedPayload { id: id.clone() },
     );
 
-    tauri::async_runtime::spawn_blocking(move || match get_source_plan_limits(source_plan) {
-        Ok(report) => {
-            if notifications_enabled {
-                notify_for_report(&report, &app, &sent_notifications, &remaining_store);
+    let result =
+        tauri::async_runtime::spawn_blocking(move || match get_source_plan_limits(source_plan) {
+            Ok(report) => {
+                if notifications_enabled {
+                    notify_for_report(&report, &app, &sent_notifications, &remaining_store);
+                }
+                let structured = report.data.structured;
+                if let Ok(mut cache) = structured_cache.lock() {
+                    cache.insert(id.clone(), structured.clone());
+                }
+                let payload = provider_limits_from_structured(&id, &structured);
+                let _ = app.emit(PROVIDER_UPDATED_EVENT, &payload);
+                Ok(structured)
             }
-            let structured = report.data.structured;
-            if let Ok(mut cache) = structured_cache.lock() {
-                cache.insert(id.clone(), structured.clone());
+            Err(error) => {
+                let message = error.to_string();
+                let payload = provider_error(&id, message.clone());
+                let _ = app.emit(PROVIDER_REFRESH_FAILED_EVENT, &payload);
+                Err(message)
             }
-            let payload = provider_limits_from_structured(&id, &structured);
-            let _ = app.emit(PROVIDER_UPDATED_EVENT, &payload);
-            Ok(structured)
-        }
-        Err(error) => {
-            let message = error.to_string();
-            let payload = provider_error(&id, message.clone());
-            let _ = app.emit(PROVIDER_REFRESH_FAILED_EVENT, &payload);
-            Err(message)
-        }
-    })
-    .await
-    .map_err(|error| error.to_string())?
+        })
+        .await
+        .map_err(|error| error.to_string())?;
+
+    scheduler_app
+        .state::<super::BackgroundRefreshScheduler>()
+        .collection_finished(scheduler_provider_id, collection_started_at);
+    result
 }
 
 #[derive(serde::Serialize)]

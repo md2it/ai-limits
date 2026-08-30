@@ -55,6 +55,7 @@ fn main() {
         .manage(Arc::new(Mutex::new(HashSet::<String>::new())))
         .manage(commands::new_structured_info_cache())
         .manage(commands::CollectionCoordinator::new())
+        .manage(commands::BackgroundRefreshScheduler::new())
         .setup(|app| {
             let store_path = notifications::previous_remaining_store_path(app.handle())?;
             let remaining_store: Arc<dyn ai_limits::notifications::PreviousRemainingStore> =
@@ -62,6 +63,8 @@ fn main() {
                     store_path,
                 ));
             app.manage(remaining_store);
+            app.state::<commands::BackgroundRefreshScheduler>()
+                .start(app.handle().clone());
             #[cfg(target_os = "macos")]
             {
                 install_help_menu(app)?;
@@ -82,6 +85,7 @@ fn main() {
             commands::get_app_version,
             commands::get_single_provider_limits,
             commands::get_cached_provider_limits,
+            commands::configure_background_refresh,
             commands::open_external_url,
             commands::start_provider_cli_login,
             commands::get_cli_command,

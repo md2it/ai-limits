@@ -6,6 +6,10 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Fixed:
+- Provider data now keeps refreshing while every application window is hidden
+- Menu Bar Popover now displays the shared cached snapshot instead of collecting again when it initializes
+
 Infra:
 - Application version now has one source of truth shared by the CLI, desktop app, About screens, and release workflow
 

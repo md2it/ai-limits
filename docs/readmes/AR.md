@@ -7,12 +7,12 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-macos-arm64.dmg"><img src="https://shieldcn.dev/badge/macOS-v0.5.2-grey.svg?logo=apple" alt="تنزيل لنظام macOS"></a>
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-windows-setup.exe"><img src="https://shieldcn.dev/badge/Windows-v0.5.2-blue.svg?logo=ri:FaWindows" alt="تنزيل لنظام Windows"></a>
-  <a href="https://github.com/md2it/ai-limits/releases/download/v0.5.2/AI-Limits-v0.5.2-linux.AppImage"><img src="https://shieldcn.dev/badge/Linux-v0.5.2-yellow.svg?logo=linux" alt="تنزيل لنظام Linux"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.6.0/AI-Limits-v0.6.0-macos-arm64.dmg"><img src="https://shieldcn.dev/badge/macOS-v0.6.0-grey.svg?logo=apple" alt="تنزيل لنظام macOS"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.6.0/AI-Limits-v0.6.0-windows-setup.exe"><img src="https://shieldcn.dev/badge/Windows-v0.6.0-blue.svg?logo=ri:FaWindows" alt="تنزيل لنظام Windows"></a>
+  <a href="https://github.com/md2it/ai-limits/releases/download/v0.6.0/AI-Limits-v0.6.0-linux.AppImage"><img src="https://shieldcn.dev/badge/Linux-v0.6.0-yellow.svg?logo=linux" alt="تنزيل لنظام Linux"></a>
 </p>
 
-<p align="center"><a href="https://github.com/md2it/ai-limits/releases/tag/v0.5.2">كل التنزيلات</a></p>
+<p align="center"><a href="https://github.com/md2it/ai-limits/releases/tag/v0.6.0">كل التنزيلات</a></p>
 
 ---
 
