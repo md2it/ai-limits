@@ -6,6 +6,9 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Infra:
+- Application version now has one source of truth shared by the CLI, desktop app, About screens, and release workflow
+
 ## [v0.5.2](https://github.com/md2it/ai-limits/releases/tag/v0.5.2) — 2026-08-27
 
 Updated:

@@ -1,7 +1,6 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "AI Limits",
-  "version": "0.5.2",
   "identifier": "com.ai-limits.desktop",
   "build": {
     "beforeDevCommand": "sh scripts/tauri-dev-server.sh",

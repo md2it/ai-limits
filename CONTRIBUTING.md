@@ -29,4 +29,6 @@ The release workflow takes the version entered at launch and automatically:
 - creates a new empty `Unreleased` section;
 - uses the versioned section for the annotated Git tag and GitHub Release notes.
 
+The application version has one source of truth: `workspace.package.version` in the root `Cargo.toml`. Both Rust packages inherit it, Tauri uses the desktop package version, and the release workflow validates the entered tag against it.
+
 Do not create or edit release sections manually.

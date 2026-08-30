@@ -64,19 +64,19 @@ jobs:
 
           python3 - <<'PY'
           from pathlib import Path
-          import json
           import os
           import re
+          import tomllib
 
           tag = os.environ["RELEASE_TAG"]
 
           # Installed clients compare their built-in version against the version in
           # the update manifest, which is derived from this tag. A mismatch would
           # either hide the release from the updater or offer it in a loop.
-          configured = json.loads(Path("src-tauri/tauri.conf.json").read_text())["version"]
+          configured = tomllib.loads(Path("Cargo.toml").read_text())["workspace"]["package"]["version"]
           if configured != tag.lstrip("v"):
               raise SystemExit(
-                  f"src-tauri/tauri.conf.json declares version {configured}, which does not match {tag}."
+                  f"Cargo.toml declares workspace version {configured}, which does not match {tag}."
               )
 
           text = Path("CHANGELOG.md").read_text()
