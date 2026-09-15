@@ -490,6 +490,41 @@ async function loadCachedProviderLimits(providerId) {
   }
 }
 
+// Reconciles an already-initialized surface with the application-wide cache.
+// Opening a hidden Main Window or Popover calls this without starting a new
+// collection: the user sees every result already known to the application
+// immediately, while the native scheduler remains responsible for freshness.
+export async function refreshProvidersFromSharedCache() {
+  removeDisabledProviderBlocks();
+
+  const enabledProviders = PROVIDER_IDS.filter(isProviderEnabled);
+  const cachedSnapshots = await Promise.all(enabledProviders.map(loadCachedProviderLimits));
+
+  for (const [index, providerId] of enabledProviders.entries()) {
+    const snapshot = cachedSnapshots[index];
+    if (!snapshot) {
+      continue;
+    }
+
+    snapshot.pending = false;
+    cacheProviderData(snapshot);
+    recordProviderUpdateNow(providerId, snapshot.collectedAt);
+
+    let block = getProviderBlock(providerId);
+    if (!block) {
+      block = mountProviderBlock(snapshot);
+      insertProviderBlockInOrder(block, providerId);
+      continue;
+    }
+
+    recalculateProviderNextRefreshAt(providerId);
+    updateProviderBlockData(block, snapshot, getProviderNextRefreshAt(providerId));
+    attachSectionHandlers(block, providerId);
+  }
+
+  scheduleSectionSlotAlignment();
+}
+
 // A failed fetch previously rejected silently: providerRefreshInFlight was
 // still cleared in `finally`, but nothing told the user the click did
 // anything. Manual and scheduled refreshes share this function, so surfacing

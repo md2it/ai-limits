@@ -45,6 +45,8 @@ Related:
 7. Concurrent fetches for the same provider, from either surface, share one actual collection; a `get_cached_provider_limits` read never itself triggers a collection
 8. A successful collection is announced to every open surface via the `provider-updated` app event, so a surface does not need to fetch again to see a result another surface just collected — see [frontend-state.md](ui/frontend-state.md#shared-structured-data-cache)
 9. `configure_background_refresh` accepts only the supported update intervals or `Manual only`; the application process owns periodic wakeups so hidden webviews are not responsible for background collection
+10. Opening Main Window or Menu Bar Popover re-reads the shared cache and does not itself start a provider collection
+11. Manual refresh starts one new source-chain collection per enabled provider; the normal fallback rules determine each collection's usable result
 
 ### Utility commands
 

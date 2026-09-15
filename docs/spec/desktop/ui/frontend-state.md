@@ -31,7 +31,7 @@ A surface that itself called `get_single_provider_limits` for the provider in qu
 
 The full cross-window animation lifecycle built on these three events — including the short flash played when a card's content changes without a `provider-refresh-started` signal ever reaching that surface — is documented separately in [refresh-animation.md](refresh-animation.md).
 
-On initializing its provider list (first load, or a provider newly re-enabled), a surface calls `get_cached_provider_limits` for each enabled provider before deciding whether to collect: a provider with an existing shared snapshot renders it immediately and only re-collects if the shared update-frequency schedule (recomputed from that snapshot's `collectedAt`) says a refresh is already due; a provider with no shared snapshot yet collects normally. This is what lets a surface opened after the other has already collected data show it immediately, with no collection of its own.
+On first load, after a provider is newly enabled, and whenever either surface opens, that surface calls `get_cached_provider_limits` for each enabled provider. An existing shared snapshot renders immediately without starting another collection. A provider with no snapshot yet collects on first load or when newly enabled. Opening a surface never replaces its visible result with an empty state merely because no cached snapshot is available. This lets each opening show the data currently known to the application without delaying the window for a source request.
 
 User-facing problem and recovery rules are documented in [problems.md](problems.md).
 

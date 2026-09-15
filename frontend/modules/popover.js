@@ -21,6 +21,7 @@ import {
   initProviderIntervals,
   listenForSystemThemeMeterRefresh,
   refreshEnabledProviders,
+  refreshProvidersFromSharedCache,
   refreshProviderSectionsFromCache,
   applySharedUpdateFrequency,
   syncBackgroundRefreshSchedule,
@@ -207,4 +208,5 @@ listenForSystemThemeMeterRefresh();
 initProviderIntervals();
 applyAppTheme();
 syncBackgroundRefreshSchedule();
+window.__refreshProvidersFromSharedCache = () => refreshProvidersFromSharedCache();
 refreshEnabledProviders({ initial: true });

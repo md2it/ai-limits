@@ -19,7 +19,7 @@ dependencies = [
 
 [[package]]
 name = "ai-limits"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -29,7 +29,7 @@ dependencies = [
 
 [[package]]
 name = "ai-limits-desktop"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "ai-limits",
  "block2",

@@ -879,6 +879,12 @@ pub fn show_near_tray(
         // AppKit route and the page-level fallback immediately, rather than
         // relying on the global event monitor alone.
         panel.panel.makeKeyAndOrderFront(None);
+        if let Err(error) = panel
+            .webview
+            .evaluate_script("window.__refreshProvidersFromSharedCache && window.__refreshProvidersFromSharedCache()")
+        {
+            eprintln!("Popover: failed to refresh cached provider data on open: {error}");
+        }
         panel.panel.invalidateShadow();
         panel.dismiss_monitors = Some(install_dismiss_monitors(app, tray));
     });

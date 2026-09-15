@@ -58,7 +58,7 @@ The panel's own chrome is a single fixed header strip above the scrolling card a
 ```
 
 - **`AI Limits`** — opens the Main Window.
-- **`[update all]`** — refreshes every visible provider. A hand-authored circular refresh glyph (`POPOVER_UPDATE_ALL_ICON_SVG` in [popover-toolbar.js](../../../frontend/modules/popover-toolbar.js)), drawn at the panel's own icon scale (15px, 1.5 stroke, `currentColor`) rather than reused from the Main Window's 18-20px/2.0 glyph builders.
+- **`[update all]`** — starts a new source-chain collection for every enabled provider. A hand-authored circular refresh glyph (`POPOVER_UPDATE_ALL_ICON_SVG` in [popover-toolbar.js](../../../frontend/modules/popover-toolbar.js)), drawn at the panel's own icon scale (15px, 1.5 stroke, `currentColor`) rather than reused from the Main Window's 18-20px/2.0 glyph builders.
 - **`[info]`** — opens the Main Window, on the matching Help/info section.
 - **`[gear]`** — opens the Main Window, on Settings.
 
@@ -115,7 +115,7 @@ The card animation these three events drive — including the short flash played
 
 - Menu Bar = quick access.
 - Main Window = full work.
-- The Popover opens only on an explicit user action (clicking the menu bar icon) — never automatically.
+- The Popover opens only on an explicit user action (clicking the menu bar icon) — never automatically. On every opening it reads the application-wide provider cache, so its cards immediately show the data currently known to the application.
 
 ## Static Layout
 
@@ -134,7 +134,7 @@ Implemented, in both surfaces unless noted:
 - Unlike the `macos`/`windows`/`linux` showcase variants, the panel has no titlebar and no traffic lights — the Popover is not an OS window, so that chrome does not apply. It also has no resize handle; the OS-window screenshot resize behavior in [showcase.md](../../product/showcase.md) does not apply to it either.
 - No Help entry point.
 - The [Toolbar](#toolbar) is implemented: every enabled provider's card is always shown, stacked top to bottom — there is no tab control to filter them.
-  - In `popover.html`, `[update all]` refreshes every enabled provider through the common collection path. The resulting shared structured snapshots are used by both surfaces; it does not initiate a separate Main Window collection.
+  - In `popover.html`, `[update all]` starts a new collection for every enabled provider through the common source-chain path. The resulting shared structured snapshots are used by both surfaces; it does not initiate a separate Main Window collection.
   - `[info]` and `[gear]` are real cross-window navigation: they call two bridge globals, `window.__openMainWindowHelp(chapterId?)` and `window.__openMainWindowSettings()`, implemented via `window.__TAURI__.core.invoke` calls into the `open_main_window_help`/`open_main_window_settings` Tauri commands — see [Toolbar](#toolbar). A provider card's own "More details" link (shown on some data-error states) also routes through `window.__openMainWindowHelp`, via a small guard in [help.js](../../../frontend/modules/help.js)'s `openHelp()`: when no local Help view exists (true for `popover.js`, which never calls `initHelp`), it defers to that same bridge global instead of throwing.
   - The `AI Limits` header button calls a third bridge global, `window.__openMainApplication()`, same pattern, backed by the `open_main_window` command.
   - In the showcase preview the four actions are rendered-only, with no callbacks attached — the preview does not go through `popover.js` at all. Tab switching does work there, since that behavior lives in the shared module.
@@ -143,7 +143,7 @@ Implemented, in both surfaces unless noted:
 - Stylesheets: `popover.html` links its own entry point, [frontend/popover.css](../../../frontend/popover.css), instead of the Main Window's `styles.css`. It pulls in only what this surface renders — tokens, the shared base, the provider cards, and the panel layer — leaving out the Main Window nav bar, the settings page, the help view, the update banner and the screenshot-showcase chrome, none of which exist here. The panel layer itself is [frontend/styles/popover.css](../../../frontend/styles/popover.css), imported last by both entry points so its scoped overrides win; it is a real file of its own rather than a section of `showcase.css`, so the shipped window no longer depends on the screenshot-mockup stylesheet. See [Visual Layer](#visual-layer).
 - CSP: `popover.html` introduces no new script/style/resource origins, so it is covered by the same `app.security.csp` in `src-tauri/tauri.conf.json` as `index.html` without changes — `script-src 'self'`, `style-src 'self'`, no inline styles or scripts, only local ES module imports.
 
-Native tray/panel logic now exists on top of this layout — see [src-tauri/src/main.rs](../../../src-tauri/src/main.rs) and [src-tauri/src/popover_panel.rs](../../../src-tauri/src/popover_panel.rs): a `TrayIcon` (`install_tray_icon`) toggles the native `NSPanel` (`popover_panel::show_near_tray`/`hide`), positioned near the clicked tray icon and dismissed by the native monitors in [Dismissal](#dismissal) — see [Native Panel](#native-panel) for the current mechanics. Dock-icon reactivation and Main Window close-to-hide are wired up too (see [Entry Points](#entry-points) and [Closing](#closing)). `[update all]`'s real behavior still stops at starting collections for this window's own cards (no cross-window refresh — this was never in scope); the other open surface's matching cards still animate and update through the shared `provider-refresh-started`/`provider-updated`/`provider-refresh-failed` events described in [Cross-Window Sync](#cross-window-sync), without starting a second collection there. `AI Limits`/`[info]`/`[gear]` call real implementations of the bridge globals, backed by Tauri commands in [src-tauri/src/commands/mod.rs](../../../src-tauri/src/commands/mod.rs) — see [Toolbar](#toolbar) for the full writeup.
+Native tray/panel logic now exists on top of this layout — see [src-tauri/src/main.rs](../../../src-tauri/src/main.rs) and [src-tauri/src/popover_panel.rs](../../../src-tauri/src/popover_panel.rs): a `TrayIcon` (`install_tray_icon`) toggles the native `NSPanel` (`popover_panel::show_near_tray`/`hide`), positioned near the clicked tray icon and dismissed by the native monitors in [Dismissal](#dismissal) — see [Native Panel](#native-panel) for the current mechanics. Dock-icon reactivation and Main Window close-to-hide are wired up too (see [Entry Points](#entry-points) and [Closing](#closing)). Every opening re-reads the shared provider cache before the user interacts with the cards. `[update all]` starts new collections through the common source-chain path; the other open surface receives the resulting states through the shared `provider-refresh-started`/`provider-updated`/`provider-refresh-failed` events without a second collection. `AI Limits`/`[info]`/`[gear]` call real implementations of the bridge globals, backed by Tauri commands in [src-tauri/src/commands/mod.rs](../../../src-tauri/src/commands/mod.rs) — see [Toolbar](#toolbar) for the full writeup.
 
 ## Visual Layer
 

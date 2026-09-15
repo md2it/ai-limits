@@ -231,6 +231,9 @@ fn show_and_focus_main_window(app: &tauri::AppHandle) {
 
     let _ = window.show();
     let _ = window.set_focus();
+    let _ = window.eval(
+        "window.__refreshProvidersFromSharedCache && window.__refreshProvidersFromSharedCache()",
+    );
 
     hide_popover_window(app);
 }

@@ -16,6 +16,7 @@ import {
   initProviderIntervals,
   listenForSystemThemeMeterRefresh,
   refreshEnabledProviders,
+  refreshProvidersFromSharedCache,
   refreshProviderSectionsFromCache,
   removeDisabledProviderBlocks,
   scheduleSectionSlotAlignment,
@@ -167,6 +168,7 @@ initProviderIntervals();
 applyAppTheme();
 syncSettingsInputs();
 syncBackgroundRefreshSchedule();
+window.__refreshProvidersFromSharedCache = () => refreshProvidersFromSharedCache();
 refreshButton.addEventListener("click", () => {
   refreshEnabledProviders();
 });

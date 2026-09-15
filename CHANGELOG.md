@@ -6,6 +6,9 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Fixed:
+- Main Window and Menu Bar Popover now show the current shared data when opened
+
 ## [v0.6.0](https://github.com/md2it/ai-limits/releases/tag/v0.6.0) — 2026-08-30
 
 Fixed:
