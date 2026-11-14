@@ -47,6 +47,7 @@ pub struct ProviderLimits {
     error_message: Option<String>,
     no_fresh_data: bool,
     authorization_required: Option<String>,
+    pub(super) cursor_epoch: Option<u64>,
 }
 
 #[derive(serde::Serialize)]
@@ -133,6 +134,7 @@ pub(super) fn provider_limits_from_structured(
         error_message,
         no_fresh_data,
         authorization_required,
+        cursor_epoch: (id == "cursor").then(ai_limits::providers::cursor_api2::cache_epoch),
     }
 }
 
@@ -153,7 +155,26 @@ pub(super) fn provider_error(id: &str, message: String) -> ProviderLimits {
         error_message: Some(message),
         no_fresh_data: false,
         authorization_required: None,
+        cursor_epoch: (id == "cursor").then(ai_limits::providers::cursor_api2::cache_epoch),
     }
+}
+
+pub(super) fn cursor_failure(
+    message: String,
+    previous: Option<&StructuredSourceInfo>,
+) -> ProviderLimits {
+    if ai_limits::providers::cursor_api2::retain_snapshot(&message) {
+        if let Some(previous) = previous {
+            let mut payload = provider_limits_from_structured("cursor", previous);
+            payload.error_message = Some(if message == "Could not update Cursor. Try again." {
+                "Could not update Cursor. Showing previous data.".into()
+            } else {
+                message
+            });
+            return payload;
+        }
+    }
+    provider_error("cursor", message)
 }
 
 fn plan_links(account: &AccountInfo) -> Vec<ProviderLink> {
@@ -461,5 +482,29 @@ mod tests {
         assert!(response.plan.lines[1].contains("2026"));
         assert!(!response.plan.lines[1].contains("2024"));
         assert!(!response.plan.lines[1].contains(':'));
+    }
+    #[test]
+    fn cursor_transient_failure_keeps_snapshot_and_timestamp() {
+        let mut previous = structured_source("cursor", "cursor_api2", AccountInfo::default());
+        previous.data_as_of = Some("2026-10-28T10:00:00Z".into());
+        previous.collected_at = previous.data_as_of.clone();
+        previous.limits.push(ai_limits::types::LimitInfo {
+            name: "auto".into(),
+            remaining_percent: Some(70.0),
+            ..Default::default()
+        });
+        let payload = cursor_failure(
+            "Could not update Cursor. Try again.".into(),
+            Some(&previous),
+        );
+        assert_eq!(payload.limits.len(), 1);
+        assert_eq!(payload.collected_at, previous.collected_at);
+        assert_eq!(
+            payload.error_message.as_deref(),
+            Some("Could not update Cursor. Showing previous data.")
+        );
+        let terminal = cursor_failure("Sign in to Cursor, then retry.".into(), Some(&previous));
+        assert!(terminal.limits.is_empty());
+        assert!(terminal.collected_at.is_none());
     }
 }

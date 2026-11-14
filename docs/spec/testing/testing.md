@@ -18,6 +18,7 @@ The quality gate does not replace the manual desktop smoke-check. Before a relea
 
 ## Test Areas
 
+- Cursor session recovery and platform acceptance: [Cursor authentication](../get-limits/providers/cursor-auth.md#acceptance-checks).
 - Provider source contract tests: [get-limits/providers/contract.md](../get-limits/providers/contract.md#tests).
 - Notification trigger and delivery tests: [notifications](../notifications/testing.md#testing).
 - Local desktop dev run: [dev run](../setup/dev-run.md).

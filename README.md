@@ -72,7 +72,7 @@ The full comparison covers 18 alternatives and 16 criteria: [alternatives catalo
 - Windows and Linux: unsigned pre-release builds are available; support evolves based on user feedback,
 - Desktop notifications are currently available only on macOS,
 - Some local Codex and Claude sources may not work on Windows and Linux yet; CLI sources work everywhere.
-- Codex and Claude CLI sources require authorization with the respective provider; Cursor requires a valid token from an authorized Cursor Agent.
+- Codex and Claude CLI sources require authorization with the respective provider; Cursor limits require an active Cursor CLI sign-in. Install Cursor CLI and run `cursor agent login` in your terminal.
 
 ## License
 

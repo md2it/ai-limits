@@ -1,7 +1,8 @@
-use std::io::{self, Write};
-use std::process::Stdio;
+use std::io;
 
-use crate::infra::os_access::{cursor_dashboard_request_command, read_cursor_access_token};
+use super::credentials::Store;
+use super::session::{with_session, Session};
+use super::transport::{Failure, Transport};
 
 use super::parse::{
     billing_window, is_enterprise_account, monthly_billing_window, plan_usage_is_present, team_id,
@@ -35,43 +36,28 @@ pub struct CursorResponses {
     pub fetch_diagnostics: Vec<&'static str>,
 }
 
-const TOKEN_MISSING: &str =
-    "Cursor api2 usage unavailable: token not found; run `cursor agent login`";
-const TOKEN_EMPTY: &str = "Cursor api2 usage unavailable: empty token; run `cursor agent login`";
-const TOKEN_UNREADABLE: &str =
-    "Cursor api2 usage unavailable: the macOS Keychain token could not be read";
-const TOKEN_REJECTED: &str =
-    "Cursor api2 usage unavailable: token rejected; run `cursor agent login`";
-const REQUEST_FAILED: &str = "Cursor api2 usage unavailable: the request could not be completed";
-
-const REQUEST_ERROR: &str = "request failed";
-const EMPTY_RESPONSE: &str = "empty response";
-const REJECTED: &str = "request was not authorized";
-
 pub(super) fn fetch_dashboard() -> io::Result<Result<CursorResponses, AccessDenied>> {
-    let token = match read_token() {
-        Ok(token) => token,
-        Err(denied) => return Ok(Err(denied)),
-    };
+    Ok(
+        with_session(fetch_with_session).map_err(|error| AccessDenied {
+            message: error.message().to_string(),
+        }),
+    )
+}
 
+fn fetch_with_session<T: Transport, S: Store>(
+    session: &mut Session<'_, T, S>,
+) -> Result<CursorResponses, Failure> {
     let mut responses = CursorResponses::default();
 
-    let plan_info = post("GetPlanInfo", "{}", &token)?;
-    if let Err(error) = &plan_info {
-        let message = if *error == REJECTED {
-            TOKEN_REJECTED
-        } else {
-            REQUEST_FAILED
-        };
-        return Ok(Err(AccessDenied {
-            message: message.to_string(),
-        }));
+    let plan_info = post(session, "GetPlanInfo", "{}")?;
+    if plan_info.is_err() {
+        return Err(Failure::Transient);
     }
     responses.plan_info = Some(plan_info);
 
-    let current_period = post("GetCurrentPeriodUsage", "{}", &token)?;
+    let current_period = post(session, "GetCurrentPeriodUsage", "{}")?;
     responses.current_period = Some(current_period);
-    responses.hard_limit = Some(post("GetHardLimit", "{}", &token)?);
+    responses.hard_limit = Some(post(session, "GetHardLimit", "{}")?);
 
     let current_period_body = responses
         .current_period
@@ -81,22 +67,22 @@ pub(super) fn fetch_dashboard() -> io::Result<Result<CursorResponses, AccessDeni
 
     let (window, team) = match current_period_body.as_deref() {
         Some(body) if plan_usage_is_present(body) => (billing_window(body), 0),
-        Some(_) | None => team_window(&token, &mut responses)?,
+        Some(_) | None => team_window(session, &mut responses)?,
     };
 
     let Some((start, end)) = window else {
         responses
             .fetch_diagnostics
             .push("usage totals and activity: the billing cycle window is unknown");
-        return Ok(Ok(responses));
+        return Ok(responses);
     };
 
     let window_body = format!("{{\"teamId\":{team},\"startDate\":{start},\"endDate\":{end}}}");
-    responses.aggregated = Some(post("GetAggregatedUsageEvents", &window_body, &token)?);
+    responses.aggregated = Some(post(session, "GetAggregatedUsageEvents", &window_body)?);
 
-    fetch_event_pages(&token, team, start, end, &mut responses.filtered)?;
+    fetch_event_pages(session, team, start, end, &mut responses.filtered)?;
 
-    Ok(Ok(responses))
+    Ok(responses)
 }
 
 /// Team and enterprise accounts report no `planUsage`, so the window comes from
@@ -106,14 +92,14 @@ pub(super) fn fetch_dashboard() -> io::Result<Result<CursorResponses, AccessDeni
 /// against a live team account, so every step that does not answer degrades to
 /// no window at all rather than to a guessed one.
 fn team_window(
-    token: &str,
+    session: &mut Session<'_, impl Transport, impl Store>,
     responses: &mut CursorResponses,
-) -> io::Result<(Option<(i64, i64)>, i64)> {
+) -> Result<(Option<(i64, i64)>, i64), Failure> {
     responses
         .fetch_diagnostics
         .push("team or enterprise account: the team branch is unverified against a live account");
 
-    let me = post("GetMe", "{}", token)?;
+    let me = post(session, "GetMe", "{}")?;
     let Ok(me) = me else {
         responses
             .fetch_diagnostics
@@ -129,7 +115,7 @@ fn team_window(
     }
 
     let team = team_id(&me).unwrap_or(0);
-    let cycle = post("GetMonthlyBillingCycle", "{}", token)?;
+    let cycle = post(session, "GetMonthlyBillingCycle", "{}")?;
     let window = cycle
         .as_ref()
         .ok()
@@ -145,17 +131,17 @@ fn team_window(
 }
 
 fn fetch_event_pages(
-    token: &str,
+    session: &mut Session<'_, impl Transport, impl Store>,
     team: i64,
     start: i64,
     end: i64,
     pages: &mut UsageEventPages,
-) -> io::Result<()> {
+) -> Result<(), Failure> {
     for page in 1..=MAX_EVENT_PAGES {
         let body = format!(
             "{{\"teamId\":{team},\"startDate\":{start},\"endDate\":{end},\"page\":{page},\"pageSize\":{PAGE_SIZE}}}"
         );
-        match post("GetFilteredUsageEvents", &body, token)? {
+        match post(session, "GetFilteredUsageEvents", &body)? {
             Ok(response) => {
                 if !pages.add_page(&response) {
                     return Ok(());
@@ -176,105 +162,21 @@ fn fetch_event_pages(
     Ok(())
 }
 
-fn read_token() -> Result<String, AccessDenied> {
-    let output = read_cursor_access_token().map_err(|_| AccessDenied {
-        message: TOKEN_UNREADABLE.to_string(),
-    })?;
-
-    if !output.status.success() {
-        return Err(AccessDenied {
-            message: TOKEN_MISSING.to_string(),
-        });
-    }
-
-    let token = String::from_utf8_lossy(&output.stdout).trim().to_string();
-    if token.is_empty() {
-        return Err(AccessDenied {
-            message: TOKEN_EMPTY.to_string(),
-        });
-    }
-
-    Ok(token)
-}
-
-/// Sends one Connect-RPC call. The token goes to `curl` through the config on
-/// stdin, never through `argv`.
-fn post(method: &str, body: &str, token: &str) -> io::Result<MethodOutcome> {
-    let Some(mut command) = cursor_dashboard_request_command(method, body) else {
-        return Ok(Err(REQUEST_ERROR));
-    };
-
-    let child = command
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn();
-
-    let mut child = match child {
-        Ok(child) => child,
-        Err(_) => return Ok(Err(REQUEST_ERROR)),
-    };
-
-    if let Some(mut stdin) = child.stdin.take() {
-        stdin.write_all(
-            format!(
-                "header = \"Authorization: Bearer {token}\"\nheader = \"Content-Type: application/json\"\nheader = \"Connect-Protocol-Version: 1\"\n"
-            )
-            .as_bytes(),
-        )?;
-    }
-
-    let output = match child.wait_with_output() {
-        Ok(output) => output,
-        Err(_) => return Ok(Err(REQUEST_ERROR)),
-    };
-
-    let response = String::from_utf8_lossy(&output.stdout).to_string();
-
-    if !output.status.success() {
-        return Ok(Err(REQUEST_ERROR));
-    }
-
-    if response.trim().is_empty() {
-        return Ok(Err(EMPTY_RESPONSE));
-    }
-
-    if is_rejected(&response) {
-        return Ok(Err(REJECTED));
-    }
-
-    Ok(Ok(response))
-}
-
-fn is_rejected(response: &str) -> bool {
-    response.contains("\"code\":\"unauthenticated\"")
-        || response.contains("\"code\":\"permission_denied\"")
-        || response.contains("\"error\":\"unauthorized\"")
-        || response.contains("Unauthorized")
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn access_denied_messages_are_fixed_literals() {
-        for message in [
-            TOKEN_MISSING,
-            TOKEN_EMPTY,
-            TOKEN_UNREADABLE,
-            TOKEN_REJECTED,
-            REQUEST_FAILED,
-        ] {
-            assert!(message.starts_with("Cursor api2 usage unavailable: "));
-        }
-    }
-
-    #[test]
-    fn rejection_is_detected_without_carrying_the_response() {
-        assert!(is_rejected(
-            r#"{"code":"unauthenticated","message":"nope"}"#
-        ));
-        assert!(!is_rejected(r#"{"planInfo":{"planName":"Pro"}}"#));
+fn post(
+    session: &mut Session<'_, impl Transport, impl Store>,
+    method: &str,
+    body: &str,
+) -> Result<MethodOutcome, Failure> {
+    match session.post(method, body) {
+        Ok(body) => Ok(Ok(body)),
+        Err(
+            error @ (Failure::Unauthorized
+            | Failure::SignedOut
+            | Failure::Missing
+            | Failure::Choice
+            | Failure::Forbidden
+            | Failure::Protected),
+        ) => Err(error),
+        Err(_) => Ok(Err("request failed")),
     }
 }

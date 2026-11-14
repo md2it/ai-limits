@@ -8,12 +8,16 @@ use ai_limits::get_limits::{
 };
 use ai_limits::notifications as core_notifications;
 use ai_limits::notifications::PreviousRemainingStore;
-use ai_limits::types::{SourceReport, StructuredSourceInfo};
+use ai_limits::types::SourceReport;
 
 use super::provider_limits::{
-    provider_error, provider_limits_from_structured, ProviderLimits, ProviderLimitsQuery,
+    cursor_failure, provider_error, provider_limits_from_structured, ProviderLimits,
+    ProviderLimitsQuery,
 };
-use super::structured_cache::{CollectionCoordinator, StructuredInfoCache};
+use super::structured_cache::{
+    read_cached_structured_info, sync_cursor_cache, CollectResult, CollectionCoordinator,
+    StructuredInfoCache,
+};
 
 /// Tauri app event emitted after every successful actual collection, payload
 /// the same `ProviderLimits` shape a direct `get_single_provider_limits`
@@ -61,7 +65,8 @@ pub(super) async fn collect_single_provider_limits(
     let id = source_plan.label().to_string();
     let notifications_enabled = query.notifications_enabled;
 
-    let result = coordinator
+    let response_cache = Arc::clone(&structured_cache);
+    let (result, cursor_epoch) = coordinator
         .collect_once(&id, move || {
             run_collection(
                 source_plan,
@@ -74,9 +79,25 @@ pub(super) async fn collect_single_provider_limits(
         })
         .await;
 
-    Ok(match result {
+    let response = || match result {
         Ok(structured) => provider_limits_from_structured(&id, &structured),
+        Err(error) if id == "cursor" => cursor_failure(
+            error,
+            read_cached_structured_info(&response_cache, &id).as_ref(),
+        ),
         Err(error) => provider_error(&id, error),
+    };
+    Ok(if let Some(epoch) = cursor_epoch {
+        ai_limits::providers::cursor_api2::publish_if_current(epoch, response).unwrap_or_else(
+            || {
+                let mut discarded =
+                    provider_error("cursor", "Could not update Cursor. Try again.".into());
+                discarded.cursor_epoch = Some(epoch);
+                discarded
+            },
+        )
+    } else {
+        response()
     })
 }
 
@@ -91,7 +112,7 @@ async fn run_collection(
     sent_notifications: Arc<Mutex<HashSet<String>>>,
     remaining_store: Arc<dyn PreviousRemainingStore>,
     structured_cache: StructuredInfoCache,
-) -> Result<StructuredSourceInfo, String> {
+) -> CollectResult {
     let id = source_plan.label().to_string();
     let scheduler_app = app.clone();
     let scheduler_provider_id = id.clone();
@@ -102,9 +123,12 @@ async fn run_collection(
         &StartedPayload { id: id.clone() },
     );
 
-    let result =
-        tauri::async_runtime::spawn_blocking(move || match get_source_plan_limits(source_plan) {
+    let result = tauri::async_runtime::spawn_blocking(move || {
+        let report = collect_report(source_plan);
+        let epoch = (id == "cursor").then(ai_limits::providers::cursor_api2::collection_epoch);
+        let publish = || match report {
             Ok(report) => {
+                sync_cursor_cache(&structured_cache);
                 if notifications_enabled {
                     notify_for_report(&report, &app, &sent_notifications, &remaining_store);
                 }
@@ -118,18 +142,61 @@ async fn run_collection(
             }
             Err(error) => {
                 let message = error.to_string();
-                let payload = provider_error(&id, message.clone());
+                sync_cursor_cache(&structured_cache);
+                let payload = if id == "cursor" {
+                    if !ai_limits::providers::cursor_api2::retain_snapshot(&message) {
+                        if let Ok(mut cache) = structured_cache.lock() {
+                            cache.remove(&id);
+                        }
+                    }
+                    cursor_failure(
+                        message.clone(),
+                        read_cached_structured_info(&structured_cache, &id).as_ref(),
+                    )
+                } else {
+                    provider_error(&id, message.clone())
+                };
                 let _ = app.emit(PROVIDER_REFRESH_FAILED_EVENT, &payload);
                 Err(message)
             }
-        })
-        .await
-        .map_err(|error| error.to_string())?;
+        };
+        let result = if let Some(epoch) = epoch {
+            ai_limits::providers::cursor_api2::publish_if_current(epoch, publish)
+                .unwrap_or_else(|| Err("Could not update Cursor. Try again.".into()))
+        } else {
+            publish()
+        };
+        (result, epoch)
+    })
+    .await
+    .unwrap_or_else(|_| (Err("Could not collect provider limits".into()), None));
 
     scheduler_app
         .state::<super::BackgroundRefreshScheduler>()
         .collection_finished(scheduler_provider_id, collection_started_at);
     result
+}
+
+fn collect_report(plan: SourcePlan) -> Result<SourceReport, String> {
+    let report = get_source_plan_limits(plan).map_err(|e| e.to_string())?;
+    if report.data.structured.provider == "cursor"
+        && !report.data.structured.status.data_available
+        && report.data.structured.status.access_available
+    {
+        return Err("Could not update Cursor. Try again.".into());
+    }
+    if report.data.structured.provider == "cursor"
+        && !report.data.structured.status.access_available
+    {
+        return Err(report
+            .data
+            .structured
+            .status
+            .message
+            .clone()
+            .unwrap_or_else(|| "Could not update Cursor. Try again.".into()));
+    }
+    Ok(report)
 }
 
 #[derive(serde::Serialize)]

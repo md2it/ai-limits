@@ -136,12 +136,16 @@ function buildLimitRowsHtml(provider, surface) {
     }
 
     const message = escapeHtml(provider.errorMessage || "No usable limit records from this source");
+    const cursorDetails = provider.id === "cursor" && provider.errorMessage === "Choose which Cursor account to use." ? `<button type="button" class="provider-link" data-cursor-settings>Choose account in Settings</button>` : "";
+    const cursorLogin = provider.id === "cursor" && /Sign in to Cursor/.test(provider.errorMessage || "") ? `<p>Sign in through Cursor IDE or run <code>cursor agent login</code>, then retry.</p>` : "";
     const details = provider.errorMessage === "Local provider data is outdated" ? `<button type="button" class="provider-link" data-open-data-errors>More details</button>` : "";
     const retryHtml = surface === "main" ? `<button type="button" class="provider-link" data-manual-refresh>Retry</button>` : "";
-    return `<div><p class="provider-message">${message}</p>${details}${retryHtml}</div>`;
+    return `<div><p class="provider-message">${message}</p>${details}${cursorDetails}${cursorLogin}${retryHtml}</div>`;
   }
 
-  return provider.limits.map((limit) => {
+  const warning = provider.id === "cursor" && provider.errorMessage
+    ? `<p class="provider-message" role="status">${escapeHtml(provider.errorMessage)}</p><button type="button" class="provider-link" data-manual-refresh>Retry</button>` : "";
+  return warning + provider.limits.map((limit) => {
     const remaining = Number(limit.remainingPercentage) || 0;
     const percent = remaining.toFixed(1);
     const width = Math.max(0, Math.min(100, remaining));

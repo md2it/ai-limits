@@ -40,12 +40,42 @@ const providerFlashRefreshing = new Set();
 // loading state.
 const REMOTE_UPDATE_FLASH_MS = 1800;
 const providerDataCache = new Map();
+let cursorEpoch = 0;
+let cursorSourceRefreshPending = false;
+
+// IPC replies can arrive after a source-change event. Never render their old account values.
+function acceptCursorEpoch(provider) {
+  if (provider?.id !== "cursor" || !Number.isSafeInteger(provider.cursorEpoch)) return true;
+  if (provider.cursorEpoch < cursorEpoch) return false;
+  if (provider.cursorEpoch > cursorEpoch) {
+    cursorEpoch = provider.cursorEpoch;
+    providerDataCache.delete("cursor");
+    const block = getProviderBlock("cursor");
+    if (block) updateProviderBlockData(block, createEmptyProvider("cursor"), getProviderNextRefreshAt("cursor"));
+  }
+  return true;
+}
 
 export function initProviders(elements, { surface = "main" } = {}) {
   providerList = elements.providerList;
   statusLine = elements.statusLine;
   providerSurface = surface;
   initSectionSlotAlignment(providerList);
+
+  for (const button of document.querySelectorAll("[data-cursor-source]")) {
+    button.addEventListener("click", async () => {
+      const invoke = window.__TAURI__?.core?.invoke;
+      if (!invoke) return;
+      button.disabled = true;
+      try {
+        const epoch = await invoke("select_cursor_credential_source", { source: button.dataset.cursorSource });
+        acceptCursorEpoch({ id: "cursor", cursorEpoch: epoch });
+        if (providerRefreshInFlight.has("cursor")) cursorSourceRefreshPending = true;
+        else await refreshSingleProvider("cursor");
+      } catch { setErrorState("Could not select Cursor account. Try again."); }
+      finally { button.disabled = false; }
+    });
+  }
 
   // Backend-emitted (not by any frontend module): fires after every
   // successful actual collection, from whichever surface started it. Lets
@@ -147,6 +177,7 @@ function applyRemoteProviderUpdate(provider) {
     return;
   }
 
+  if (!acceptCursorEpoch(provider)) return;
   const wasAnimatingRemoteStart = providerRemoteRefreshInFlight.delete(provider.id);
   updateRefreshVisual(provider.id);
 
@@ -190,6 +221,7 @@ function applyRemoteProviderFailure(provider) {
     return;
   }
 
+  if (!acceptCursorEpoch(provider)) return;
   const wasAnimatingRemoteStart = providerRemoteRefreshInFlight.delete(provider.id);
   updateRefreshVisual(provider.id);
 
@@ -309,6 +341,9 @@ export function applySharedUpdateFrequency() {
 }
 
 function attachSectionHandlers(block, providerId) {
+  for (const button of block.querySelectorAll("[data-cursor-settings]")) {
+    button.addEventListener("click", () => { window.__TAURI__?.core?.invoke?.("open_main_window_settings"); });
+  }
   attachRetryHandlers(block, providerId);
   attachHelpLinkHandlers(block);
   attachDataErrorsBlockHandlers(block);
@@ -502,7 +537,7 @@ export async function refreshProvidersFromSharedCache() {
 
   for (const [index, providerId] of enabledProviders.entries()) {
     const snapshot = cachedSnapshots[index];
-    if (!snapshot) {
+    if (!snapshot || !acceptCursorEpoch(snapshot)) {
       continue;
     }
 
@@ -530,7 +565,8 @@ export async function refreshProvidersFromSharedCache() {
 // anything. Manual and scheduled refreshes share this function, so surfacing
 // the error here covers both. The busy state now reads on the whole card
 // (the "is-refreshing" glare) rather than on a dedicated button.
-async function refreshSingleProvider(providerId) {
+async function refreshSingleProvider(providerId, { retryStaleCursor = true } = {}) {
+  let staleCursorReply = false;
   if (!isProviderEnabled(providerId) || providerRefreshInFlight.has(providerId)) {
     return;
   }
@@ -540,9 +576,13 @@ async function refreshSingleProvider(providerId) {
 
   try {
     const provider = await fetchSingleProviderLimits(providerId);
+    if (!acceptCursorEpoch(provider)) {
+      staleCursorReply = providerId === "cursor" && retryStaleCursor;
+      return;
+    }
     provider.pending = false;
     cacheProviderData(provider);
-    recordProviderUpdateNow(providerId, provider.collectedAt);
+    recordProviderUpdateNow(providerId, provider.errorMessage ? undefined : provider.collectedAt);
 
     if (!isProviderEnabled(providerId)) {
       return;
@@ -569,6 +609,12 @@ async function refreshSingleProvider(providerId) {
     providerRefreshInFlight.delete(providerId);
     updateRefreshVisual(providerId);
     scheduleSectionSlotAlignment();
+    if (providerId === "cursor" && (cursorSourceRefreshPending || staleCursorReply)) {
+      cursorSourceRefreshPending = false;
+      // A joined operation may belong to an older account even when another window started it.
+      // Its completion has released the coordinator key; retry once, never loop on stale replies.
+      await refreshSingleProvider("cursor", { retryStaleCursor: false });
+    }
   }
 }
 
@@ -598,7 +644,7 @@ export async function refreshEnabledProviders({ initial = false } = {}) {
     providerList.replaceChildren(
       ...enabledProviders.map((providerId, index) => {
         const snapshot = cachedSnapshots[index];
-        if (!snapshot) {
+        if (!snapshot || !acceptCursorEpoch(snapshot)) {
           providersNeedingCollection.push(providerId);
           return mountProviderBlock(createEmptyProvider(providerId));
         }

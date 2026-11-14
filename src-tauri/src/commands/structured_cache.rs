@@ -1,5 +1,8 @@
 use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use std::sync::{
+    atomic::{AtomicU64, Ordering},
+    Arc, Mutex,
+};
 
 use tauri::async_runtime::{channel, Sender};
 
@@ -25,10 +28,22 @@ pub fn read_cached_structured_info(
     cache: &StructuredInfoCache,
     provider_id: &str,
 ) -> Option<StructuredSourceInfo> {
+    sync_cursor_cache(cache);
     cache.lock().ok()?.get(provider_id).cloned()
 }
 
-type CollectResult = Result<StructuredSourceInfo, String>;
+/// Credential changes invalidate account-bound values before either surface can read them.
+pub fn sync_cursor_cache(cache: &StructuredInfoCache) {
+    static EPOCH: AtomicU64 = AtomicU64::new(0);
+    let current = ai_limits::providers::cursor_api2::cache_epoch();
+    if EPOCH.swap(current, Ordering::SeqCst) != current {
+        if let Ok(mut cache) = cache.lock() {
+            cache.remove("cursor");
+        }
+    }
+}
+
+pub type CollectResult = (Result<StructuredSourceInfo, String>, Option<u64>);
 
 #[derive(Default)]
 struct InFlightEntry {
@@ -67,10 +82,12 @@ impl CollectionCoordinator {
         }
 
         if let Some(mut rx) = waiter_rx {
-            return rx
-                .recv()
-                .await
-                .unwrap_or_else(|| Err("collection coordinator channel closed".to_string()));
+            return rx.recv().await.unwrap_or_else(|| {
+                (
+                    Err("collection coordinator channel closed".to_string()),
+                    None,
+                )
+            });
         }
 
         // Detached from this call's own future so a caller being dropped
@@ -78,7 +95,7 @@ impl CollectionCoordinator {
         // cannot strand the waiters that joined it.
         let result = tauri::async_runtime::spawn(async move { run().await })
             .await
-            .unwrap_or_else(|error| Err(error.to_string()));
+            .unwrap_or_else(|error| (Err(error.to_string()), None));
 
         let waiters = {
             let mut inflight = self.inflight.lock().unwrap();
@@ -146,7 +163,7 @@ mod tests {
                             })
                             .await
                             .unwrap();
-                            Ok(structured("codex"))
+                            (Ok(structured("codex")), None)
                         })
                         .await
                 }));
@@ -154,7 +171,10 @@ mod tests {
 
             for handle in handles {
                 let result = handle.await.expect("task should not panic");
-                assert_eq!(result.expect("collection should succeed").provider, "codex");
+                assert_eq!(
+                    result.0.expect("collection should succeed").provider,
+                    "codex"
+                );
             }
 
             assert_eq!(runs.load(Ordering::SeqCst), 1);
@@ -193,7 +213,7 @@ mod tests {
                 coordinator
                     .collect_once("codex", move || async move {
                         runs.fetch_add(1, Ordering::SeqCst);
-                        Ok(structured("codex"))
+                        (Ok(structured("codex")), None)
                     })
                     .await
             };
@@ -202,13 +222,13 @@ mod tests {
                 coordinator
                     .collect_once("claude", move || async move {
                         runs.fetch_add(1, Ordering::SeqCst);
-                        Ok(structured("claude"))
+                        (Ok(structured("claude")), None)
                     })
                     .await
             };
 
-            assert_eq!(codex.unwrap().provider, "codex");
-            assert_eq!(claude.unwrap().provider, "claude");
+            assert_eq!(codex.0.unwrap().provider, "codex");
+            assert_eq!(claude.0.unwrap().provider, "claude");
             assert_eq!(runs.load(Ordering::SeqCst), 2);
         });
     }

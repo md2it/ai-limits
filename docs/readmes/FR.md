@@ -70,7 +70,8 @@ La comparaison complète portant sur 18 alternatives et 16 critères se trouve d
 - Windows et Linux : des builds de préversion non signés sont disponibles ; le support évolue selon les retours des utilisateurs,
 - Les notifications de l’application de bureau ne sont pour l’instant disponibles que sur macOS,
 - Certaines sources locales de Codex et Claude peuvent ne pas encore fonctionner sous Windows et Linux (les sources via CLI fonctionnent partout),
-- Les sources CLI de Codex et Claude exigent l’autorisation auprès du fournisseur concerné ; Cursor exige un jeton valide d’un Cursor Agent autorisé.
+- Les sources CLI de Codex et Claude exigent l’autorisation auprès du fournisseur concerné .
+- Pour consulter les limites de Cursor, une session Cursor CLI active est nécessaire. Installez Cursor CLI et exécutez `cursor agent login` dans le terminal.
 
 ## Licence
 

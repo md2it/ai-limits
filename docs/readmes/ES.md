@@ -70,7 +70,8 @@ La comparación completa de 18 alternativas y 16 criterios está en el [catálog
 - Windows y Linux: hay builds preliminares sin firmar disponibles; el soporte evoluciona según los comentarios de los usuarios,
 - Las notificaciones de la aplicación de escritorio solo están disponibles por ahora en macOS,
 - Algunas fuentes locales de Codex y Claude pueden no funcionar aún en Windows y Linux (las fuentes a través de CLI funcionan en todas partes),
-- Las fuentes CLI de Codex y Claude requieren autorización con el proveedor correspondiente; Cursor requiere un token válido de Cursor Agent autorizado.
+- Las fuentes CLI de Codex y Claude requieren autorización con el proveedor correspondiente.
+- Para consultar los límites de Cursor, necesitas una sesión activa en Cursor CLI. Instala Cursor CLI y ejecuta `cursor agent login` en la terminal.
 
 ## Licencia
 

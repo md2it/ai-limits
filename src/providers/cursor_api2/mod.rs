@@ -1,7 +1,10 @@
+mod credentials;
 mod fetch;
 mod helpers;
 mod parse;
 mod project;
+mod session;
+mod transport;
 
 use std::io;
 
@@ -19,3 +22,8 @@ pub fn collect_usage() -> io::Result<SourceData> {
         Err(denied) => Ok(access_denied(denied.message)),
     }
 }
+
+pub use session::{
+    cache_epoch, collection_epoch, publish_if_current, retain_snapshot, select_source,
+    select_source_with,
+};

@@ -7,7 +7,7 @@ mod structured_cache;
 use std::collections::HashSet;
 use std::sync::{Arc, Mutex};
 
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 
 use crate::platform::terminal;
 use ai_limits::infra::os_access;
@@ -74,8 +74,43 @@ pub fn get_cached_provider_limits(
     provider_id: String,
     structured_cache: tauri::State<'_, StructuredInfoCache>,
 ) -> Option<ProviderLimits> {
-    let structured = read_cached_structured_info(structured_cache.inner(), &provider_id)?;
-    Some(provider_limits_from_structured(&provider_id, &structured))
+    let read = || {
+        let structured = read_cached_structured_info(structured_cache.inner(), &provider_id)?;
+        Some(provider_limits_from_structured(&provider_id, &structured))
+    };
+    if provider_id == "cursor" {
+        ai_limits::providers::cursor_api2::publish_if_current(
+            ai_limits::providers::cursor_api2::cache_epoch(),
+            read,
+        )
+        .flatten()
+    } else {
+        read()
+    }
+}
+
+#[tauri::command]
+pub async fn select_cursor_credential_source(
+    source: String,
+    app: tauri::AppHandle,
+    structured_cache: tauri::State<'_, StructuredInfoCache>,
+) -> Result<u64, String> {
+    let cache = Arc::clone(structured_cache.inner());
+    let epoch = tauri::async_runtime::spawn_blocking(move || {
+        ai_limits::providers::cursor_api2::select_source_with(&source, || {
+            structured_cache::sync_cursor_cache(&cache);
+            let payload = provider_limits::provider_error(
+                "cursor",
+                "Could not update Cursor. Try again.".into(),
+            );
+            let _ = app.emit(collect::PROVIDER_REFRESH_FAILED_EVENT, &payload);
+            ai_limits::providers::cursor_api2::cache_epoch()
+        })
+        .map_err(str::to_owned)
+    })
+    .await
+    .map_err(|_| "Could not select Cursor account".to_string())??;
+    Ok(epoch)
 }
 
 #[tauri::command]

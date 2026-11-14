@@ -70,7 +70,8 @@
 - Windows 与 Linux：提供未签名的预发布构建版本；支持将根据用户反馈持续完善，
 - 桌面应用通知目前仅在 macOS 上可用，
 - 部分 Codex 与 Claude 的本地数据源在 Windows 与 Linux 上可能尚不可用（通过 CLI 的数据源在各平台均可使用），
-- Codex 和 Claude 的 CLI 数据源需要相应服务商授权；Cursor 需要已授权 Cursor Agent 提供的有效令牌。
+- Codex 和 Claude 的 CLI 数据源需要相应服务商授权。
+- 查看 Cursor 限额需要有效的 Cursor CLI 登录会话。请安装 Cursor CLI，并在终端运行 `cursor agent login`。
 
 ## 许可证
 

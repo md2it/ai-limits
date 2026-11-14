@@ -61,7 +61,7 @@ export const HELP_CHAPTERS = [
           </div>
           <div>
             <dt>Cursor</dt>
-            <dd>Uses the Cursor access token from Keychain to query the Cursor API.</dd>
+            <dd>Requires an active Cursor CLI sign-in to fetch limits. Install Cursor CLI, run <code>cursor agent login</code> in your terminal, and complete sign-in in your browser. You do not need to keep the CLI running.</dd>
           </div>
         </dl>
         <p>
@@ -122,7 +122,7 @@ export const HELP_CHAPTERS = [
           </div>
           <div>
             <dt>Cursor</dt>
-            <dd>Cursor needs a valid local access token. Sign in to Cursor again if its token is missing or rejected.</dd>
+            <dd>Sign in through Cursor CLI with <code>cursor agent login</code>, then refresh in AI Limits. Signing in to the Cursor desktop editor alone is not enough. If you previously selected IDE as the source, choose <strong>Use CLI</strong> in Settings.</dd>
           </div>
         </dl>
         <p class="info-note">Try a manual refresh after fixing access.</p>
@@ -224,11 +224,11 @@ export const HELP_CHAPTERS = [
           </div>
           <div>
             <dt>Keychain</dt>
-            <dd>Read-only access to the Cursor access token.</dd>
+            <dd>On macOS, read-only access to the Cursor CLI session credentials.</dd>
           </div>
           <div>
             <dt>Local files</dt>
-            <dd>Read-only access to local Codex and Claude data folders.</dd>
+            <dd>Read-only access to local Codex and Claude data and, on Windows and Linux, Cursor CLI session credentials.</dd>
           </div>
           <div>
             <dt>Notifications</dt>

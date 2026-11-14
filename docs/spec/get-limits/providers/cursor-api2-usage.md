@@ -2,7 +2,7 @@
 
 ## Provider Method: `cursor_api2_usage`
 
-`cursor_api2_usage` is the only Cursor source. It reads plan, limit, and usage data from Cursor's internal dashboard backend `api2.cursor.sh` with the access token created by `cursor agent login`.
+`cursor_api2_usage` is the only Cursor source. It reads plan, limit, and usage data from Cursor's internal dashboard backend `api2.cursor.sh` with an access token from an active Cursor CLI session. Credential discovery and recovery are specified in [cursor-auth.md](cursor-auth.md).
 
 Code layout (`src/providers/cursor_api2/`):
 
@@ -22,7 +22,7 @@ Every call is Connect-RPC over JSON:
 
 All methods used by this source are `Get*` methods and are semantically read-only. Nothing is written to the Cursor account.
 
-The endpoint is a stable internal Cursor endpoint used by Cursor itself. It has no publicly documented contract: the method names and payload shapes recorded here are what was verified against a live individual Pro account, not a stability guarantee. A contract change must degrade to `null` values plus diagnostics, never to guessed values.
+The endpoint is an internal Cursor endpoint used by Cursor itself. It has no publicly documented contract: the method names and payload shapes recorded here are what was verified against a live individual Pro account, not a stability guarantee. A contract change must degrade to `null` values plus diagnostics, never to guessed values.
 
 ## Why HTTP is the only path
 
@@ -35,7 +35,7 @@ There is no local Cursor source. This is a confirmed architectural property of C
 
 `cursor-agent about --format json` is not a local source either: it performs network calls to `GetMe` and `GetPlanInfo`, so as a plan source it duplicates `GetPlanInfo` and is not used.
 
-`cursor-agent status --format json` is genuinely local and returns identity and auth state only. It may be used as an optional cheap pre-check for "is the user logged in" before any network call. It is an optimization, not a data source: it reports no plan, no price, no limits, and no usage.
+`cursor-agent status --format json` reports authentication and identity, not usage. The inspected CLI calls `GetMe` when local credentials exist and can still report authenticated when that call fails. It is neither a guaranteed local pre-check nor proof that API2 accepts the current token, and it must not gate collection or substitute for session recovery.
 
 ## Call sequence
 
@@ -51,7 +51,7 @@ Steps 4 and 5 use the current billing cycle window: `startDate` and `endDate` ar
 
 A failure of any step after the first degrades only the fields that step feeds. A failed `GetAggregatedUsageEvents` leaves `usage.tokens.*` `null` plus a diagnostic and does not invalidate plan or limit data.
 
-**A failed first step is different in kind.** `GetPlanInfo` is the source's access probe: it is the simplest call, with an empty body, and it is where a missing, expired, or rejected token shows up. When it fails, the run stops there and the whole source reports denied access — `status.access_available = false` with a fixed literal telling the user to run `cursor agent login` if the token was rejected, and a generic transport literal otherwise. No further method is attempted. Continuing would mean issuing four more calls that are certain to fail the same way, and reporting an empty result as if the account genuinely had no data.
+`GetPlanInfo` is the initial access probe. An authentication failure first follows the bounded recovery sequence in [cursor-auth.md](cursor-auth.md#collection-and-refresh-sequence). Stop the collection only after recovery fails. Do not interpret permission errors or network failures as expired credentials. Authentication rejection in a later method uses the same collection-wide recovery budget; other later failures degrade only the fields they feed.
 
 ### Paging `GetFilteredUsageEvents`
 
@@ -83,7 +83,7 @@ The method already called by the source. Fields used:
 - `billingCycleStart`, `billingCycleEnd` — epoch milliseconds
 - `spendLimitUsage.individualUsed`, `individualLimit`, `pooledLimit`, `limitType`
 
-`planUsage.remaining` does **not** exist in the current response. This is a confirmed fact about the response shape, not an unread field: an earlier parser read that key and it is simply not there any more. The remaining allowance is derived from `includedSpend` and `limit` instead.
+`planUsage.remaining` is optional and was present in the 2026-10-28 observation. Its exact relationship to bonus allowances is not verified. The current projection continues to derive remaining included allowance from `includedSpend` and `limit`; do not substitute the optional field without verifying its semantics.
 
 `spendLimitUsage.individualUsed`, `individualLimit`, and `pooledLimit` did not appear on the verified account at all, so the whole on-demand spend window is unobserved end to end; see [Not verified](#not-verified).
 
@@ -98,7 +98,7 @@ Body `{}`. Returns the on-demand spend ceiling:
 
 Body `{"teamId":0,"startDate":<ms>,"endDate":<ms>}`. Returns totals for the window:
 
-- `totalInputTokens`, `totalOutputTokens`, `totalCacheWriteTokens`, `totalCacheReadTokens`
+- `totalInputTokens`, `totalOutputTokens`, `totalCacheWriteTokens`, `totalCacheReadTokens`; each is optional, and `totalCacheWriteTokens` was absent in the 2026-10-28 observation
 - `totalCostCents`
 - `percentOfBurstUsed`, `totalRequestCost` — optional
 - `aggregations[]` — `modelIntent`, `inputTokens`, `outputTokens`, `cacheWriteTokens`, `cacheReadTokens`, `totalCents`, `requestCost`, `tier`
@@ -257,11 +257,11 @@ These are verified absences, not unchecked gaps.
 - the enterprise/team branch above, verified by client code reading only.
 - **the whole on-demand spend window.** `hardLimit` was absent from the `GetHardLimit` response, and `spendLimitUsage.individualUsed`, `individualLimit`, and `pooledLimit` were absent from `GetCurrentPeriodUsage`. Not one of the values that would populate the `on_demand_spend` record was observed, so its amounts are unexercised outside tests, and the scale it is built on is an assumption, not a reading. The dollars-versus-cents question is unanswerable from the verified data and stays open until a live account returns a ceiling.
 - `planInfo.planOwner`, `spendLimitUsage.limitType`, `percentOfBurstUsed`, `totalRequestCost`, and `aggregations[].tier` are read into raw data; their exact semantics are not established and no structured field is derived from them.
-- contract stability across Cursor versions. The surface here was verified against `cursor-agent` 2026.07.23-e383d2b and a live individual Pro account.
+- contract stability across Cursor versions; current observations and their limits are recorded in [cursor-options.md](cursor-options.md#verification-and-implementation-gap)
 
 ## Safety rules
 
-- the access token is read from the macOS Keychain and passed to `curl` as a config on stdin (`curl -K -`), so it never appears in `argv`, in a process listing, in a shell history, or in an environment variable. It is never written to raw data, `diagnostics`, `status.message`, stdout, or stderr, and never interpolated into an error message.
+- credentials are read and recovered only within the backend according to [cursor-auth.md](cursor-auth.md); access headers and refresh payloads travel through request memory or stdin, never process arguments or environment variables; no credentials or refresh response bodies enter raw data, diagnostics, status messages, stdout, or stderr
 - `owningUser`, `serviceAccountId`, and any account email or identifier never leave the parsing layer. `conversationId` is used only to count distinct values and is never projected or emitted.
 - failures never carry source content. A missing token, a rejected token, a transport error, an unparseable response, or an absent field degrades to `null` plus a short fixed diagnostic literal. Response bodies and error payloads are never interpolated into user-visible strings.
 - no token value, email, or identifier appears in this document or any other document, including in examples.

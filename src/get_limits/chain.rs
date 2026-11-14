@@ -95,6 +95,10 @@ fn account_field_cache() -> &'static Mutex<HashMap<String, CachedAccountFields>>
 /// rendered subscription section between polls. Cache the last known values
 /// per provider and backfill gaps so the displayed fields stay stable.
 fn backfill_account_from_cache(report: &mut SourceReport) {
+    // Cursor sessions can change accounts; never backfill across their credential boundary.
+    if report.source == Source::CursorApi2 {
+        return;
+    }
     let Ok(mut cache) = account_field_cache().lock() else {
         return;
     };

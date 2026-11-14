@@ -6,6 +6,10 @@ Format: each version groups its entries under plain-text labels, in this order w
 
 ## Unreleased
 
+Fixed:
+- Cursor limits require an active Cursor CLI sign-in and recover routine token expiry automatically
+- Temporary Cursor update failures retain the last known limits and their original timestamp
+
 ## [v0.6.1](https://github.com/md2it/ai-limits/releases/tag/v0.6.1) — 2026-09-15
 
 Fixed:

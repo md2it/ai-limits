@@ -86,6 +86,7 @@ fn main() {
             commands::get_single_provider_limits,
             commands::get_cached_provider_limits,
             commands::configure_background_refresh,
+            commands::select_cursor_credential_source,
             commands::open_external_url,
             commands::start_provider_cli_login,
             commands::get_cli_command,
