@@ -1,15 +1,15 @@
 {
-  "version": "0.6.1",
-  "notes": "Fixed:\n- Main Window and Menu Bar Popover now show the current shared data when opened",
-  "pub_date": "2026-09-15T15:10:49.879415Z",
+  "version": "0.6.2",
+  "notes": "Fixed:\n- Cursor limits require an active Cursor CLI sign-in and recover routine token expiry automatically\n- Temporary Cursor update failures retain the last known limits and their original timestamp",
+  "pub_date": "2026-11-14T08:56:59.087729Z",
   "platforms": {
     "darwin-aarch64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q21jNWU0M29tcFBlZEdLcFlYeUZUaFFoOUFXODRtdVUzSzFIZHlsM01MRlRjOGRSQVkrb2N2Vkxna2lleXozTTJscWlNeDlCYm9VdzA1cHJkT0xYSGc4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDg0OTE1CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKMTF2dVNBL1ZPZnlvQXBiS25rdTE5YmhiQ1hEV3lWVy9kNmkvMldzUnQ0NXhjNVBXaUZyTFh1UTVid2hER3VPK3VMRWtYUFVRbmM3bXp2QVdVMjU0QlE9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.1/AI-Limits-v0.6.1-macos-arm64.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2tXZ2FnUGtYejNoNUZQS25PZ24wRXZrTjNUdTB6a3VrOFp1cDIzemRJOFNFQUZrZEtESjZqUDhjT1BReTVEK2hTM2dBbEx1LzJ0QjA1eXRYY3pWYlFZPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjQ2NTIwCWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKL0M4M0FncU1YWXhrNG9mR1p1U1I1RFNDRjcxYkNBTDBCNU8xNDdpV1Q3a1ZkbUdEZXFzWWNqNDhTaXZLdXEyRzd1MnhnNFhINEtENTJjamRwMlhKQkE9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.2/AI-Limits-v0.6.2-macos-arm64.app.tar.gz"
     },
     "darwin-x86_64": {
-      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q3AvRGpycHB2V3Npb29BZjQya1VYVWFETU9wdnNpTUpEcGdEK2pRTDg2NlFhYXR2aG10eWtxY1Y3Z1pyajZWa1ZuWmZCQWdSZnM2enY2ZjFIODZtaHdzPQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzg5NDg0ODMyCWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKNXJ5emwvbko5MmtHdjBqTGVmSm13ZlFrRURPWlh6S1JWN2lVVzFlV01WcE00aXBSajBtZ0RWTDh3TXdIdGpITFpFVUh5NW5VTjdWb3pzRWU1NzdhRFE9PQo=",
-      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.1/AI-Limits-v0.6.1-macos-intel.app.tar.gz"
+      "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVSRlRCRXlmWko4Q2l4SFNpSnBDK1NCQXVLSnV3cmp4eDd1RGp3L09PTDkveGxtVk5JQmo2eEtLdjlQV2IwMGhwKzVLWi9GTUtLN3c5ZHBmV3I5ZU5XNkJ3SHlhRnZOYkE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzk0NjQ2NTA0CWZpbGU6QUkgTGltaXRzLmFwcC50YXIuZ3oKSnQrRHZhQ3ZFNXYyMitNNi9vL0kxTTRlMTgvMHlKeUE4a0dlQlI1VVp2N0NUUXNTeS9HNmJva251VDB5a1M4OUNHdzZpNk1zMU5QbUgzK1gyVG1BQ1E9PQo=",
+      "url": "https://github.com/md2it/ai-limits/releases/download/v0.6.2/AI-Limits-v0.6.2-macos-intel.app.tar.gz"
     }
   }
 }
